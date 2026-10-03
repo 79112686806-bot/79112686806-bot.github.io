@@ -1,0 +1,9 @@
+# Секреты — никогда не коммитить
+.env
+.env.*
+!.env.example
+
+# Результат сборки
+dist/
+node_modules/
+.vercel/
