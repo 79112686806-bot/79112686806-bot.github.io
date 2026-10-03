@@ -1,6 +1,7 @@
 -- Начальные данные: 10 программ из index.html и программа курса «Колесо».
 -- Можно запускать повторно — существующие строки не дублируются.
 
+-- Все курсы создаются со статусом draft (в разработке), «Колесо» открываем ниже.
 insert into public.courses (slug, sort, title, subtitle, description) values
   ('wheel',          1, 'Колесо',                 'Первый технологический прорыв',  'От трения и качения до собственной тележки.'),
   ('phone',          2, 'Телефон',                'Как передавать голос',           'Изучаем устройство телефона и придумываем новые функции.'),
@@ -13,6 +14,8 @@ insert into public.courses (slug, sort, title, subtitle, description) values
   ('bioengineering', 9, 'Биоинженерия',           'Техника и живые системы',        'Как инженерные идеи применяются к живым системам.'),
   ('brain',         10, 'Мозг человека',          'Самое сложное устройство',       'Исследуем мозг как систему и придумываем необычные технологии.')
 on conflict (slug) do nothing;
+
+update public.courses set status = 'available' where slug = 'wheel' and status = 'draft';
 
 -- Модули курса «Колесо» (0 — вводное занятие, далее номер совпадает с «Модуль N»)
 insert into public.modules (course_id, sort, title)
