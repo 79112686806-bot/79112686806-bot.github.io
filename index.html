@@ -248,6 +248,13 @@ footer{color:var(--ink-soft);font-family:"Marck Script",cursive;font-size:19px}
   .speech{flex-wrap:wrap}.speech button{margin-left:0}
 }
 @media(prefers-reduced-motion:reduce){.promo-badge,.voice-dot{animation:none}}
+
+/* Вступительный текст на внутренних страницах — по левому краю, как на «Как проходят занятия» */
+.section.page .section-intro{text-align:left;margin-left:0;max-width:760px}
+/* Карточки курсов: содержимое сверху, названия занимают одинаковую высоту — подписи на одной линии */
+.course{display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch}
+.course .icon{height:40px;display:flex;align-items:flex-end}
+.course h3{min-height:2.7em}
 </style></head>
 <body><svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
 <filter id="torn" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="5" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="26" xChannelSelector="R" yChannelSelector="G"/></filter>
@@ -264,20 +271,23 @@ footer{color:var(--ink-soft);font-family:"Marck Script",cursive;font-size:19px}
 <section class="section page" id="coursesPage" style="display:none"><h2>10 программ</h2><p class="section-intro">Выберите тему, которая больше всего заинтересует ребёнка.</p><div class="courses" id="courseGrid"></div><div class="bottom"><button class="btn primary" onclick="showPage('home')">Вернуться на главную</button></div></section>
 <section class="section page" id="signupPage" style="display:none"><h2>Заявка на курс</h2><p class="section-intro">Формат один — онлайн, полностью через личный кабинет: видео, материалы, задания и связь с преподавателем.</p><div class="option" style="max-width:460px;cursor:default"><h3 id="signupCourseName"></h3><p>Онлайн-формат. Все занятия, видео и задания открываются в личном кабинете по мере прохождения.</p><b>20 000 ₽<br><small>за весь курс</small></b></div><div id="chosenForm"></div><div class="bottom"><button class="btn" onclick="showPage('courses')">Назад к программам</button></div></section>
 <section class="section page" id="requestSentPage" style="display:none"><h2>Заявка отправлена</h2><div class="payment"><p>Спасибо! Мы получили вашу заявку на курс «<span id="reqCourseName"></span>» и свяжемся с вами по указанному контакту в ближайшее время, чтобы ответить на вопросы и подобрать удобное время занятий.</p><button class="btn primary" onclick="showPage('home')">На главную</button></div></section>
-<section class="section page" id="paymentPage" style="display:none"><h2>Оплата курса</h2><div class="payment" id="paymentForm"><h3 id="paymentTitle"></h3><p id="paymentText"></p><p class="note" style="margin-bottom:14px">Онлайн-формат, доступ через личный кабинет. Первое занятие — со скидкой 50%.</p><label>Номер карты</label><input placeholder="0000 0000 0000 0000"><label>Срок действия</label><input placeholder="ММ/ГГ"><label>Код</label><input placeholder="CVC"><button class="btn primary" onclick="completePayment()">Оплатить (демо)</button><p class="note">Это демонстрационная страница. Реальная оплата пока не подключена.</p></div><div class="payment" id="paymentSuccess" style="display:none"><h3>Оплата прошла успешно</h3><p>Логин и пароль от личного кабинета высланы вам на почту.</p><p class="note" style="margin-bottom:14px">Если письмо не пришло в течение нескольких минут — проверьте папку «Спам» или напишите нам.</p><button class="btn primary" onclick="enterDashboard()">Войти в личный кабинет</button></div></section>
-<section class="section page" id="dashboardPage" style="display:none"><button class="btn" onclick="showPage('home')" style="margin-bottom:18px">← Вернуться на сайт</button><h2>Личный кабинет</h2><p class="section-intro" id="dashIntro"></p><div class="dashboard"><aside class="sidebar"><h3 id="dashCourse"></h3><p>Прогресс</p><div class="progress"><span></span></div><p class="note">28% пройдено</p><hr style="border-color:var(--line)"><div id="sideAccordion"></div><span class="side-pin" onclick="alert('Чат с преподавателем — демонстрационная заглушка')">💬 Чат с нами</span></aside><div><div class="lesson" id="lessonArea"></div><div class="timeline"><div class="step active"><div class="dot">1</div><small>Введение</small></div><div class="step"><div class="dot">2</div><small>Исследование</small></div><div class="step"><div class="dot">3</div><small>Модель</small></div><div class="step"><div class="dot">4</div><small>Проект</small></div></div></div></div></section>
+<section class="section page" id="paymentPage" style="display:none"><h2>Оплата курса</h2><div class="payment" id="paymentForm"><h3 id="paymentTitle"></h3><p id="paymentText"></p><p class="note" style="margin-bottom:14px">Онлайн-формат, доступ через личный кабинет. Первое занятие — со скидкой 50%.</p><div id="accountFields"></div><label>Номер карты</label><input placeholder="0000 0000 0000 0000"><label>Срок действия</label><input placeholder="ММ/ГГ"><label>Код</label><input placeholder="CVC"><p class="note" id="payMsg"></p><button class="btn primary" onclick="completePayment()">Оплатить (демо)</button><p class="note">Это демонстрационная страница. Реальная оплата пока не подключена.</p></div><div class="payment" id="paymentSuccess" style="display:none"><h3>Оплата прошла успешно</h3><p>Курс открыт в личном кабинете. Письмо с логином для входа отправлено вам на почту.</p><p class="note" style="margin-bottom:14px">Если письмо не пришло в течение нескольких минут — проверьте папку «Спам» или напишите нам.</p><button class="btn primary" onclick="enterDashboard()">Войти в личный кабинет</button></div></section>
+<section class="section page" id="myCoursesPage" style="display:none"><button class="btn" onclick="showPage('home')" style="margin-bottom:18px">← Вернуться на сайт</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button><h2>Личный кабинет</h2><p class="section-intro">Ваши курсы. Нажмите на курс, чтобы перейти к занятиям.</p><div class="courses" id="myCourseGrid"></div></section>
+<section class="section page" id="dashboardPage" style="display:none"><button class="btn" onclick="enterCabinet()" style="margin-bottom:18px">← Мои курсы</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button><h2>Личный кабинет</h2><p class="section-intro" id="dashIntro"></p><div class="dashboard"><aside class="sidebar"><h3 id="dashCourse"></h3><p>Прогресс</p><div class="progress"><span></span></div><p class="note">28% пройдено</p><hr style="border-color:var(--line)"><div id="sideAccordion"></div><span class="side-pin" onclick="alert('Чат с преподавателем — демонстрационная заглушка')">💬 Чат с нами</span></aside><div><div class="lesson" id="lessonArea"></div><div class="timeline"><div class="step active"><div class="dot">1</div><small>Введение</small></div><div class="step"><div class="dot">2</div><small>Исследование</small></div><div class="step"><div class="dot">3</div><small>Модель</small></div><div class="step"><div class="dot">4</div><small>Проект</small></div></div></div></div></section>
 <footer>Инженерный клуб — занятия и проекты для школьников. Учимся сейчас, готовимся к будущему.</footer></div>
 <div class="modal" id="modal"><div class="modal-card"><button class="close" onclick="closeModal()">×</button><div id="modalContent"></div></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
 <script>
+// Параметры ссылки из письма (invite / recovery / ошибка) — запоминаем до того, как клиент разберёт адрес
+const AUTH_LINK=Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
 const sb=supabase.createClient(window.APP_CONFIG.supabaseUrl,window.APP_CONFIG.supabaseKey);
 </script>
 <script>
 const courses=[['⚙','Колесо','Первый технологический прорыв','От трения и качения до собственной тележки.'],['☎','Телефон','Как передавать голос','Изучаем устройство телефона и придумываем новые функции.'],['⛵','Лодки и корабли','Как держаться на воде','Плавучесть, форма корпуса и проектирование транспорта.'],['🔭','Оптические приборы','Как мы видим далёкое','Линзы, свет, увеличение и новые оптические устройства.'],['🚗','Двигатель и автомобиль','Как заставить машину двигаться','Энергия, движение, мотор и автомобиль будущего.'],['✈','Самолёт','Как летать','Подъёмная сила, форма крыла и летающие аппараты.'],['⌘','Интернет','Как связаны компьютеры','Сети, передача данных и идеи цифровых устройств.'],['🤖','Роботы','Машины, которые помогают','Датчики, механизмы и робот-помощник или друг.'],['🧬','Биоинженерия','Техника и живые системы','Как инженерные идеи применяются к живым системам.'],['🧠','Мозг человека','Самое сложное устройство','Исследуем мозг как систему и придумываем необычные технологии.']];let selectedCourse=0;
 // Статусы курсов из базы: купить можно только курс со статусом available
-let courseStatus={};
-sb.from('courses').select('sort,status').then(({data})=>{(data||[]).forEach(c=>courseStatus[c.sort-1]=c.status)});
+let courseStatus={},courseSlug={};
+sb.from('courses').select('sort,status,slug').then(({data})=>{(data||[]).forEach(c=>{courseStatus[c.sort-1]=c.status;courseSlug[c.sort-1]=c.slug})});
 function isAvailable(i){return courseStatus[i]==='available'}
 
 
@@ -381,13 +391,49 @@ const carousel=document.getElementById('homeCarousel');
 const carouselItems=[...courses,...courses];
 carouselItems.forEach((c,i)=>{const n=document.createElement('div');n.className='node';n.innerHTML=`<span class="visual">${COURSE_ICONS[i%10]}</span>`;n.onclick=()=>openCourse(i%10);carousel.appendChild(n)});
 const grid=document.getElementById('courseGrid');courses.forEach((c,i)=>{let el=document.createElement('button');el.className='course';el.innerHTML=`<span class="num">${String(i+1).padStart(2,'0')}</span><span class="icon">${COURSE_ICONS[i]}</span><h3>${c[1]}</h3><small>${c[2]}</small>`;el.onclick=()=>openCourse(i);grid.appendChild(el)});
-function showPage(p){['home','how','courses','signup','requestSent','payment','dashboard'].forEach(x=>{let el=document.getElementById(x==='home'?'homePage':x+'Page');if(el)el.style.display=x===p?'block':'none'});scrollTo(0,0)}function show(html){modalContent.innerHTML=html;modal.classList.add('open')}function closeModal(){modal.classList.remove('open')}function openCourse(i){selectedCourse=i;let c=courses[i];show(`<div class="eyebrow">Программа ${i+1}</div><h2>${c[1]}</h2><p><b>${c[2]}.</b> ${c[3]}</p><p>Школьник изучает материалы, отвечает на вопросы, обсуждает тему с преподавателем и разрабатывает собственную идею.</p>${isAvailable(i)?`<button class="btn primary" onclick="closeModal();goSignup()">Выбрать этот курс</button>`:`<p class="note">Курс в разработке — запись откроется позже.</p>`}`)}
-function goSignup(){if(!isAvailable(selectedCourse))return;signupCourseName.textContent=courses[selectedCourse][1];chosenForm.innerHTML=`<div class="form"><label>Имя родителя</label><input placeholder="Как к вам обращаться"><label>Контакт для связи</label><input placeholder="Телефон или Telegram"><label>Комментарий</label><textarea rows="3" placeholder="Возраст ребёнка, интересы, удобное время"></textarea><div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px"><button class="btn" onclick="submitRequest()">Оставить заявку на консультацию</button><button class="btn primary" onclick="goPayment()">Оплатить и начать</button></div></div>`;showPage('signup')}
+function showPage(p){['home','how','courses','signup','requestSent','payment','myCourses','dashboard'].forEach(x=>{let el=document.getElementById(x==='home'?'homePage':x+'Page');if(el)el.style.display=x===p?'block':'none'});scrollTo(0,0)}function show(html){modalContent.innerHTML=html;modal.classList.add('open')}function closeModal(){modal.classList.remove('open')}function openCourse(i){selectedCourse=i;let c=courses[i];show(`<div class="eyebrow">Программа ${i+1}</div><h2>${c[1]}</h2><p><b>${c[2]}.</b> ${c[3]}</p><p>Школьник изучает материалы, отвечает на вопросы, обсуждает тему с преподавателем и разрабатывает собственную идею.</p>${isAvailable(i)?`<button class="btn primary" onclick="closeModal();goSignup()">Выбрать этот курс</button>`:`<p class="note">Курс в разработке — запись откроется позже.</p>`}`)}
+async function goSignup(){if(!isAvailable(selectedCourse))return;signupCourseName.textContent=courses[selectedCourse][1];
+  if(await hasCourse(courseSlug[selectedCourse])){chosenForm.innerHTML='<div class="form"><p><b>Этот курс уже открыт в вашем личном кабинете.</b></p></div>';showPage('signup');return}
+chosenForm.innerHTML=`<div class="form"><label>Имя родителя</label><input id="signupParent" placeholder="Как к вам обращаться"><label>Контакт для связи</label><input id="signupContact" placeholder="Телефон или Telegram"><label>Комментарий</label><textarea rows="3" placeholder="Возраст ребёнка, интересы, удобное время"></textarea><div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px"><button class="btn" onclick="submitRequest()">Оставить заявку на консультацию</button><button class="btn primary" onclick="goPayment()">Оплатить и начать</button></div></div>`;showPage('signup')}
 function submitRequest(){reqCourseName.textContent=courses[selectedCourse][1];showPage('requestSent')}
-function goPayment(){paymentTitle.textContent='Онлайн-курс — '+courses[selectedCourse][1];paymentText.textContent='Стоимость: 20 000 ₽ за весь курс.';paymentForm.style.display='block';paymentSuccess.style.display='none';showPage('payment')}
-function completePayment(){paymentForm.style.display='none';paymentSuccess.style.display='block'}
-function enterDashboard(){dashCourse.textContent=courses[selectedCourse][1];dashIntro.textContent='Ваш курс открыт. Слева — программа по темам и исследования. Видео и материалы открываются по мере прохождения.';buildAccordion();showPage('dashboard')}
-function enterCabinet(){if(typeof selectedCourse==='undefined'||selectedCourse===null||selectedCourse<0)selectedCourse=0;dashCourse.textContent=courses[selectedCourse][1];dashIntro.textContent='С возвращением! Слева — программа по темам и исследования.';buildAccordion();showPage('dashboard')}
+let buyer={};
+async function hasCourse(slug){const{data:{session}}=await sb.auth.getSession();if(!session)return false;
+  const{data}=await sb.from('enrollments').select('id,courses!inner(slug)').eq('user_id',session.user.id).eq('courses.slug',slug).limit(1);
+  return !!(data&&data.length)}
+function escapeHtml(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c])}
+async function goPayment(){if(window.signupParent)buyer={parent_name:signupParent.value.trim(),contact:signupContact.value.trim()};
+  paymentTitle.textContent='Онлайн-курс — '+courses[selectedCourse][1];paymentText.textContent='Стоимость: 20 000 ₽ за весь курс.';paymentForm.style.display='block';paymentSuccess.style.display='none';payMsg.textContent='';
+  const{data:{session}}=await sb.auth.getSession();
+  accountFields.innerHTML=session
+    ?`<p class="note" style="margin-bottom:14px">Курс откроется в вашем аккаунте: <b>${escapeHtml(session.user.email)}</b></p>`
+    :`<label>Email — будет логином для входа</label><input id="payEmail" type="email" autocomplete="email"><label>Придумайте пароль для личного кабинета</label><input id="payPassword" type="password" autocomplete="new-password" minlength="8"><label>Повторите пароль</label><input id="payPassword2" type="password" autocomplete="new-password"><p class="note" style="margin-bottom:14px">Не короче 8 символов. Пароль знаете только вы — в письме мы его не присылаем.</p>`;
+  showPage('payment')}
+async function completePayment(){
+  const btn=document.querySelector('#paymentForm .btn.primary');payMsg.textContent='';
+  const{data:{session}}=await sb.auth.getSession();
+  const body={course_slug:courseSlug[selectedCourse],...buyer};
+  if(!session){const email=payEmail.value.trim(),password=payPassword.value;
+    if(!email)return payMsg.textContent='Укажите email.';
+    if(password.length<8)return payMsg.textContent='Пароль должен быть не короче 8 символов.';
+    if(password!==payPassword2.value)return payMsg.textContent='Пароли не совпадают.';
+    Object.assign(body,{email,password})}
+  btn.disabled=true;payMsg.textContent='Оформляем…';
+  const{error}=await sb.functions.invoke('checkout',{body});
+  if(error){btn.disabled=false;let r={};try{r=await error.context.json()}catch(e){}
+    if(r.error==='already_registered'){payMsg.textContent=r.message+' ';const a=document.createElement('a');a.href='#';a.textContent='Войти';a.onclick=ev=>{ev.preventDefault();afterLogin=goPayment;showLogin()};payMsg.append(a);return}
+    return payMsg.textContent=r.message||'Не получилось оформить покупку. Попробуйте ещё раз или напишите нам.'}
+  if(!session){const{error:e2}=await sb.auth.signInWithPassword({email:body.email,password:body.password});if(e2)console.error(e2)}
+  btn.disabled=false;paymentForm.style.display='none';paymentSuccess.style.display='block'}
+async function enterDashboard(){return enterCabinet()}
+async function enterCabinet(){const session=await requireLogin();if(!session)return;
+  const{data,error}=await sb.from('enrollments').select('courses(slug,title,subtitle,sort)').eq('user_id',session.user.id).in('status',['active','finished']);
+  const list=(data||[]).map(e=>e.courses).filter(Boolean).sort((a,b)=>a.sort-b.sort);
+  myCourseGrid.innerHTML='';
+  if(error)myCourseGrid.innerHTML='<p class="note">Не удалось загрузить курсы. Обновите страницу.</p>';
+  else if(!list.length)myCourseGrid.innerHTML=`<div><p>У вас пока нет открытых курсов.</p><button class="btn primary" onclick="showPage('courses')">Выбрать курс</button></div>`;
+  list.forEach(c=>{const i=c.sort-1;const el=document.createElement('button');el.className='course';el.innerHTML=`<span class="icon">${COURSE_ICONS[i]||''}</span><h3>${escapeHtml(c.title)}</h3><small>${escapeHtml(c.subtitle||'')}</small>`;el.onclick=()=>openCourseDashboard(i);myCourseGrid.appendChild(el)});
+  showPage('myCourses')}
+function openCourseDashboard(i){selectedCourse=i;dashCourse.textContent=courses[i][1];dashIntro.textContent='Слева — программа по темам и исследования. Видео и материалы открываются по мере прохождения.';buildAccordion();showPage('dashboard')}
 function buildAccordion(){const box=document.getElementById('sideAccordion');box.innerHTML='';curriculum.forEach((g,gi)=>{const grp=document.createElement('div');grp.className='side-group'+(gi===0?' open':'');const head=document.createElement('div');head.className='side-group-head';head.innerHTML=`<span>${g.t}</span><span class="chev">▸</span>`;head.onclick=()=>grp.classList.toggle('open');const items=document.createElement('div');items.className='side-items';g.items.forEach((label,ii)=>{const it=document.createElement('span');it.className='side-item'+(gi===0&&ii===0?' active':'');it.textContent=label;it.onclick=()=>openLesson(it,label);items.appendChild(it)});grp.appendChild(head);grp.appendChild(items);box.appendChild(grp)});openLesson(box.querySelector('.side-item'),curriculum[0].items[0])}
 const UNLOCKED_LESSONS=new Set(['Кто такие инженеры и зачем они нужны','Что значит «мыслить как инженер»','Инженерия вокруг нас','Что такое колесо?']);
 const RESEARCH_MAP={
@@ -433,6 +479,42 @@ function openLesson(el,title){
   }
 }
 function saveField(inp){localStorage.setItem('research_'+inp.dataset.k,inp.value)}
+
+// ---------- Вход в личный кабинет ----------
+const AUTH_ERRORS={
+'Invalid login credentials':'Неверный email или пароль.',
+'Email not confirmed':'Email ещё не подтверждён — проверьте почту.',
+'New password should be different from the old password.':'Новый пароль должен отличаться от старого.'
+};
+function authError(e){const m=(e&&e.message)||'';if(AUTH_ERRORS[m])return AUTH_ERRORS[m];if(/rate limit|too many/i.test(m))return 'Слишком много попыток. Подождите немного и попробуйте снова.';return 'Не получилось: '+(m||'нет связи с сервером')+'.'}
+let afterLogin=null;
+function authMsg(text){const el=document.getElementById('authMsg');if(el)el.textContent=text}
+function authBusy(form,busy){form.querySelectorAll('button').forEach(b=>b.disabled=busy)}
+async function requireLogin(){const{data:{session}}=await sb.auth.getSession();if(session)return session;showLogin();return false}
+function showLogin(){show(`<h2>Вход в личный кабинет</h2><form class="form" onsubmit="doLogin(event)"><label>Email</label><input id="authEmail" type="email" autocomplete="email" required><label>Пароль</label><input id="authPassword" type="password" autocomplete="current-password" required><p class="note" id="authMsg"></p><div style="display:flex;gap:12px;flex-wrap:wrap"><button class="btn primary" type="submit">Войти</button><button class="btn" type="button" onclick="showForgot()">Забыли пароль?</button></div></form>`);authEmail.focus()}
+async function doLogin(e){e.preventDefault();const f=e.target;authBusy(f,true);authMsg('');
+  const{error}=await sb.auth.signInWithPassword({email:authEmail.value.trim(),password:authPassword.value});
+  authBusy(f,false);if(error)return authMsg(authError(error));closeModal();const next=afterLogin||enterCabinet;afterLogin=null;next()}
+function showForgot(){show(`<h2>Восстановление пароля</h2><p>Укажите email, на который оформлен доступ, — пришлём ссылку для установки нового пароля.</p><form class="form" onsubmit="doForgot(event)"><label>Email</label><input id="authEmail" type="email" autocomplete="email" required><p class="note" id="authMsg"></p><div style="display:flex;gap:12px;flex-wrap:wrap"><button class="btn primary" type="submit">Отправить ссылку</button><button class="btn" type="button" onclick="showLogin()">Назад ко входу</button></div></form>`);authEmail.focus()}
+async function doForgot(e){e.preventDefault();const f=e.target;authBusy(f,true);authMsg('');
+  const{error}=await sb.auth.resetPasswordForEmail(authEmail.value.trim(),{redirectTo:location.origin+location.pathname});
+  authBusy(f,false);if(error)return authMsg(authError(error));
+  authMsg('Если этот адрес зарегистрирован, мы отправили на него письмо со ссылкой. Проверьте также папку «Спам».')}
+function showSetPassword(type){show(`<h2>${type==='invite'?'Добро пожаловать! Придумайте пароль':'Новый пароль'}</h2><p>Не короче 8 символов. С этим паролем вы будете входить в личный кабинет.</p><form class="form" onsubmit="doSetPassword(event)"><label>Пароль</label><input id="authPassword" type="password" autocomplete="new-password" minlength="8" required><label>Повторите пароль</label><input id="authPassword2" type="password" autocomplete="new-password" minlength="8" required><p class="note" id="authMsg"></p><button class="btn primary" type="submit">Сохранить и войти</button></form>`);authPassword.focus()}
+async function doSetPassword(e){e.preventDefault();const f=e.target;
+  if(authPassword.value.length<8)return authMsg('Пароль должен быть не короче 8 символов.');
+  if(authPassword.value!==authPassword2.value)return authMsg('Пароли не совпадают.');
+  authBusy(f,true);authMsg('');const{error}=await sb.auth.updateUser({password:authPassword.value});
+  authBusy(f,false);if(error)return authMsg(authError(error));closeModal();enterCabinet()}
+function showLinkError(){show(`<h2>Ссылка устарела</h2><p>Ссылка из письма уже использована или срок её действия истёк. Запросите новую — это займёт минуту.</p><button class="btn primary" onclick="showForgot()">Запросить новую ссылку</button>`)}
+async function logout(){await sb.auth.signOut();showPage('home')}
+// Переход по ссылке из письма: приглашение или восстановление пароля
+(async()=>{
+  if(AUTH_LINK.error){history.replaceState(null,'',location.pathname);showLinkError();return}
+  if(AUTH_LINK.type==='invite'||AUTH_LINK.type==='recovery'){
+    const{data:{session}}=await sb.auth.getSession();history.replaceState(null,'',location.pathname);
+    session?showSetPassword(AUTH_LINK.type):showLinkError()}
+})();
 
 function speak(text){if('speechSynthesis' in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ru-RU';u.rate=.95;speechSynthesis.speak(u)}}
 function speakWelcome(){speak(document.getElementById('welcomeText').textContent)}
