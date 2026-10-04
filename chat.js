@@ -225,7 +225,8 @@
       msgMenu.dataset.id = m.id;
       msgMenu.hidden = false;
       const c = chatEl.getBoundingClientRect(), b = bubble.getBoundingClientRect();
-      const left = ownSide(m) ? Math.max(0, b.right - c.left - msgMenu.offsetWidth) : b.left - c.left;
+      // меню не выходит за границы чата (важно на узком экране телефона)
+      const left = Math.max(0, Math.min(ownSide(m) ? b.right - c.left - msgMenu.offsetWidth : b.left - c.left, c.width - msgMenu.offsetWidth));
       let top = b.bottom - c.top + 4;
       if (top + msgMenu.offsetHeight > c.height) top = Math.max(0, b.top - c.top - msgMenu.offsetHeight - 4);
       msgMenu.style.left = left + 'px';
