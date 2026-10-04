@@ -10,7 +10,8 @@
 - Backend/БД/авторизация — Supabase - зарегистрировался 
 - Видеозвонок в уроке — Jitsi Meet (iframe)
 - Оплата — ЮKassa (подключим позже, не сейчас)
-- Хостинг фронтенда — Vercel
+- Хостинг фронтенда — GitHub Pages (репозиторий 79112686806-bot/Sait, публикация через
+  GitHub Actions). Vercel заменён: *.vercel.app в России без VPN не открывается.
 - Отправка писем клиентам — через Supabase Auth (письмо с приглашением/установкой пароля при создании аккаунта после оплаты) или Resend из Edge Function, если понадобится более гибкий шаблон письма
 
 Функциональность:
@@ -25,7 +26,8 @@
 - index.html — сайт (бывший site.html)
 - admin.html — админ-панель (/admin.html), доступ только при profiles.role = 'admin'
 - scripts/build.mjs — собирает dist/: копирует страницы и пишет dist/config.js
-  с публичными URL и publishable-ключом Supabase (из .env локально, из env Vercel на проде).
+  с публичными URL и publishable-ключом Supabase (из .env локально, из Secrets репозитория
+  в GitHub Actions на проде).
   Service role key в config.js и в браузер не попадает никогда.
 - chat.js — общий чат (кабинет и админка); course-page.js — шаблон страницы курса
   (используют и сайт, и сборка).
@@ -34,4 +36,7 @@
   description, H1–H3 и Schema.org, плюс robots.txt; при заданном SITE_URL — sitemap.xml
   и канонические ссылки. Ссылки навигации — настоящие <a href>, с onclick="return go(...)".
 - Клиент Supabase в странице — глобальная переменная `sb`.
-- Локально: `npm run dev` → http://localhost:3000. Vercel публикует только dist/.
+- Локально: `npm run dev` → http://localhost:3000.
+- Публикация: push в main → .github/workflows/pages.yml собирает dist/ и выкладывает
+  на GitHub Pages. Сайт рассчитан на корень домена (абсолютные пути /...), поэтому
+  нужен свой домен (или репозиторий <user>.github.io), а не адрес вида /Sait/.
