@@ -27,5 +27,11 @@
 - scripts/build.mjs — собирает dist/: копирует страницы и пишет dist/config.js
   с публичными URL и publishable-ключом Supabase (из .env локально, из env Vercel на проде).
   Service role key в config.js и в браузер не попадает никогда.
+- chat.js — общий чат (кабинет и админка); course-page.js — шаблон страницы курса
+  (используют и сайт, и сборка).
+- SEO: у публичных разделов свои адреса (/, /programmy/, /kak-prohodyat-zanyatiya/,
+  /kursy/<slug>/). Сборка создаёт для них готовые HTML-страницы со своими title,
+  description, H1–H3 и Schema.org, плюс robots.txt; при заданном SITE_URL — sitemap.xml
+  и канонические ссылки. Ссылки навигации — настоящие <a href>, с onclick="return go(...)".
 - Клиент Supabase в странице — глобальная переменная `sb`.
 - Локально: `npm run dev` → http://localhost:3000. Vercel публикует только dist/.
