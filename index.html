@@ -441,7 +441,7 @@ async function openCourseDashboard(i){const session=await requireLogin();if(!ses
   const[{data:course,error},{data:prog},{data:calls}]=await Promise.all([
     sb.from('courses').select('modules(id,sort,title,lessons(id,sort,title,research_task))').eq('slug',slug).single(),
     sb.from('lesson_progress').select('lesson_id,status,teacher_comment').eq('user_id',uid),
-    sb.from('lesson_calls').select('lesson_id,url,starts_at,note').eq('user_id',uid)]);
+    sb.from('lesson_calls').select('lesson_id,url,starts_at,note,duration_min,ended_at').eq('user_id',uid)]);
   if(error||!course){sideAccordion.innerHTML='<p class="note">Не удалось загрузить программу. Обновите страницу.</p>';return}
   dash.modules=(course.modules||[]).sort((a,b)=>a.sort-b.sort);
   dash.modules.forEach(m=>{m.lessons.sort((a,b)=>a.sort-b.sort);m.lessons.forEach(l=>{l.module=m;dash.lessons.push(l)})});
@@ -486,10 +486,20 @@ function updateProgress(){const total=dash.lessons.length,done=dash.lessons.filt
     st.classList.toggle('done',isDone);st.classList.toggle('active',isActive)})}
 // Занятие с преподавателем: ссылка на звонок (Телемост) открывается в новой вкладке
 function safeUrl(u){try{const x=new URL(u);return x.protocol==='https:'?x.href:'#'}catch(e){return '#'}}
-function callHtml(l){const c=dash.calls[l.id];
-  if(!c)return '<div class="video">📞 Ссылка на занятие с преподавателем появится здесь</div>';
+// Состояние занятия: запланировано / завершено (вручную или через длительность после начала)
+function callState(c){if(!c)return null;if(c.ended_at)return 'ended';
+  if(c.starts_at&&Date.now()>new Date(c.starts_at).getTime()+(c.duration_min||90)*60000)return 'ended';return 'planned'}
+const CALL_NOTE='font-family:"PT Serif",Georgia,serif;font-size:17px;line-height:1.6;color:var(--ink);white-space:pre-wrap;text-align:left;max-width:560px;margin:0 auto';
+function callHtml(l){const c=dash.calls[l.id],st=callState(c);
+  const box=`class="video" id="callBox" data-state="${st||'none'}" style="height:auto;min-height:270px;gap:14px;align-content:center;text-align:center;padding:24px"`;
+  if(!c)return `<div ${box}>📞 Ссылка на занятие с преподавателем появится здесь</div>`;
+  if(st==='ended'){const rec=dash.materials.some(m=>m.lesson_id===l.id&&m.user_id);
+    return `<div ${box}><div>✓ Занятие завершено</div><p style='${CALL_NOTE};text-align:center'>${rec?'Видеозапись занятия — в «Материалах темы» ниже.':'В скором времени видеозапись занятия появится в «Материалах темы».'}</p></div>`}
   const when=c.starts_at?new Date(c.starts_at).toLocaleString('ru-RU',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}):'';
-  return `<div class="video" style="gap:14px;align-content:center;text-align:center;padding:20px"><div>📞 Занятие с преподавателем${when?' — '+escapeHtml(when):''}</div>${c.note?`<p class="note">${escapeHtml(c.note)}</p>`:''}<div><a class="btn primary" style="font-size:15px" href="${escapeHtml(safeUrl(c.url))}" target="_blank" rel="noopener">Подключиться к звонку</a></div></div>`}
+  return `<div ${box}><div>📞 Занятие с преподавателем${when?' — '+escapeHtml(when):''}</div>${c.note?`<p style='${CALL_NOTE}'>${escapeHtml(c.note)}</p>`:''}<div><a class="btn primary" style="font-size:15px" href="${escapeHtml(safeUrl(c.url))}" target="_blank" rel="noopener">Подключиться к звонку</a></div></div>`}
+// Раз в минуту проверяем, не закончилось ли занятие по времени
+setInterval(()=>{const el=document.getElementById('callBox');if(!el||!dash.current)return;
+  const st=callState(dash.calls[dash.current.id])||'none';if(el.dataset.state!==st)el.outerHTML=callHtml(dash.current)},60000);
 // Материалы: ссылка открывается как есть, файл — по временной ссылке из закрытого хранилища
 function materialLinks(list){return list.map(m=>m.kind==='link'
   ?`<a href="${escapeHtml(safeUrl(m.url))}" target="_blank" rel="noopener">${escapeHtml(m.title)}</a>`

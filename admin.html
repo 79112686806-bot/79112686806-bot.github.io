@@ -59,6 +59,14 @@ tbody tr:hover{background:#fbf7f1}
 .qitem .t{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .chatwrap{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fcfaf6}
 .navcount{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:9px;background:var(--accent);color:#fff;font-size:11px;line-height:18px;text-align:center}
+.sub{margin-top:10px;padding:12px;border:1px dashed var(--line);border-radius:8px;background:#fcfaf6}
+.sub h4{margin:0 0 8px;font-size:14px}
+.sub .grid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.mat{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.mat:last-child{border-bottom:none}
+.mat .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.warn{color:var(--warn)}
+label.filebtn{display:inline-block;border:1px solid var(--accent);color:var(--accent);background:#fff;border-radius:6px;padding:6px 12px;cursor:pointer}
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;display:none;z-index:20}
 @media(max-width:700px){main{padding:14px}th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5){display:none}}
 </style>
@@ -66,7 +74,7 @@ tbody tr:hover{background:#fbf7f1}
 <body>
 <header id="top" hidden>
   <b>Инженерный клуб · админ</b>
-  <nav class="tabs"><a href="#queue" data-tab="queue">Очередь<span class="navcount" id="qCount" hidden></span></a><a href="#students" data-tab="students">Ученики</a></nav>
+  <nav class="tabs"><a href="#queue" data-tab="queue">Очередь<span class="navcount" id="qCount" hidden></span></a><a href="#students" data-tab="students">Ученики</a><a href="#materials" data-tab="materials">Материалы курса</a></nav>
   <span class="me" id="meEmail"></span>
   <a href="./" title="Открыть сайт">← На сайт</a>
   <button onclick="logout()">Выйти</button>
@@ -111,10 +119,11 @@ async function doLogin(e){e.preventDefault();const{error}=await sb.auth.signInWi
 async function logout(){await sb.auth.signOut();location.hash='';location.reload()}
 
 // ---------- Маршруты: #students, #student/<id> ----------
-function route(){closeAdminChat();const h=location.hash.slice(1)||'queue';const[tab,arg,cid,lid]=h.split('/');
+function route(){closeAdminChat();matView=null;const h=location.hash.slice(1)||'queue';const[tab,arg,cid,lid]=h.split('/');
   document.querySelectorAll('nav.tabs a').forEach(a=>a.classList.toggle('active',a.dataset.tab===(tab==='student'?'students':tab)));
   if(tab==='student'&&arg)return showStudent(arg,cid?+cid:undefined,lid?+lid:undefined);
   if(tab==='students')return showStudents();
+  if(tab==='materials')return showMaterials(arg?+arg:undefined);
   return showQueue()}
 
 // ---------- Очередь: новые сообщения и темы на проверке ----------
@@ -192,17 +201,20 @@ async function enroll(uid){const courseId=+enrollSel.value;const{error}=await sb
 
 // ---------- Темы курса: статусы, ответы, подтверждение ----------
 async function loadCourse(s,courseId){closeAdminChat();const box=document.getElementById('courseBox');box.innerHTML='<p class="muted">Загрузка тем…</p>';
-  const[{data:course},{data:prog},{data:answers},{data:threads}]=await Promise.all([
+  const[{data:course},{data:prog},{data:answers},{data:threads},{data:calls},{data:personal}]=await Promise.all([
     sb.from('courses').select('title,modules(id,sort,title,lessons(id,sort,title,research_task))').eq('id',courseId).single(),
     sb.from('lesson_progress').select('lesson_id,status,submitted_at,approved_at,teacher_comment').eq('user_id',s.id),
     sb.from('research_answers').select('lesson_id,hypothesis,method,result,conclusion,updated_at').eq('user_id',s.id),
-    sb.rpc('admin_threads',{p_student_id:s.id})]);
+    sb.rpc('admin_threads',{p_student_id:s.id}),
+    sb.from('lesson_calls').select('lesson_id,url,starts_at,note,duration_min,ended_at').eq('user_id',s.id),
+    sb.from('materials').select('id,lesson_id,title,kind,url,storage_path,created_at').eq('user_id',s.id).order('id')]);
   const modules=(course?.modules||[]).sort((a,b)=>a.sort-b.sort);const lessons=[];
   modules.forEach(m=>{m.lessons.sort((a,b)=>a.sort-b.sort);m.lessons.forEach(l=>lessons.push(l))});
   const progress={};(prog||[]).forEach(p=>progress[p.lesson_id]=p);
   const ans={};(answers||[]).forEach(a=>ans[a.lesson_id]=a);
   const unread={},hasThread={};(threads||[]).forEach(t=>{unread[t.lesson_id]=t.unread;hasThread[t.lesson_id]=true});
-  card={student:s,courseId,lessons,progress,answers:ans,unread,hasThread};
+  const callMap={};(calls||[]).forEach(c=>callMap[c.lesson_id]=c);matCache={};(personal||[]).forEach(m=>matCache[m.id]=m);
+  card={student:s,courseId,lessons,progress,answers:ans,unread,hasThread,calls:callMap,personal:personal||[]};
   const approved=lessons.filter(l=>progress[l.id]?.status==='approved').length;
   box.innerHTML=`<h2>${esc(course?.title)} — темы <span class="muted small">(подтверждено ${approved} из ${lessons.length})</span></h2>
     <div class="card">${modules.map(m=>`<div class="module">${esc(m.title)}</div>${m.lessons.map(lessonRow).join('')}`).join('')}</div>`}
@@ -218,8 +230,117 @@ function lessonRow(l){const p=card.progress[l.id],st=p?.status,a=card.answers[l.
   const actions=st==='approved'
     ?`${p.teacher_comment?`<div class="small">Ваш комментарий: ${esc(p.teacher_comment)}</div>`:''}<button class="link small" onclick="revoke(${l.id},this)">Отменить подтверждение</button>`
     :open?`<div class="row"><input id="cm${l.id}" placeholder="Комментарий ученику (необязательно)" style="flex:1;min-width:220px"><button class="primary" onclick="approve(${l.id})">Подтвердить тему</button></div>`:'';
-  const chat=open||st?`<button id="cb-${l.id}" style="margin-top:8px" onclick="toggleChat(${l.id})">${chatLabel(l.id)}</button><div id="chat-${l.id}"></div>`:'';
+  const nRec=card.personal.filter(m=>m.lesson_id===l.id).length,c=card.calls[l.id];
+  const lp=open||st?`<button style="margin-top:8px" onclick="toggleLessonPanel(${l.id})">📞 Занятие и видеозапись${c?` · ${callState(c)==='ended'?'завершено':c.starts_at?fmtDate(c.starts_at):'назначено'}`:''}${nRec?` · 🎥 ${nRec}`:''}</button> `:'';
+  const chat=open||st?`${lp}<button id="cb-${l.id}" style="margin-top:8px" onclick="toggleChat(${l.id})">${chatLabel(l.id)}</button><div id="lp-${l.id}"></div><div id="chat-${l.id}"></div>`:'';
   return `<div class="lesson ${st==='submitted'?'submitted':''} ${!open&&!st?'locked':''}" id="lesson-${l.id}"><div class="row" style="justify-content:space-between"><span>${esc(l.title)}</span>${badge}</div>${open||st?answersHtml:''}<div class="actions">${actions}</div>${chat}</div>`}
+// ---------- Занятие (ссылка на звонок) и личные записи ученика ----------
+const TELEMOST=/^https:\/\/telemost\.yandex\.ru\/j\/\d+/;
+const MAX_FILE=50*1024*1024;
+const pad=n=>String(n).padStart(2,'0');
+function toLocalInput(iso){if(!iso)return '';const d=new Date(iso);return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`}
+function safeName(n){return n.replace(/[^A-Za-z0-9._-]/g,'_').slice(-60)}
+function callState(c){if(!c)return null;if(c.ended_at)return 'ended';
+  if(c.starts_at&&Date.now()>new Date(c.starts_at).getTime()+(c.duration_min||90)*60000)return 'ended';return 'planned'}
+function callStatusHtml(c){const st=callState(c);if(!st)return '<span class="badge b-mute">не назначено</span>';
+  if(st==='ended')return `<span class="badge b-ok">✓ завершено${c.ended_at?' '+fmtDate(c.ended_at):''}</span> <span class="small muted">У ученика вместо кнопки — «Занятие завершено, видеозапись скоро появится».</span>`;
+  return `<span class="badge b-warn">запланировано${c.starts_at?' на '+fmtDate(c.starts_at):''}</span> <span class="small muted">У ученика — кнопка «Подключиться к звонку».</span>`}
+function toggleLessonPanel(id){const el=document.getElementById('lp-'+id);if(el.innerHTML){el.innerHTML='';return}renderLessonPanel(id)}
+function renderLessonPanel(id){const el=document.getElementById('lp-'+id);const c=card.calls[id]||{};const recs=card.personal.filter(m=>m.lesson_id===id);
+  const today=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
+  const st=callState(card.calls[id]);
+  el.innerHTML=`<div class="sub"><h4>📞 Занятие с учеником</h4><p style="margin:0 0 10px">${callStatusHtml(card.calls[id])}</p>
+    <div class="grid"><label class="small muted">Ссылка на встречу<input id="cu-${id}" value="${esc(c.url)}" placeholder="https://telemost.yandex.ru/j/…" oninput="document.getElementById('cw-${id}').textContent=''"></label>
+      <label class="small muted">Дата и время<input type="datetime-local" id="ct-${id}" value="${st==='ended'?'':toLocalInput(c.starts_at)}"></label>
+      <label class="small muted">Длительность<select id="cd-${id}">${[45,60,90,120,150,180].map(m=>`<option value="${m}" ${(c.duration_min||90)===m?'selected':''}>${m} мин</option>`).join('')}</select></label></div>
+    <label class="small muted" style="display:block;margin-top:10px">Рекомендации ученику к занятию
+      <textarea id="cn-${id}" rows="4" maxlength="2000" style="width:100%;margin-top:4px;font-size:15px;line-height:1.5" placeholder="Например: подготовь машинку с круглыми и квадратными колёсами, линейку и запиши свою гипотезу.">${esc(c.note)}</textarea></label>
+    <p class="small warn" id="cw-${id}"></p>
+    <div class="row"><button class="primary" onclick="saveCall(${id})">${st==='ended'?'Провести ещё раз':'Сохранить занятие'}</button>
+      ${st==='planned'?`<button onclick="endCall(${id})">Завершить занятие</button>`:''}
+      ${card.calls[id]?`<button class="link" onclick="deleteCall(${id})">Убрать занятие</button>`:''}
+      <span class="small muted">${st==='ended'?'Чтобы провести ещё раз — укажите новую дату (и ссылку, если она новая) и нажмите «Провести ещё раз».':'В Телемосте: «Создать встречу» → «Скопировать ссылку». Занятие завершится само через указанную длительность.'}</span></div>
+    <h4 style="margin-top:16px">🎥 Видеозаписи занятий — личные, только для этого ученика</h4>
+    <p class="small muted" style="margin:0 0 6px">Запись видит только этот ученик — в теме и во вкладке «Материалы». Файлы для всех учеников (PDF, задания) загружаются один раз во вкладке «Материалы курса».</p>
+    ${recs.length?recs.map(m=>matRow(m)).join(''):'<p class="small muted">Пока ничего нет.</p>'}
+    <div class="row" style="margin-top:8px"><input id="rt-${id}" value="🎥 Запись занятия ${esc(today)}" style="min-width:220px">
+      <input id="ru-${id}" placeholder="Ссылка на Яндекс Диск" style="flex:1;min-width:220px"><button onclick="addMaterial(${id},true)">Добавить ссылку</button>
+      <label class="filebtn">Загрузить видео<input type="file" accept="video/*" hidden onchange="uploadMaterial(${id},true,this)"></label></div>
+    <p class="small muted" style="margin-top:6px">Видеофайл — до 50 МБ. Длинную запись лучше загрузить на Яндекс Диск («Поделиться» → «Скопировать ссылку») и добавить ссылкой.</p></div>`}
+async function saveCall(id){const url=document.getElementById('cu-'+id).value.trim(),t=document.getElementById('ct-'+id).value,note=document.getElementById('cn-'+id).value.trim(),w=document.getElementById('cw-'+id);
+  if(!/^https:\/\//.test(url)){w.textContent='Вставьте ссылку, начинающуюся с https://';return}
+  if(!TELEMOST.test(url)&&!w.dataset.ok){w.dataset.ok='1';w.textContent='Это не похоже на ссылку на встречу Телемоста (она выглядит так: https://telemost.yandex.ru/j/12345678901234). Нажмите «Сохранить занятие» ещё раз, если всё верно.';return}
+  delete w.dataset.ok;
+  if(callState(card.calls[id])==='ended'&&!t){w.textContent='Укажите новую дату и время занятия.';return}
+  const row={user_id:card.student.id,lesson_id:id,url,starts_at:t?new Date(t).toISOString():null,note:note||null,duration_min:+document.getElementById('cd-'+id).value,ended_at:null};
+  const{error}=await sb.from('lesson_calls').upsert(row);if(error)return toast('Ошибка: '+error.message);
+  card.calls[id]=row;toast('Занятие сохранено — ученик видит кнопку «Подключиться к звонку»');renderLessonPanel(id)}
+async function endCall(id){const ended_at=new Date().toISOString();const{error}=await sb.from('lesson_calls').update({ended_at}).eq('user_id',card.student.id).eq('lesson_id',id);
+  if(error)return toast('Ошибка: '+error.message);card.calls[id].ended_at=ended_at;toast('Занятие завершено — у ученика кнопка скрыта');renderLessonPanel(id)}
+async function deleteCall(id){const{error}=await sb.from('lesson_calls').delete().eq('user_id',card.student.id).eq('lesson_id',id);
+  if(error)return toast('Ошибка: '+error.message);delete card.calls[id];toast('Занятие убрано');renderLessonPanel(id)}
+
+// ---------- Материалы: общие (вкладка «Материалы курса») и личные (карточка ученика) ----------
+function matRow(m){const icon=m.kind==='link'?'🔗':'📄';
+  return `<div class="mat" id="mat-${m.id}"><span class="name">${icon} <button class="link" onclick="openMat(${m.id})">${esc(m.title)}</button></span>
+    <button class="link small" onclick="renameMat(${m.id})">переименовать</button><button class="link small" onclick="deleteMat(${m.id},this)">удалить</button></div>`}
+let matCache={};
+async function openMat(id){const m=matCache[id]||await sb.from('materials').select('*').eq('id',id).single().then(r=>r.data);if(!m)return;
+  if(m.kind==='link')return window.open(m.url,'_blank','noopener');
+  const w=window.open('','_blank');const{data,error}=await sb.storage.from('materials').createSignedUrl(m.storage_path,300);
+  if(error){if(w)w.close();return toast('Не удалось открыть файл')}if(w)w.location=data.signedUrl}
+async function addMaterial(lessonId,personal){const title=document.getElementById((personal?'rt-':'mt-')+lessonId).value.trim(),url=document.getElementById((personal?'ru-':'mu-')+lessonId).value.trim();
+  if(!title)return toast('Укажите название');if(!/^https:\/\//.test(url))return toast('Ссылка должна начинаться с https://');
+  const{error}=await sb.from('materials').insert({lesson_id:lessonId,user_id:personal?card.student.id:null,title,kind:'link',url});
+  if(error)return toast('Ошибка: '+error.message);toast('Добавлено');afterMatChange(lessonId,personal)}
+async function uploadMaterial(lessonId,personal,inp){const f=inp.files[0];inp.value='';if(!f)return;
+  if(f.size>MAX_FILE)return toast('Файл больше 50 МБ — загрузите его на Яндекс Диск и добавьте ссылкой');
+  const titleEl=document.getElementById((personal?'rt-':'mt-')+lessonId);const title=(titleEl&&titleEl.value.trim())||f.name;
+  const path=(personal?`personal/${card.student.id}`:'course')+`/${lessonId}/${Date.now()}-${safeName(f.name)}`;
+  toast('Загружаем «'+f.name+'»…');
+  const up=await sb.storage.from('materials').upload(path,f,{contentType:f.type||'application/octet-stream'});
+  if(up.error)return toast('Не удалось загрузить: '+up.error.message);
+  const{error}=await sb.from('materials').insert({lesson_id:lessonId,user_id:personal?card.student.id:null,title,kind:'file',storage_path:path});
+  if(error){await sb.storage.from('materials').remove([path]);return toast('Ошибка: '+error.message)}
+  toast('Файл загружен');afterMatChange(lessonId,personal)}
+async function renameMat(id){const row=document.getElementById('mat-'+id);const cur=row.querySelector('.name button').textContent;
+  row.innerHTML=`<input value="${esc(cur)}" style="flex:1"><button class="primary">Сохранить</button><button class="link">отмена</button>`;
+  const[inp,ok,cancel]=row.children;inp.focus();
+  cancel.onclick=()=>afterMatChange(null);
+  ok.onclick=async()=>{const t=inp.value.trim();if(!t)return;const{error}=await sb.from('materials').update({title:t}).eq('id',id);
+    if(error)return toast('Ошибка: '+error.message);toast('Переименовано');afterMatChange(null)}}
+async function deleteMat(id,b){if(!b.dataset.sure){b.dataset.sure='1';b.textContent='точно удалить?';return}
+  const{data:m}=await sb.from('materials').select('kind,storage_path').eq('id',id).single();
+  const{error}=await sb.from('materials').delete().eq('id',id);if(error)return toast('Ошибка: '+error.message);
+  if(m&&m.kind==='file')await sb.storage.from('materials').remove([m.storage_path]);
+  toast('Удалено');afterMatChange(null)}
+async function afterMatChange(lessonId){
+  if(matView)return showMaterials(matView.courseId,true);
+  if(card){const{data}=await sb.from('materials').select('id,lesson_id,title,kind,url,storage_path,created_at').eq('user_id',card.student.id).order('id');
+    card.personal=data||[];(data||[]).forEach(m=>matCache[m.id]=m);document.querySelectorAll('[id^="lp-"]').forEach(el=>{if(el.innerHTML)renderLessonPanel(+el.id.slice(3))})}}
+
+// ---------- Вкладка «Материалы курса»: общие материалы для всех учеников ----------
+let matView=null;
+async function showMaterials(courseId,keep){card=null;
+  const{data:allCourses}=await sb.from('courses').select('id,title,status,sort').order('sort');
+  courseId=courseId||(allCourses||[])[0]?.id;
+  const[{data:course},{data:mats}]=await Promise.all([
+    sb.from('courses').select('title,modules(id,sort,title,lessons(id,sort,title))').eq('id',courseId).single(),
+    sb.from('materials').select('id,lesson_id,title,kind,url,storage_path,sort').is('user_id',null).order('sort').order('id')]);
+  matView={courseId};matCache={};(mats||[]).forEach(m=>matCache[m.id]=m);
+  const modules=(course?.modules||[]).sort((a,b)=>a.sort-b.sort);
+  const scroll=keep?window.scrollY:0;
+  app.innerHTML=`<h1>Материалы курса — файлы для всех учеников</h1>
+    <p class="muted">Загрузите файл к теме один раз — он автоматически появится у каждого ученика курса, как только у него откроется эта тема (в самой теме и во вкладке «📁 Материалы»). Видеозаписи занятий — личные: их добавляют в карточке ученика.</p>
+    <div class="row" style="margin-bottom:12px">${(allCourses||[]).map(c=>`<a class="btn ${c.id===courseId?'primary':''}" style="${c.id===courseId?'background:var(--accent);color:#fff':''};text-decoration:none" href="#materials/${c.id}">${esc(c.title)}${c.status==='draft'?' (в разработке)':''}</a>`).join('')}</div>
+    ${modules.length?modules.map(m=>`<h2>${esc(m.title)}</h2>${m.lessons.sort((a,b)=>a.sort-b.sort).map(l=>{const list=(mats||[]).filter(x=>x.lesson_id===l.id);
+      return `<div class="card"><b>${esc(l.title)}</b><div style="margin:8px 0">${list.length?list.map(matRow).join(''):'<p class="small muted">Материалов пока нет.</p>'}</div>
+        <div class="row"><input id="mt-${l.id}" placeholder="Название (для файла можно не указывать)" style="min-width:220px;flex:1">
+        <input id="mu-${l.id}" placeholder="Ссылка https://…" style="min-width:200px;flex:1"><button onclick="addMaterial(${l.id},false)">Добавить ссылку</button>
+        <label class="filebtn">Загрузить файл<input type="file" hidden onchange="uploadMaterial(${l.id},false,this)"></label></div></div>`}).join('')}`).join('')
+      :'<p class="muted">В этом курсе пока нет тем.</p>'}`;
+  if(keep)window.scrollTo(0,scroll)}
+
 // ---------- Чат с учеником по теме (модуль chat.js) ----------
 let adminChat=null,adminChatLesson=null;
 function chatLabel(id){const n=card&&card.unread[id];return n?`💬 Чат · ${n} нов.`:card&&card.hasThread[id]?'💬 Чат':'💬 Написать ученику'}
