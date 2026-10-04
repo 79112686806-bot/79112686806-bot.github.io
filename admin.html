@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Админ-панель — Инженерный клуб</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#2a2118;--muted:#776b5d;--line:#e4ddd1;--accent:#9a3a1b;--accent-soft:#f6e6de;--ok:#2f7a3d;--ok-soft:#e3f1e5;--warn:#a76a00;--warn-soft:#fbefd6}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+a{color:var(--accent)}
+body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 24px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+header b{font-size:16px}
+nav.tabs{display:flex;gap:4px}
+nav.tabs a{padding:6px 12px;border-radius:6px;color:var(--muted);text-decoration:none}
+nav.tabs a.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+header .me{margin-left:auto;color:var(--muted);font-size:13px}
+main{max-width:1100px;margin:0 auto;padding:24px}
+h1{font-size:22px;margin:0 0 16px}
+h2{font-size:18px;margin:24px 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+button,.btn{font:inherit;border:1px solid var(--accent);color:var(--accent);background:#fff;border-radius:6px;padding:6px 12px;cursor:pointer}
+button.primary{background:var(--accent);color:#fff}
+button:disabled{opacity:.5;cursor:default}
+button.link{border:none;background:none;padding:0;color:var(--accent);text-decoration:underline}
+input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:6px;padding:7px 10px;background:#fff;color:var(--ink)}
+input[type=search]{width:100%;max-width:360px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:#faf8f4}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:#fbf7f1}
+.badge{display:inline-block;padding:1px 8px;border-radius:20px;font-size:12px;white-space:nowrap}
+.b-ok{background:var(--ok-soft);color:var(--ok)}
+.b-warn{background:var(--warn-soft);color:var(--warn)}
+.b-acc{background:var(--accent-soft);color:var(--accent)}
+.b-mute{background:#eee;color:#666}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.grid label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.module{margin-top:18px;font-weight:600}
+.lesson{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-top:8px;background:#fff}
+.lesson.submitted{border-color:#e8c27a;background:#fffaf0}
+.lesson.locked{opacity:.6}
+.lesson .actions{margin-top:8px}
+.answers{margin-top:8px;padding:10px;background:#faf8f4;border-radius:6px;font-size:14px}
+.answers div{margin-bottom:6px;white-space:pre-wrap}
+.center{max-width:380px;margin:80px auto}
+.center input{width:100%;margin:4px 0 12px}
+:root{--chat-accent:#9a3a1b;--chat-line:#e4ddd1;--chat-mine:#f6e6de;--chat-other:#fff;--chat-muted:#776b5d;--chat-menu:#fff}
+.qlist{padding:0;overflow:hidden}
+.qitem{display:block;padding:12px 16px;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none}
+.qitem:last-child{border-bottom:none}
+.qitem:hover{background:#fbf7f1}
+.qitem .t{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chatwrap{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fcfaf6}
+.navcount{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:9px;background:var(--accent);color:#fff;font-size:11px;line-height:18px;text-align:center}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;display:none;z-index:20}
+@media(max-width:700px){main{padding:14px}th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5){display:none}}
+</style>
+</head>
+<body>
+<header id="top" hidden>
+  <b>Инженерный клуб · админ</b>
+  <nav class="tabs"><a href="#queue" data-tab="queue">Очередь<span class="navcount" id="qCount" hidden></span></a><a href="#students" data-tab="students">Ученики</a></nav>
+  <span class="me" id="meEmail"></span>
+  <a href="./" title="Открыть сайт">← На сайт</a>
+  <button onclick="logout()">Выйти</button>
+</header>
+<main id="app"><p class="muted">Загрузка…</p></main>
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="chat.js"></script>
+<script>
+const sb=supabase.createClient(window.APP_CONFIG.supabaseUrl,window.APP_CONFIG.supabaseKey);
+const app=document.getElementById('app');
+const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+const fmtDate=d=>d?new Date(d).toLocaleString('ru-RU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>el.style.display='none',2500)}
+let me=null, students=[];
+
+// ---------- Вход и проверка прав ----------
+async function start(){
+  const{data:{session}}=await sb.auth.getSession();
+  if(!session)return showLogin();
+  const{data:isAdmin}=await sb.rpc('is_admin');
+  if(!isAdmin){app.innerHTML=`<div class="center card"><h1>Нет доступа</h1><p class="muted">Этот раздел только для администратора.</p><p><a href="./">На сайт</a> · <button class="link" onclick="logout()">Выйти</button></p></div>`;return}
+  me=session.user;document.getElementById('top').hidden=false;document.getElementById('meEmail').textContent=me.email;
+  window.addEventListener('hashchange',route);await loadStudents();route();
+  refreshQueueCount();setInterval(refreshQueueCount,60000);
+  sb.channel('admin-messages').on('postgres_changes',{event:'INSERT',schema:'public',table:'lesson_messages'},p=>{
+    const m=p.new;if(m.author_id!==m.student_id)return; // интересны только сообщения учеников
+    refreshQueueCount();toast('💬 Новое сообщение: '+studentName(m.student_id));
+    const tab=(location.hash.slice(1)||'queue').split('/')[0];
+    if(tab==='queue')showQueue();
+    if(card&&card.student.id===m.student_id&&adminChatLesson!==m.lesson_id){card.unread[m.lesson_id]=(card.unread[m.lesson_id]||0)+1;updateChatBtn(m.lesson_id)}
+  }).subscribe()}
+function studentName(id){const s=students.find(x=>x.id===id);return s?(s.student_name||s.email):'ученик'}
+function showLogin(msg){app.innerHTML=`<form class="center card" onsubmit="doLogin(event)"><h1>Вход в админ-панель</h1>
+  <label class="small muted">Email</label><input id="lEmail" type="email" autocomplete="email" required>
+  <label class="small muted">Пароль</label><input id="lPass" type="password" autocomplete="current-password" required>
+  <p class="small" style="color:var(--accent)">${esc(msg||'')}</p><button class="primary" type="submit">Войти</button></form>`;lEmail.focus()}
+async function doLogin(e){e.preventDefault();const{error}=await sb.auth.signInWithPassword({email:lEmail.value.trim(),password:lPass.value});
+  if(error)return showLogin(error.message==='Invalid login credentials'?'Неверный email или пароль.':error.message);start()}
+async function logout(){await sb.auth.signOut();location.hash='';location.reload()}
+
+// ---------- Маршруты: #students, #student/<id> ----------
+function route(){closeAdminChat();const h=location.hash.slice(1)||'queue';const[tab,arg,cid,lid]=h.split('/');
+  document.querySelectorAll('nav.tabs a').forEach(a=>a.classList.toggle('active',a.dataset.tab===(tab==='student'?'students':tab)));
+  if(tab==='student'&&arg)return showStudent(arg,cid?+cid:undefined,lid?+lid:undefined);
+  if(tab==='students')return showStudents();
+  return showQueue()}
+
+// ---------- Очередь: новые сообщения и темы на проверке ----------
+async function loadQueueData(){const[{data:threads},{data:subs}]=await Promise.all([
+    sb.rpc('admin_threads'),
+    sb.from('lesson_progress').select('user_id,lesson_id,submitted_at,lessons(title,modules(course_id))').eq('status','submitted').order('submitted_at')]);
+  return{threads:threads||[],subs:subs||[]}}
+function setQueueCount(n){const el=document.getElementById('qCount');el.hidden=!n;el.textContent=n;document.title=(n?'('+n+') ':'')+'Админ-панель — Инженерный клуб'}
+async function refreshQueueCount(){const{threads,subs}=await loadQueueData();setQueueCount(threads.filter(t=>t.unread>0).length+subs.length)}
+function threadPreview(t){if(t.last_deleted)return 'Сообщение удалено';return (t.last_from_student?'':'Вы: ')+((t.last_body||'').slice(0,140)||(t.last_has_files?'📎 Вложение':''))}
+async function showQueue(){if(!app.querySelector('#queueView'))app.innerHTML='<p class="muted">Загрузка очереди…</p>';
+  const{threads,subs}=await loadQueueData();const unread=threads.filter(t=>t.unread>0);
+  setQueueCount(unread.length+subs.length);
+  if((location.hash.slice(1)||'queue').split('/')[0]!=='queue')return;
+  const link=(sid,cid,lid)=>`#student/${sid}/${cid}/${lid}`;
+  app.innerHTML=`<div id="queueView"><h1>Очередь</h1>
+    <h2>💬 Новые сообщения ${unread.length?`<span class="badge b-warn">${unread.length}</span>`:''}</h2>
+    ${unread.length?`<div class="card qlist">${unread.map(t=>`<a class="qitem" href="${link(t.student_id,t.course_id,t.lesson_id)}"><div class="t"><b>${esc(studentName(t.student_id))}</b><span class="muted">·</span>${esc(t.lesson_title)}<span class="badge b-warn">${t.unread} нов.</span></div><div class="small muted">${esc(threadPreview(t))} · ${fmtDate(t.last_at)}</div></a>`).join('')}</div>`:'<p class="muted">Новых сообщений нет.</p>'}
+    <h2>⏳ Темы на проверке ${subs.length?`<span class="badge b-warn">${subs.length}</span>`:''}</h2>
+    ${subs.length?`<div class="card qlist">${subs.map(p=>`<a class="qitem" href="${link(p.user_id,p.lessons?.modules?.course_id,p.lesson_id)}"><div class="t"><b>${esc(studentName(p.user_id))}</b><span class="muted">·</span>${esc(p.lessons?.title)}</div><div class="small muted">отправлена ${fmtDate(p.submitted_at)}</div></a>`).join('')}</div>`:'<p class="muted">Нет тем, ожидающих проверки.</p>'}
+    <h2>Последние переписки</h2>
+    ${threads.length?`<div class="card qlist">${threads.slice(0,15).map(t=>`<a class="qitem" href="${link(t.student_id,t.course_id,t.lesson_id)}"><div class="t"><b>${esc(studentName(t.student_id))}</b><span class="muted">·</span>${esc(t.lesson_title)}${t.unread?` <span class="badge b-warn">${t.unread} нов.</span>`:''}</div><div class="small muted">${esc(threadPreview(t))} · ${fmtDate(t.last_at)}</div></a>`).join('')}</div>`:'<p class="muted">Переписок пока нет.</p>'}</div>`}
+
+// ---------- Ученики ----------
+async function loadStudents(){const{data,error}=await sb.rpc('admin_students');if(error){toast('Ошибка: '+error.message);return[]}students=data||[];return students}
+async function showStudents(){app.innerHTML='<p class="muted">Загрузка учеников…</p>';await loadStudents();
+  app.innerHTML=`<h1>Ученики <span class="muted small">(${students.length})</span></h1>
+    <div class="row" style="margin-bottom:12px"><input type="search" id="q" placeholder="Поиск: email, имя, контакт" oninput="renderStudentRows()"></div>
+    <table><thead><tr><th>Ученик</th><th>Курсы</th><th>Прогресс</th><th>Регистрация</th><th>Последний вход</th></tr></thead><tbody id="rows"></tbody></table>`;
+  renderStudentRows()}
+function renderStudentRows(){const q=(document.getElementById('q')?.value||'').toLowerCase();
+  const list=students.filter(s=>[s.email,s.student_name,s.parent_name,s.contact].join(' ').toLowerCase().includes(q));
+  rows.innerHTML=list.map(s=>`<tr onclick="location.hash='student/${s.id}'">
+    <td><b>${esc(s.student_name||s.email)}</b>${s.student_name?`<div class="small muted">${esc(s.email)}</div>`:''}${s.role==='admin'?' <span class="badge b-acc">админ</span>':''}${s.parent_name?`<div class="small muted">Родитель: ${esc(s.parent_name)}</div>`:''}</td>
+    <td>${s.courses.length?s.courses.map(c=>`<div>${esc(c.title)}${c.status!=='active'?` <span class="badge b-mute">${esc(STATUS_RU[c.status]||c.status)}</span>`:''}</div>`).join(''):'<span class="muted">—</span>'}</td>
+    <td>✓ ${s.approved}${s.submitted?` <span class="badge b-warn">на проверке: ${s.submitted}</span>`:''}</td>
+    <td class="small">${fmtDate(s.created_at)}</td><td class="small">${fmtDate(s.last_sign_in_at)}</td></tr>`).join('')
+    ||'<tr><td colspan="5" class="muted">Никого не найдено</td></tr>'}
+const STATUS_RU={active:'активен',paused:'доступ приостановлен',finished:'завершил'};
+
+// ---------- Карточка ученика ----------
+let card=null; // {student, courseId, lessons, progress, answers}
+async function showStudent(id,courseId,lessonId){app.innerHTML='<p class="muted">Загрузка…</p>';
+  if(!students.length)await loadStudents();const s=students.find(x=>x.id===id);
+  if(!s){app.innerHTML='<p>Ученик не найден. <a href="#students">К списку</a></p>';return}
+  const{data:allCourses}=await sb.from('courses').select('id,title,status,sort').order('sort');
+  const enrolledIds=s.courses.map(c=>c.course_id);
+  const canEnroll=(allCourses||[]).filter(c=>c.status==='available'&&!enrolledIds.includes(c.id));
+  courseId=courseId||(s.courses[0]&&s.courses[0].course_id);
+  app.innerHTML=`<p><a href="#students">← Все ученики</a></p>
+  <h1>${esc(s.student_name||s.email)} ${s.role==='admin'?'<span class="badge b-acc">админ</span>':''}</h1>
+  <div class="card"><div class="grid">
+    <label>Email (логин)<input value="${esc(s.email)}" disabled></label>
+    <label>Имя ученика<input id="fStudent" value="${esc(s.student_name)}" placeholder="Как зовут ребёнка"></label>
+    <label>Имя родителя<input id="fParent" value="${esc(s.parent_name)}"></label>
+    <label>Контакт<input id="fContact" value="${esc(s.contact)}" placeholder="Телефон или Telegram"></label></div>
+    <div class="row" style="margin-top:12px"><button onclick="saveProfile('${s.id}')">Сохранить</button>
+    <span class="small muted">Зарегистрирован ${fmtDate(s.created_at)} · последний вход ${fmtDate(s.last_sign_in_at)}</span></div></div>
+  <h2>Курсы</h2><div class="card">
+    ${s.courses.length?s.courses.map(c=>`<div class="row" style="margin-bottom:8px">
+      <button class="${c.course_id===courseId?'primary':''}" onclick="showStudent('${s.id}',${c.course_id})">${esc(c.title)}</button>
+      <select onchange="setEnrollment('${s.id}',${c.course_id},this.value)">${Object.entries(STATUS_RU).map(([k,v])=>`<option value="${k}" ${k===c.status?'selected':''}>${v}</option>`).join('')}</select>
+      <span class="small muted">с ${fmtDate(c.since)}</span></div>`).join(''):'<p class="muted">Не записан ни на один курс.</p>'}
+    ${canEnroll.length?`<div class="row" style="margin-top:10px"><select id="enrollSel">${canEnroll.map(c=>`<option value="${c.id}">${esc(c.title)}</option>`).join('')}</select>
+      <button onclick="enroll('${s.id}')">Открыть курс вручную</button><span class="small muted">например, при оплате не через сайт</span></div>`:''}
+  </div><div id="courseBox"></div>`;
+  if(courseId)await loadCourse(s,courseId);
+  if(lessonId&&document.getElementById('chat-'+lessonId))toggleChat(lessonId)}
+async function saveProfile(id){const{error}=await sb.from('profiles').update({student_name:fStudent.value.trim()||null,parent_name:fParent.value.trim()||null,contact:fContact.value.trim()||null}).eq('id',id);
+  if(error)return toast('Не сохранилось: '+error.message);toast('Сохранено');await loadStudents()}
+async function setEnrollment(uid,courseId,status){const{error}=await sb.from('enrollments').update({status}).eq('user_id',uid).eq('course_id',courseId);
+  if(error)return toast('Ошибка: '+error.message);toast('Статус доступа: '+STATUS_RU[status]);await loadStudents()}
+async function enroll(uid){const courseId=+enrollSel.value;const{error}=await sb.from('enrollments').insert({user_id:uid,course_id:courseId,source:'manual'});
+  if(error)return toast('Ошибка: '+error.message);toast('Курс открыт');await loadStudents();showStudent(uid,courseId)}
+
+// ---------- Темы курса: статусы, ответы, подтверждение ----------
+async function loadCourse(s,courseId){closeAdminChat();const box=document.getElementById('courseBox');box.innerHTML='<p class="muted">Загрузка тем…</p>';
+  const[{data:course},{data:prog},{data:answers},{data:threads}]=await Promise.all([
+    sb.from('courses').select('title,modules(id,sort,title,lessons(id,sort,title,research_task))').eq('id',courseId).single(),
+    sb.from('lesson_progress').select('lesson_id,status,submitted_at,approved_at,teacher_comment').eq('user_id',s.id),
+    sb.from('research_answers').select('lesson_id,hypothesis,method,result,conclusion,updated_at').eq('user_id',s.id),
+    sb.rpc('admin_threads',{p_student_id:s.id})]);
+  const modules=(course?.modules||[]).sort((a,b)=>a.sort-b.sort);const lessons=[];
+  modules.forEach(m=>{m.lessons.sort((a,b)=>a.sort-b.sort);m.lessons.forEach(l=>lessons.push(l))});
+  const progress={};(prog||[]).forEach(p=>progress[p.lesson_id]=p);
+  const ans={};(answers||[]).forEach(a=>ans[a.lesson_id]=a);
+  const unread={},hasThread={};(threads||[]).forEach(t=>{unread[t.lesson_id]=t.unread;hasThread[t.lesson_id]=true});
+  card={student:s,courseId,lessons,progress,answers:ans,unread,hasThread};
+  const approved=lessons.filter(l=>progress[l.id]?.status==='approved').length;
+  box.innerHTML=`<h2>${esc(course?.title)} — темы <span class="muted small">(подтверждено ${approved} из ${lessons.length})</span></h2>
+    <div class="card">${modules.map(m=>`<div class="module">${esc(m.title)}</div>${m.lessons.map(lessonRow).join('')}`).join('')}</div>`}
+function isUnlocked(l){const i=card.lessons.indexOf(l);return card.lessons.slice(0,i).every(p=>card.progress[p.id]?.status==='approved')}
+function lessonRow(l){const p=card.progress[l.id],st=p?.status,a=card.answers[l.id],open=isUnlocked(l);
+  const badge=st==='approved'?`<span class="badge b-ok">✓ подтверждена ${fmtDate(p.approved_at)}</span>`
+    :st==='submitted'?`<span class="badge b-warn">⏳ на проверке с ${fmtDate(p.submitted_at)}</span>`
+    :open?'<span class="badge b-acc">открыта, изучает</span>':'<span class="badge b-mute">🔒 закрыта</span>';
+  const hasAns=a&&(a.hypothesis||a.method||a.result||a.conclusion);
+  const answersHtml=l.research_task?`<div class="answers"><div class="muted small">🔬 ${esc(l.research_task)}</div>${hasAns?
+    [['Гипотеза','hypothesis'],['Как измеряем','method'],['Результат','result'],['Вывод','conclusion']].map(([t,k])=>`<div><b>${t}:</b> ${esc(a[k])||'<span class="muted">—</span>'}</div>`).join('')+`<div class="small muted">изменено ${fmtDate(a.updated_at)}</div>`
+    :'<div class="muted small">Ученик ещё ничего не написал.</div>'}</div>`:'';
+  const actions=st==='approved'
+    ?`${p.teacher_comment?`<div class="small">Ваш комментарий: ${esc(p.teacher_comment)}</div>`:''}<button class="link small" onclick="revoke(${l.id},this)">Отменить подтверждение</button>`
+    :open?`<div class="row"><input id="cm${l.id}" placeholder="Комментарий ученику (необязательно)" style="flex:1;min-width:220px"><button class="primary" onclick="approve(${l.id})">Подтвердить тему</button></div>`:'';
+  const chat=open||st?`<button id="cb-${l.id}" style="margin-top:8px" onclick="toggleChat(${l.id})">${chatLabel(l.id)}</button><div id="chat-${l.id}"></div>`:'';
+  return `<div class="lesson ${st==='submitted'?'submitted':''} ${!open&&!st?'locked':''}" id="lesson-${l.id}"><div class="row" style="justify-content:space-between"><span>${esc(l.title)}</span>${badge}</div>${open||st?answersHtml:''}<div class="actions">${actions}</div>${chat}</div>`}
+// ---------- Чат с учеником по теме (модуль chat.js) ----------
+let adminChat=null,adminChatLesson=null;
+function chatLabel(id){const n=card&&card.unread[id];return n?`💬 Чат · ${n} нов.`:card&&card.hasThread[id]?'💬 Чат':'💬 Написать ученику'}
+function updateChatBtn(id){const b=document.getElementById('cb-'+id);if(b)b.textContent=adminChatLesson===id?'Свернуть чат':chatLabel(id)}
+function closeAdminChat(){if(adminChat){adminChat.destroy();adminChat=null}const id=adminChatLesson;adminChatLesson=null;
+  if(id){const el=document.getElementById('chat-'+id);if(el)el.innerHTML='';updateChatBtn(id)}}
+function toggleChat(lessonId){const was=adminChatLesson;closeAdminChat();if(was===lessonId)return;
+  const el=document.getElementById('chat-'+lessonId);if(!el)return;adminChatLesson=lessonId;updateChatBtn(lessonId);
+  const s=card.student;el.innerHTML='<div class="chatwrap"></div>';
+  adminChat=Chat.mount(el.firstChild,{sb,studentId:s.id,lessonId,meId:me.id,side:'teacher',peerName:s.student_name||s.email,isAdmin:true,
+    onRead:()=>{card.unread[lessonId]=0;card.hasThread[lessonId]=true;refreshQueueCount()}});
+  document.getElementById('lesson-'+lessonId).scrollIntoView({block:'start',behavior:'smooth'})}
+async function approve(lessonId){const comment=(document.getElementById('cm'+lessonId)?.value||'').trim()||null;
+  const{error}=await sb.rpc('approve_lesson',{p_user_id:card.student.id,p_lesson_id:lessonId,p_comment:comment});
+  if(error)return toast('Ошибка: '+error.message);toast('Тема подтверждена — следующая открыта');await loadStudents();loadCourse(card.student,card.courseId)}
+async function revoke(lessonId,b){if(!document.getElementById('rv'+lessonId)){ // подтверждение действия без confirm()
+    b.insertAdjacentHTML('afterend',` <span id="rv${lessonId}" class="small">Точно? Темы после неё снова закроются. <button class="link" onclick="doRevoke(${lessonId})">Да, отменить</button></span>`);return}}
+async function doRevoke(lessonId){const{error}=await sb.rpc('revoke_lesson',{p_user_id:card.student.id,p_lesson_id:lessonId});
+  if(error)return toast('Ошибка: '+error.message);toast('Подтверждение отменено');await loadStudents();loadCourse(card.student,card.courseId)}
+
+start();
+</script>
+</body>
+</html>

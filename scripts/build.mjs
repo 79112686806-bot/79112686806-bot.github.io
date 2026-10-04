@@ -5,7 +5,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync, existsSync } from 'node:fs';
 
-const PAGES = ['index.html'];
+const PAGES = ['index.html', 'admin.html', 'chat.js'];
 const OUT = 'dist';
 
 function loadDotEnv(path) {

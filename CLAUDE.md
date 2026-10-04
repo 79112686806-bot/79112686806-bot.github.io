@@ -23,6 +23,7 @@
 
 Структура и сборка:
 - index.html — сайт (бывший site.html)
+- admin.html — админ-панель (/admin.html), доступ только при profiles.role = 'admin'
 - scripts/build.mjs — собирает dist/: копирует страницы и пишет dist/config.js
   с публичными URL и publishable-ключом Supabase (из .env локально, из env Vercel на проде).
   Service role key в config.js и в браузер не попадает никогда.
