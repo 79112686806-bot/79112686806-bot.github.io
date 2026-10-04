@@ -274,7 +274,7 @@ footer{color:var(--ink-soft);font-family:"Marck Script",cursive;font-size:19px}
 <section class="section page" id="requestSentPage" style="display:none"><h2>Заявка отправлена</h2><div class="payment"><p>Спасибо! Мы получили вашу заявку на курс «<span id="reqCourseName"></span>» и свяжемся с вами по указанному контакту в ближайшее время, чтобы ответить на вопросы и подобрать удобное время занятий.</p><button class="btn primary" onclick="showPage('home')">На главную</button></div></section>
 <section class="section page" id="paymentPage" style="display:none"><h2>Оплата курса</h2><div class="payment" id="paymentForm"><h3 id="paymentTitle"></h3><p id="paymentText"></p><p class="note" style="margin-bottom:14px">Онлайн-формат, доступ через личный кабинет. Первое занятие — со скидкой 50%.</p><div id="accountFields"></div><label>Номер карты</label><input placeholder="0000 0000 0000 0000"><label>Срок действия</label><input placeholder="ММ/ГГ"><label>Код</label><input placeholder="CVC"><p class="note" id="payMsg"></p><button class="btn primary" onclick="completePayment()">Оплатить (демо)</button><p class="note">Это демонстрационная страница. Реальная оплата пока не подключена.</p></div><div class="payment" id="paymentSuccess" style="display:none"><h3>Оплата прошла успешно</h3><p>Курс открыт в личном кабинете. Письмо с логином для входа отправлено вам на почту.</p><p class="note" style="margin-bottom:14px">Если письмо не пришло в течение нескольких минут — проверьте папку «Спам» или напишите нам.</p><button class="btn primary" onclick="enterDashboard()">Войти в личный кабинет</button></div></section>
 <section class="section page" id="myCoursesPage" style="display:none"><button class="btn" onclick="showPage('home')" style="margin-bottom:18px">← Вернуться на сайт</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button><h2>Личный кабинет</h2><p class="section-intro">Ваши курсы. Нажмите на курс, чтобы перейти к занятиям.</p><div class="courses" id="myCourseGrid"></div></section>
-<section class="section page" id="dashboardPage" style="display:none"><button class="btn" onclick="enterCabinet()" style="margin-bottom:18px">← Мои курсы</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button><h2>Личный кабинет</h2><p class="section-intro" id="dashIntro"></p><div class="dashboard"><aside class="sidebar"><h3 id="dashCourse"></h3><p>Прогресс</p><div class="progress"><span id="dashProgressBar" style="width:0"></span></div><p class="note" id="dashProgressText">0% пройдено</p><hr style="border-color:var(--line)"><div id="sideAccordion"></div><span class="side-pin" data-id="materials" onclick="openMaterials()">📁 Материалы</span><span class="side-pin" onclick="alert('Чат с преподавателем — демонстрационная заглушка')">💬 Чат с нами</span></aside><div><div class="lesson" id="lessonArea"></div><div class="timeline" id="dashTimeline"><div class="step"><div class="dot">1</div><small>Введение</small></div><div class="step"><div class="dot">2</div><small>Исследование</small></div><div class="step"><div class="dot">3</div><small>Модель</small></div><div class="step"><div class="dot">4</div><small>Проект</small></div></div></div></div></section>
+<section class="section page" id="dashboardPage" style="display:none"><button class="btn" onclick="enterCabinet()" style="margin-bottom:18px">← Мои курсы</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button><h2>Личный кабинет</h2><p class="section-intro" id="dashIntro"></p><div class="dashboard"><aside class="sidebar"><h3 id="dashCourse"></h3><p>Прогресс</p><div class="progress"><span id="dashProgressBar" style="width:0"></span></div><p class="note" id="dashProgressText">0% пройдено</p><hr style="border-color:var(--line)"><div id="sideAccordion"></div><span class="side-pin" data-id="materials" onclick="openMaterials()">📁 Материалы</span><span class="side-pin" data-id="chat" onclick="openChat()">💬 Чат с нами</span></aside><div><div class="lesson" id="lessonArea"></div><div class="timeline" id="dashTimeline"><div class="step"><div class="dot">1</div><small>Введение</small></div><div class="step"><div class="dot">2</div><small>Исследование</small></div><div class="step"><div class="dot">3</div><small>Модель</small></div><div class="step"><div class="dot">4</div><small>Проект</small></div></div></div></div></section>
 <footer>Инженерный клуб — занятия и проекты для школьников. Учимся сейчас, готовимся к будущему.</footer></div>
 <div class="modal" id="modal"><div class="modal-card"><button class="close" onclick="closeModal()">×</button><div id="modalContent"></div></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
@@ -477,7 +477,7 @@ async function openMaterialFile(id){const w=window.open('','_blank');
   if(error||!data){if(w)w.close();alert('Не удалось открыть файл. Попробуйте ещё раз.');return}
   if(w)w.location=data.signedUrl;else location.href=data.signedUrl}
 // Вкладка «Материалы»: всё из открытых тем, по заголовкам тем
-function openMaterials(){flushSave();dash.current=null;++openToken;
+function openMaterials(){flushSave();closeChat();dash.current=null;++openToken;
   document.querySelectorAll('.side-item,.side-pin').forEach(x=>x.classList.toggle('active',x.dataset.id==='materials'));
   const groups=dash.lessons.filter(isUnlocked).map(l=>({l,list:dash.materials.filter(m=>m.lesson_id===l.id)})).filter(g=>g.list.length);
   lessonArea.innerHTML=`<h2>Материалы</h2><p>Материалы всех открытых тем. Новые появляются здесь по мере прохождения курса.</p>`+
@@ -487,7 +487,7 @@ function statusHtml(l){const p=dash.progress[l.id],c=p&&p.teacher_comment?`<p cl
   if(p&&p.status==='approved')return `<p>✓ Тема подтверждена преподавателем.</p>${c}`;
   if(p&&p.status==='submitted')return `<p>⏳ Тема отправлена на проверку. Преподаватель посмотрит её и откроет следующую тему.</p>${c}`;
   return `<p class="note">Изучите тему${l.research_task?' и заполните исследование':''}, затем отправьте её преподавателю на проверку.</p><button class="btn primary" onclick="submitLesson()">Отправить на проверку</button><p class="note" id="submitMsg"></p>`}
-async function openLesson(id){flushSave();const l=dash.lessons.find(x=>x.id===id);if(!l)return;dash.current=l;const token=++openToken;
+async function openLesson(id){flushSave();closeChat();const l=dash.lessons.find(x=>x.id===id);if(!l)return;dash.current=l;const token=++openToken;
   document.querySelectorAll('.side-item,.side-pin').forEach(x=>x.classList.toggle('active',x.dataset.id===String(id)));
   const item=document.querySelector(`.side-item[data-id="${id}"]`);if(item)item.closest('.side-group').classList.add('open');
   const title=escapeHtml(l.title),task=l.research_task?escapeHtml(l.research_task):'';
@@ -502,9 +502,66 @@ async function openLesson(id){flushSave();const l=dash.lessons.find(x=>x.id===id
       <p class="note" id="researchSaved" style="margin-top:10px"></p></div>`}
   html+=`<div class="materials"><h3>Проверка темы</h3>${statusHtml(l)}</div>`;
   const mats=dash.materials.filter(m=>m.lesson_id===l.id);
-  html+=`<div class="materials"><h3>Материалы темы</h3>${mats.length?materialLinks(mats):'<p class="note">Материалы к этой теме скоро появятся здесь и во вкладке «Материалы».</p>'}</div>`;
+  // Занятие назначено, а записи (личного материала) ещё нет — показываем, что она появится
+  const waitRecording=dash.calls[l.id]&&!mats.some(m=>m.user_id)?'<p class="note">🎥 Запись занятия появится здесь, когда преподаватель её загрузит.</p>':'';
+  html+=`<div class="materials"><h3>Материалы темы</h3>${mats.length?materialLinks(mats):(waitRecording?'':'<p class="note">Материалы к этой теме скоро появятся здесь и во вкладке «Материалы».</p>')}${waitRecording}</div>`;
+  html+=chatHtml();
   lessonArea.innerHTML=html;
-  lessonArea.querySelectorAll('.research-fields textarea').forEach(t=>t.addEventListener('input',()=>scheduleSave(l.id)))}
+  lessonArea.querySelectorAll('.research-fields textarea').forEach(t=>t.addEventListener('input',()=>scheduleSave(l.id)));
+  loadChat(l)}
+// ---------- Чат темы: личная переписка ученика с преподавателем ----------
+const CHAT_MAX=50*1024*1024;
+let chatChannel=null;
+function chatHtml(){return `<div class="materials" id="chatBox"><h3>💬 Чат с преподавателем</h3><p class="note">Задайте вопрос по теме, пришлите фото или видео опыта. Файлы — до 50 МБ.</p>
+  <div id="chatList" style="max-height:420px;overflow-y:auto;margin:14px 0"><p class="note">Загружаем сообщения…</p></div>
+  <form class="form" onsubmit="sendChat(event)" style="margin-top:0"><textarea id="chatText" rows="2" maxlength="4000" placeholder="Сообщение"></textarea><input type="file" id="chatFiles" multiple><p class="note" id="chatMsg"></p><button class="btn primary" type="submit">Отправить</button></form></div>`}
+function closeChat(){if(chatChannel){sb.removeChannel(chatChannel);chatChannel=null}}
+async function loadChat(l){closeChat();
+  const{data}=await sb.from('lesson_messages').select('id,student_id,author_id,body,attachments,created_at').eq('student_id',dash.userId).eq('lesson_id',l.id).order('created_at');
+  if(dash.current!==l)return;await renderMessages(data||[],false);
+  chatChannel=sb.channel('chat-'+l.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'lesson_messages',filter:'lesson_id=eq.'+l.id},
+    p=>{if(p.new.student_id===dash.userId&&dash.current===l)renderMessages([p.new],true)}).subscribe()}
+async function renderMessages(list,append){
+  const paths=list.flatMap(m=>(m.attachments||[]).map(a=>a.path));const urls={};
+  if(paths.length){const{data}=await sb.storage.from('chat').createSignedUrls(paths,3600);(data||[]).forEach(d=>{if(d.signedUrl)urls[d.path]=d.signedUrl})}
+  const box=document.getElementById('chatList');if(!box)return;
+  if(!append)box.innerHTML=list.length?'':'<p class="note" id="chatEmpty">Сообщений пока нет — напишите первым.</p>';
+  else{const e=document.getElementById('chatEmpty');if(e)e.remove()}
+  list.forEach(m=>{if(box.querySelector(`[data-mid="${m.id}"]`))return;const mine=m.author_id===dash.userId;
+    const when=new Date(m.created_at).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const att=(m.attachments||[]).map(a=>{const u=urls[a.path]?escapeHtml(urls[a.path]):'',n=escapeHtml(a.name||'файл'),t=a.type||'';
+      if(!u)return `<p class="note">📎 ${n}</p>`;
+      if(t.startsWith('image/'))return `<a href="${u}" target="_blank" rel="noopener"><img src="${u}" alt="${n}" style="max-width:240px;max-height:240px;display:block;margin-top:6px;border-radius:3px"></a>`;
+      if(t.startsWith('video/'))return `<video src="${u}" controls style="max-width:100%;max-height:300px;display:block;margin-top:6px"></video>`;
+      return `<a href="${u}" target="_blank" rel="noopener">📎 ${n}</a>`}).join('');
+    const el=document.createElement('div');el.dataset.mid=m.id;
+    el.style.cssText='margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:3px;'+(mine?'margin-left:15%;background:rgba(154,58,27,.06)':'margin-right:15%;background:rgba(255,250,236,.55)');
+    el.innerHTML=`<div class="note" style="margin-bottom:4px"><b>${mine?'Вы':'Преподаватель'}</b> · ${when}</div>${m.body?`<div style="white-space:pre-wrap">${escapeHtml(m.body)}</div>`:''}${att}`;
+    box.appendChild(el)});
+  box.scrollTop=box.scrollHeight}
+async function sendChat(e){e.preventDefault();const l=dash.current;if(!l)return;
+  const f=e.target,btn=f.querySelector('button'),msg=document.getElementById('chatMsg');
+  const body=chatText.value.trim(),files=[...chatFiles.files];if(!body&&!files.length)return;
+  const big=files.find(x=>x.size>CHAT_MAX);if(big){msg.textContent=`Файл «${big.name}» больше 50 МБ. Загрузите его на Яндекс Диск и пришлите ссылку.`;return}
+  btn.disabled=true;msg.textContent=files.length?'Загружаем файлы…':'';
+  const attachments=[];
+  for(const file of files){
+    // В хранилище — только латиница; настоящее имя файла сохраняется в сообщении
+    const safe=file.name.replace(/[^A-Za-z0-9._-]/g,'_').slice(-60);
+    const path=`${dash.userId}/${l.id}/${Date.now()}-${Math.random().toString(36).slice(2,8)}-${safe}`;
+    const{error}=await sb.storage.from('chat').upload(path,file,{contentType:file.type||'application/octet-stream'});
+    if(error){btn.disabled=false;msg.textContent=`Не удалось загрузить «${file.name}». Попробуйте ещё раз.`;console.error(error);return}
+    attachments.push({path,name:file.name,type:file.type,size:file.size})}
+  const{data,error}=await sb.from('lesson_messages').insert({student_id:dash.userId,lesson_id:l.id,author_id:dash.userId,body,attachments})
+    .select('id,student_id,author_id,body,attachments,created_at').single();
+  btn.disabled=false;
+  if(error){msg.textContent='Не удалось отправить сообщение. Попробуйте ещё раз.';console.error(error);return}
+  chatText.value='';chatFiles.value='';msg.textContent='';
+  if(dash.current===l)renderMessages([data],true)}
+// «Чат с нами» в боковой панели — переход к чату текущей (или ближайшей открытой) темы
+async function openChat(){let l=dash.current;
+  if(!l){l=dash.lessons.find(x=>isUnlocked(x)&&lessonStatus(x)!=='approved')||dash.lessons.filter(isUnlocked).pop();if(!l)return;await openLesson(l.id)}
+  const box=document.getElementById('chatBox');if(box){box.scrollIntoView({behavior:'smooth'});chatText.focus()}}
 // Ответы на исследование сохраняются в базу через 0,8 с после последнего ввода
 let saveTimer=null,pendingSave=null;
 function scheduleSave(lessonId){const row={user_id:dash.userId,lesson_id:lessonId};
@@ -550,7 +607,7 @@ async function doSetPassword(e){e.preventDefault();const f=e.target;
   authBusy(f,true);authMsg('');const{error}=await sb.auth.updateUser({password:authPassword.value});
   authBusy(f,false);if(error)return authMsg(authError(error));closeModal();enterCabinet()}
 function showLinkError(){show(`<h2>Ссылка устарела</h2><p>Ссылка из письма уже использована или срок её действия истёк. Запросите новую — это займёт минуту.</p><button class="btn primary" onclick="showForgot()">Запросить новую ссылку</button>`)}
-async function logout(){await sb.auth.signOut();showPage('home')}
+async function logout(){closeChat();await sb.auth.signOut();showPage('home')}
 // Переход по ссылке из письма: приглашение или восстановление пароля
 (async()=>{
   if(AUTH_LINK.error){history.replaceState(null,'',location.pathname);showLinkError();return}
