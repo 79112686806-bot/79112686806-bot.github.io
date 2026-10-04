@@ -288,8 +288,8 @@ const sb=supabase.createClient(window.APP_CONFIG.supabaseUrl,window.APP_CONFIG.s
 <script>
 const courses=[['⚙','Колесо','Первый технологический прорыв','От трения и качения до собственной тележки.'],['☎','Телефон','Как передавать голос','Изучаем устройство телефона и придумываем новые функции.'],['⛵','Лодки и корабли','Как держаться на воде','Плавучесть, форма корпуса и проектирование транспорта.'],['🔭','Оптические приборы','Как мы видим далёкое','Линзы, свет, увеличение и новые оптические устройства.'],['🚗','Двигатель и автомобиль','Как заставить машину двигаться','Энергия, движение, мотор и автомобиль будущего.'],['✈','Самолёт','Как летать','Подъёмная сила, форма крыла и летающие аппараты.'],['⌘','Интернет','Как связаны компьютеры','Сети, передача данных и идеи цифровых устройств.'],['🤖','Роботы','Машины, которые помогают','Датчики, механизмы и робот-помощник или друг.'],['🧬','Биоинженерия','Техника и живые системы','Как инженерные идеи применяются к живым системам.'],['🧠','Мозг человека','Самое сложное устройство','Исследуем мозг как систему и придумываем необычные технологии.']];let selectedCourse=0;
 // Статусы курсов из базы: купить можно только курс со статусом available
-let courseStatus={},courseSlug={};
-sb.from('courses').select('sort,status,slug').then(({data})=>{(data||[]).forEach(c=>{courseStatus[c.sort-1]=c.status;courseSlug[c.sort-1]=c.slug})});
+let courseStatus={},courseSlug={},courseId={};
+sb.from('courses').select('id,sort,status,slug').then(({data})=>{(data||[]).forEach(c=>{courseStatus[c.sort-1]=c.status;courseSlug[c.sort-1]=c.slug;courseId[c.sort-1]=c.id})});
 function isAvailable(i){return courseStatus[i]==='available'}
 
 
@@ -374,8 +374,16 @@ const grid=document.getElementById('courseGrid');courses.forEach((c,i)=>{let el=
 function showPage(p){['home','how','courses','signup','requestSent','payment','myCourses','dashboard'].forEach(x=>{let el=document.getElementById(x==='home'?'homePage':x+'Page');if(el)el.style.display=x===p?'block':'none'});scrollTo(0,0)}function show(html){modalContent.innerHTML=html;modal.classList.add('open')}function closeModal(){modal.classList.remove('open')}function openCourse(i){selectedCourse=i;let c=courses[i];show(`<div class="eyebrow">Программа ${i+1}</div><h2>${c[1]}</h2><p><b>${c[2]}.</b> ${c[3]}</p><p>Школьник изучает материалы, отвечает на вопросы, обсуждает тему с преподавателем и разрабатывает собственную идею.</p>${isAvailable(i)?`<button class="btn primary" onclick="closeModal();goSignup()">Выбрать этот курс</button>`:`<p class="note">Курс в разработке — запись откроется позже.</p>`}`)}
 async function goSignup(){if(!isAvailable(selectedCourse))return;signupCourseName.textContent=courses[selectedCourse][1];
   if(await hasCourse(courseSlug[selectedCourse])){chosenForm.innerHTML='<div class="form"><p><b>Этот курс уже открыт в вашем личном кабинете.</b></p></div>';showPage('signup');return}
-chosenForm.innerHTML=`<div class="form"><label>Имя родителя</label><input id="signupParent" placeholder="Как к вам обращаться"><label>Контакт для связи</label><input id="signupContact" placeholder="Телефон или Telegram"><label>Комментарий</label><textarea rows="3" placeholder="Возраст ребёнка, интересы, удобное время"></textarea><div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px"><button class="btn" onclick="submitRequest()">Оставить заявку на консультацию</button><button class="btn primary" onclick="goPayment()">Оплатить и начать</button></div></div>`;showPage('signup')}
-function submitRequest(){reqCourseName.textContent=courses[selectedCourse][1];showPage('requestSent')}
+chosenForm.innerHTML=`<div class="form"><label>Имя родителя</label><input id="signupParent" placeholder="Как к вам обращаться"><label>Контакт для связи</label><input id="signupContact" placeholder="Телефон или Telegram"><label>Комментарий</label><textarea id="signupComment" rows="3" maxlength="2000" placeholder="Возраст ребёнка, интересы, удобное время"></textarea><input id="signupWebsite" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px"><p class="note" id="signupMsg"></p><div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px"><button class="btn" onclick="submitRequest()">Оставить заявку на консультацию</button><button class="btn primary" onclick="goPayment()">Оплатить и начать</button></div></div>`;showPage('signup')}
+async function submitRequest(){const contact=signupContact.value.trim();signupMsg.textContent='';
+  if(contact.length<3){signupMsg.textContent='Укажите телефон или Telegram, чтобы мы могли с вами связаться.';signupContact.focus();return}
+  const done=()=>{reqCourseName.textContent=courses[selectedCourse][1];showPage('requestSent')};
+  if(signupWebsite.value)return done(); // скрытое поле заполняют только спам-боты
+  const btn=chosenForm.querySelector('button');btn.disabled=true;signupMsg.textContent='Отправляем…';
+  const{error}=await sb.from('leads').insert({course_id:courseId[selectedCourse]||null,parent_name:signupParent.value.trim().slice(0,100)||null,contact:contact.slice(0,200),comment:signupComment.value.trim()||null});
+  btn.disabled=false;
+  if(error){console.error(error);signupMsg.textContent='Не удалось отправить заявку. Попробуйте ещё раз или напишите нам.';return}
+  signupMsg.textContent='';done()}
 let buyer={};
 async function hasCourse(slug){const{data:{session}}=await sb.auth.getSession();if(!session)return false;
   const{data}=await sb.from('enrollments').select('id,courses!inner(slug)').eq('user_id',session.user.id).eq('courses.slug',slug).limit(1);

@@ -58,6 +58,12 @@ tbody tr:hover{background:#fbf7f1}
 .qitem:hover{background:#fbf7f1}
 .qitem .t{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .chatwrap{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fcfaf6}
+.callrow{display:flex;gap:14px;align-items:flex-start;padding:12px 16px;border-bottom:1px solid var(--line)}
+.callrow:last-child{border-bottom:none}
+.callrow .tm{flex:none;width:96px;font-weight:600}
+.callrow .info{flex:1;min-width:0}
+.callrow .acts{display:flex;gap:8px;flex-wrap:wrap}
+.callrow .acts a{white-space:nowrap}
 .navcount{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:9px;background:var(--accent);color:#fff;font-size:11px;line-height:18px;text-align:center}
 .sub{margin-top:10px;padding:12px;border:1px dashed var(--line);border-radius:8px;background:#fcfaf6}
 .sub h4{margin:0 0 8px;font-size:14px}
@@ -74,7 +80,7 @@ label.filebtn{display:inline-block;border:1px solid var(--accent);color:var(--ac
 <body>
 <header id="top" hidden>
   <b>Инженерный клуб · админ</b>
-  <nav class="tabs"><a href="#queue" data-tab="queue">Очередь<span class="navcount" id="qCount" hidden></span></a><a href="#students" data-tab="students">Ученики</a><a href="#materials" data-tab="materials">Материалы курса</a></nav>
+  <nav class="tabs"><a href="#queue" data-tab="queue">Очередь<span class="navcount" id="qCount" hidden></span></a><a href="#calls" data-tab="calls">Занятия<span class="navcount" id="cCount" hidden></span></a><a href="#students" data-tab="students">Ученики</a><a href="#materials" data-tab="materials">Материалы курса</a><a href="#leads" data-tab="leads">Заявки<span class="navcount" id="lCount" hidden></span></a></nav>
   <span class="me" id="meEmail"></span>
   <a href="./" title="Открыть сайт">← На сайт</a>
   <button onclick="logout()">Выйти</button>
@@ -124,6 +130,8 @@ function route(){closeAdminChat();matView=null;const h=location.hash.slice(1)||'
   if(tab==='student'&&arg)return showStudent(arg,cid?+cid:undefined,lid?+lid:undefined);
   if(tab==='students')return showStudents();
   if(tab==='materials')return showMaterials(arg?+arg:undefined);
+  if(tab==='calls')return showCalls();
+  if(tab==='leads')return showLeads();
   return showQueue()}
 
 // ---------- Очередь: новые сообщения и темы на проверке ----------
@@ -132,14 +140,19 @@ async function loadQueueData(){const[{data:threads},{data:subs}]=await Promise.a
     sb.from('lesson_progress').select('user_id,lesson_id,submitted_at,lessons(title,modules(course_id))').eq('status','submitted').order('submitted_at')]);
   return{threads:threads||[],subs:subs||[]}}
 function setQueueCount(n){const el=document.getElementById('qCount');el.hidden=!n;el.textContent=n;document.title=(n?'('+n+') ':'')+'Админ-панель — Инженерный клуб'}
-async function refreshQueueCount(){const{threads,subs}=await loadQueueData();setQueueCount(threads.filter(t=>t.unread>0).length+subs.length)}
+async function refreshQueueCount(){const[{threads,subs},calls,leads]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads()]);
+  setQueueCount(threads.filter(t=>t.unread>0).length+subs.length+leads);setBadge('cCount',todayCalls(calls.calls).length);setBadge('lCount',leads)}
+function setBadge(id,n){const el=document.getElementById(id);el.hidden=!n;el.textContent=n}
+async function countNewLeads(){const{count}=await sb.from('leads').select('id',{count:'exact',head:true}).eq('status','new');return count||0}
 function threadPreview(t){if(t.last_deleted)return 'Сообщение удалено';return (t.last_from_student?'':'Вы: ')+((t.last_body||'').slice(0,140)||(t.last_has_files?'📎 Вложение':''))}
 async function showQueue(){if(!app.querySelector('#queueView'))app.innerHTML='<p class="muted">Загрузка очереди…</p>';
-  const{threads,subs}=await loadQueueData();const unread=threads.filter(t=>t.unread>0);
-  setQueueCount(unread.length+subs.length);
+  const[{threads,subs},cd,newLeads]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads()]);const unread=threads.filter(t=>t.unread>0);
+  const today=todayCalls(cd.calls);setQueueCount(unread.length+subs.length+newLeads);setBadge('cCount',today.length);setBadge('lCount',newLeads);
   if((location.hash.slice(1)||'queue').split('/')[0]!=='queue')return;
   const link=(sid,cid,lid)=>`#student/${sid}/${cid}/${lid}`;
   app.innerHTML=`<div id="queueView"><h1>Очередь</h1>
+    ${today.length?`<h2>📞 Занятия сегодня <span class="badge b-acc">${today.length}</span></h2><div class="card qlist">${today.map(callRowHtml).join('')}</div>`:''}
+    ${newLeads?`<h2>📝 Новые заявки <span class="badge b-warn">${newLeads}</span></h2><p><a href="#leads">Открыть заявки →</a></p>`:''}
     <h2>💬 Новые сообщения ${unread.length?`<span class="badge b-warn">${unread.length}</span>`:''}</h2>
     ${unread.length?`<div class="card qlist">${unread.map(t=>`<a class="qitem" href="${link(t.student_id,t.course_id,t.lesson_id)}"><div class="t"><b>${esc(studentName(t.student_id))}</b><span class="muted">·</span>${esc(t.lesson_title)}<span class="badge b-warn">${t.unread} нов.</span></div><div class="small muted">${esc(threadPreview(t))} · ${fmtDate(t.last_at)}</div></a>`).join('')}</div>`:'<p class="muted">Новых сообщений нет.</p>'}
     <h2>⏳ Темы на проверке ${subs.length?`<span class="badge b-warn">${subs.length}</span>`:''}</h2>
@@ -340,6 +353,56 @@ async function showMaterials(courseId,keep){card=null;
         <label class="filebtn">Загрузить файл<input type="file" hidden onchange="uploadMaterial(${l.id},false,this)"></label></div></div>`}).join('')}`).join('')
       :'<p class="muted">В этом курсе пока нет тем.</p>'}`;
   if(keep)window.scrollTo(0,scroll)}
+
+// ---------- «Занятия»: расписание и занятия без видеозаписи ----------
+async function loadCalls(){const[{data:calls},{data:recs}]=await Promise.all([
+    sb.from('lesson_calls').select('user_id,lesson_id,url,starts_at,duration_min,ended_at,note,lessons(title,modules(course_id))'),
+    sb.from('materials').select('user_id,lesson_id').not('user_id','is',null)]);
+  return{calls:calls||[],hasRec:new Set((recs||[]).map(r=>r.user_id+':'+r.lesson_id))}}
+const sameDay=(a,b)=>a.toDateString()===b.toDateString();
+function todayCalls(calls){const now=new Date();return calls.filter(c=>c.starts_at&&callState(c)!=='ended'&&sameDay(new Date(c.starts_at),now)).sort((x,y)=>new Date(x.starts_at)-new Date(y.starts_at))}
+function callDayLabel(d){const now=new Date(),tm=new Date();tm.setDate(now.getDate()+1);
+  const w=d.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'});
+  return sameDay(d,now)?'Сегодня, '+w:sameDay(d,tm)?'Завтра, '+w:w.charAt(0).toUpperCase()+w.slice(1)}
+const hm=d=>d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+function callRowHtml(c){const st=c.starts_at?new Date(c.starts_at):null,end=st?new Date(st.getTime()+(c.duration_min||90)*60000):null,now=new Date();
+  const live=st&&now>=st&&now<=end&&!c.ended_at;
+  const card=`#student/${c.user_id}/${c.lessons?.modules?.course_id}/${c.lesson_id}`;
+  return `<div class="callrow"><div class="tm">${st?hm(st)+'–'+hm(end):'—'}</div>
+    <div class="info"><div><b>${esc(studentName(c.user_id))}</b> <span class="muted">·</span> ${esc(c.lessons?.title)} ${live?'<span class="badge b-warn">идёт сейчас</span>':''}</div>
+      ${c.note?`<div class="small muted" style="white-space:pre-wrap">${esc(c.note.slice(0,200))}</div>`:''}</div>
+    <div class="acts"><a class="btn" href="${esc(c.url)}" target="_blank" rel="noopener">Открыть встречу</a><a class="btn" href="${card}">Карточка</a></div></div>`}
+async function showCalls(){app.innerHTML='<p class="muted">Загрузка занятий…</p>';
+  const{calls,hasRec}=await loadCalls();if((location.hash.slice(1)||'').split('/')[0]!=='calls')return;
+  const upcoming=calls.filter(c=>c.starts_at&&callState(c)!=='ended').sort((x,y)=>new Date(x.starts_at)-new Date(y.starts_at));
+  const noDate=calls.filter(c=>!c.starts_at&&callState(c)!=='ended');
+  const needRec=calls.filter(c=>callState(c)==='ended'&&!hasRec.has(c.user_id+':'+c.lesson_id)).sort((x,y)=>new Date(y.starts_at||0)-new Date(x.starts_at||0));
+  setBadge('cCount',todayCalls(calls).length);
+  const groups=[];upcoming.forEach(c=>{const k=new Date(c.starts_at).toDateString();let g=groups.find(x=>x.k===k);if(!g)groups.push(g={k,label:callDayLabel(new Date(c.starts_at)),list:[]});g.list.push(c)});
+  app.innerHTML=`<h1>Занятия</h1>
+    <h2>📅 Запланированные</h2>
+    ${groups.length?groups.map(g=>`<h3 style="margin:16px 0 8px;font-size:15px">${esc(g.label)}</h3><div class="card qlist">${g.list.map(callRowHtml).join('')}</div>`).join(''):'<p class="muted">Запланированных занятий нет. Назначить занятие можно в карточке ученика → тема → «📞 Занятие и видеозапись».</p>'}
+    ${noDate.length?`<h2>Без даты</h2><div class="card qlist">${noDate.map(callRowHtml).join('')}</div>`:''}
+    <h2>🎥 Ждут видеозаписи</h2><p class="small muted">Прошедшие занятия, к которым ещё не добавлена запись для ученика.</p>
+    ${needRec.length?`<div class="card qlist">${needRec.map(c=>`<a class="qitem" href="#student/${c.user_id}/${c.lessons?.modules?.course_id}/${c.lesson_id}"><div class="t"><b>${esc(studentName(c.user_id))}</b><span class="muted">·</span>${esc(c.lessons?.title)}</div><div class="small muted">занятие ${c.starts_at?fmtDate(c.starts_at):'без даты'}</div></a>`).join('')}</div>`:'<p class="muted">Все записи добавлены.</p>'}`}
+
+// ---------- «Заявки» с сайта ----------
+const LEAD_RU={new:'новая',in_progress:'в работе',done:'обработана'};
+async function showLeads(){app.innerHTML='<p class="muted">Загрузка заявок…</p>';
+  const[{data:leads,error},{data:courses}]=await Promise.all([sb.from('leads').select('*').order('created_at',{ascending:false}).limit(300),sb.from('courses').select('id,title')]);
+  if(error){app.innerHTML='<p>Ошибка: '+esc(error.message)+'</p>';return}
+  const title=id=>(courses||[]).find(c=>c.id===id)?.title||'—';
+  setBadge('lCount',(leads||[]).filter(l=>l.status==='new').length);
+  app.innerHTML=`<h1>Заявки на консультацию <span class="muted small">(${(leads||[]).length})</span></h1>
+    <p class="small muted">Заявки из формы «Оставить заявку на консультацию» на сайте. Свяжитесь с человеком и поменяйте статус.</p>
+    ${(leads||[]).length?`<table><thead><tr><th>Дата</th><th>Имя</th><th>Контакт</th><th>Курс</th><th>Комментарий</th><th>Статус</th></tr></thead><tbody>${leads.map(l=>`<tr style="cursor:default${l.status==='new'?';background:#fffaf0':''}">
+      <td class="small">${fmtDate(l.created_at)}</td><td>${esc(l.parent_name)||'<span class="muted">—</span>'}</td><td><b>${esc(l.contact)}</b></td><td>${esc(title(l.course_id))}</td>
+      <td class="small" style="white-space:pre-wrap;max-width:280px">${esc(l.comment)||'<span class="muted">—</span>'}</td>
+      <td><select onchange="setLeadStatus(${l.id},this.value)">${Object.entries(LEAD_RU).map(([k,v])=>`<option value="${k}" ${k===l.status?'selected':''}>${v}</option>`).join('')}</select></td></tr>`).join('')}</tbody></table>`
+      :'<p class="muted">Заявок пока нет.</p>'}`}
+async function setLeadStatus(id,status){const{error}=await sb.from('leads').update({status}).eq('id',id);
+  if(error)return toast('Ошибка: '+error.message);toast('Статус: '+LEAD_RU[status]);refreshQueueCount();
+  const row=document.querySelector(`select[onchange="setLeadStatus(${id},this.value)"]`)?.closest('tr');if(row)row.style.background=status==='new'?'#fffaf0':''}
 
 // ---------- Чат с учеником по теме (модуль chat.js) ----------
 let adminChat=null,adminChatLesson=null;
