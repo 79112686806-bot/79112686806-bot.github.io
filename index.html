@@ -255,6 +255,7 @@ footer{color:var(--ink-soft);font-family:"Marck Script",cursive;font-size:19px}
 .course{display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch}
 .course .icon{height:40px;display:flex;align-items:flex-end}
 .course h3{min-height:2.7em}
+.side-item.locked{opacity:.55}
 </style></head>
 <body><svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
 <filter id="torn" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="5" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="26" xChannelSelector="R" yChannelSelector="G"/></filter>
@@ -273,7 +274,7 @@ footer{color:var(--ink-soft);font-family:"Marck Script",cursive;font-size:19px}
 <section class="section page" id="requestSentPage" style="display:none"><h2>Заявка отправлена</h2><div class="payment"><p>Спасибо! Мы получили вашу заявку на курс «<span id="reqCourseName"></span>» и свяжемся с вами по указанному контакту в ближайшее время, чтобы ответить на вопросы и подобрать удобное время занятий.</p><button class="btn primary" onclick="showPage('home')">На главную</button></div></section>
 <section class="section page" id="paymentPage" style="display:none"><h2>Оплата курса</h2><div class="payment" id="paymentForm"><h3 id="paymentTitle"></h3><p id="paymentText"></p><p class="note" style="margin-bottom:14px">Онлайн-формат, доступ через личный кабинет. Первое занятие — со скидкой 50%.</p><div id="accountFields"></div><label>Номер карты</label><input placeholder="0000 0000 0000 0000"><label>Срок действия</label><input placeholder="ММ/ГГ"><label>Код</label><input placeholder="CVC"><p class="note" id="payMsg"></p><button class="btn primary" onclick="completePayment()">Оплатить (демо)</button><p class="note">Это демонстрационная страница. Реальная оплата пока не подключена.</p></div><div class="payment" id="paymentSuccess" style="display:none"><h3>Оплата прошла успешно</h3><p>Курс открыт в личном кабинете. Письмо с логином для входа отправлено вам на почту.</p><p class="note" style="margin-bottom:14px">Если письмо не пришло в течение нескольких минут — проверьте папку «Спам» или напишите нам.</p><button class="btn primary" onclick="enterDashboard()">Войти в личный кабинет</button></div></section>
 <section class="section page" id="myCoursesPage" style="display:none"><button class="btn" onclick="showPage('home')" style="margin-bottom:18px">← Вернуться на сайт</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button><h2>Личный кабинет</h2><p class="section-intro">Ваши курсы. Нажмите на курс, чтобы перейти к занятиям.</p><div class="courses" id="myCourseGrid"></div></section>
-<section class="section page" id="dashboardPage" style="display:none"><button class="btn" onclick="enterCabinet()" style="margin-bottom:18px">← Мои курсы</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button><h2>Личный кабинет</h2><p class="section-intro" id="dashIntro"></p><div class="dashboard"><aside class="sidebar"><h3 id="dashCourse"></h3><p>Прогресс</p><div class="progress"><span></span></div><p class="note">28% пройдено</p><hr style="border-color:var(--line)"><div id="sideAccordion"></div><span class="side-pin" onclick="alert('Чат с преподавателем — демонстрационная заглушка')">💬 Чат с нами</span></aside><div><div class="lesson" id="lessonArea"></div><div class="timeline"><div class="step active"><div class="dot">1</div><small>Введение</small></div><div class="step"><div class="dot">2</div><small>Исследование</small></div><div class="step"><div class="dot">3</div><small>Модель</small></div><div class="step"><div class="dot">4</div><small>Проект</small></div></div></div></div></section>
+<section class="section page" id="dashboardPage" style="display:none"><button class="btn" onclick="enterCabinet()" style="margin-bottom:18px">← Мои курсы</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button><h2>Личный кабинет</h2><p class="section-intro" id="dashIntro"></p><div class="dashboard"><aside class="sidebar"><h3 id="dashCourse"></h3><p>Прогресс</p><div class="progress"><span id="dashProgressBar" style="width:0"></span></div><p class="note" id="dashProgressText">0% пройдено</p><hr style="border-color:var(--line)"><div id="sideAccordion"></div><span class="side-pin" data-id="materials" onclick="openMaterials()">📁 Материалы</span><span class="side-pin" onclick="alert('Чат с преподавателем — демонстрационная заглушка')">💬 Чат с нами</span></aside><div><div class="lesson" id="lessonArea"></div><div class="timeline" id="dashTimeline"><div class="step"><div class="dot">1</div><small>Введение</small></div><div class="step"><div class="dot">2</div><small>Исследование</small></div><div class="step"><div class="dot">3</div><small>Модель</small></div><div class="step"><div class="dot">4</div><small>Проект</small></div></div></div></div></section>
 <footer>Инженерный клуб — занятия и проекты для школьников. Учимся сейчас, готовимся к будущему.</footer></div>
 <div class="modal" id="modal"><div class="modal-card"><button class="close" onclick="closeModal()">×</button><div id="modalContent"></div></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
@@ -291,28 +292,6 @@ sb.from('courses').select('sort,status,slug').then(({data})=>{(data||[]).forEach
 function isAvailable(i){return courseStatus[i]==='available'}
 
 
-const curriculum=[
-{t:'Вводное занятие',items:['Кто такие инженеры и зачем они нужны','Что значит «мыслить как инженер»','Инженерия вокруг нас']},
-{t:'Модуль 1. Колесо',items:['Что такое колесо?','История развития','Функции колеса','Области применения','Изучаем: тачка и телега','Изучаем: самокат и велосипед','Изучаем: автомобиль и транспорт','Изучаем: колесо на производстве']},
-{t:'Модуль 2. Физика колеса',items:['Трение','Скольжение','Качение','Поступательное движение','Вращательное движение','Размер и форма колеса','Материалы для колёс','Перспективные идеи развития колеса']},
-{t:'Модуль 3. Исследования и измерения',items:['Зачем нужны исследования','Как проводятся исследования','Гипотезы','Измерения в инженерии']},
-{t:'Модуль 4. Что учитывает конструктор',items:['Функционал','Надёжность','Безопасность','Удобство использования','Дизайн изделия','Экономичность производства','Психология потребителя']},
-{t:'Модуль 5. Автомобиль',items:['Функционал и история','Конструкция автомобиля','Двигатель','Маркетинговые вопросы','Перспективы развития автомобиля']},
-{t:'Модуль 6. Свой проект',items:['Разработка собственного проекта автомобиля']}
-];
-
-const researchTasks=[
-'Сравнить движение с круглыми и многоугольными (квадратными) колёсами',
-'Моменты вращения: колёса прокручиваются, а машинка не едет — гладкие и рифлёные колёса',
-'Широкие и узкие колёса: на гладкой поверхности и по тонкому слою воды',
-'Сравнить движение машинки с разными движителями (резинка, толчок, мотор)',
-'Краш-тест конструкции: на какой скорости и от чего она ломается',
-'Влияние диаметра колеса на скорость и проходимость препятствий',
-'Сравнение материалов колеса (пластик, резина) по сцеплению с поверхностью',
-'Надёжность крепления оси — сколько циклов выдерживает до поломки',
-'Передаточное число механизма: как оно влияет на скорость и силу тяги',
-'Форма кузова и сопротивление воздуху при движении'
-];
 const COURSE_ICONS=[`<svg viewBox="0 0 64 64" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 <circle cx="32" cy="32" r="22"/>
 <circle cx="32" cy="32" r="6"/>
@@ -433,52 +412,116 @@ async function enterCabinet(){const session=await requireLogin();if(!session)ret
   else if(!list.length)myCourseGrid.innerHTML=`<div><p>У вас пока нет открытых курсов.</p><button class="btn primary" onclick="showPage('courses')">Выбрать курс</button></div>`;
   list.forEach(c=>{const i=c.sort-1;const el=document.createElement('button');el.className='course';el.innerHTML=`<span class="icon">${COURSE_ICONS[i]||''}</span><h3>${escapeHtml(c.title)}</h3><small>${escapeHtml(c.subtitle||'')}</small>`;el.onclick=()=>openCourseDashboard(i);myCourseGrid.appendChild(el)});
   showPage('myCourses')}
-function openCourseDashboard(i){selectedCourse=i;dashCourse.textContent=courses[i][1];dashIntro.textContent='Слева — программа по темам и исследования. Видео и материалы открываются по мере прохождения.';buildAccordion();showPage('dashboard')}
-function buildAccordion(){const box=document.getElementById('sideAccordion');box.innerHTML='';curriculum.forEach((g,gi)=>{const grp=document.createElement('div');grp.className='side-group'+(gi===0?' open':'');const head=document.createElement('div');head.className='side-group-head';head.innerHTML=`<span>${g.t}</span><span class="chev">▸</span>`;head.onclick=()=>grp.classList.toggle('open');const items=document.createElement('div');items.className='side-items';g.items.forEach((label,ii)=>{const it=document.createElement('span');it.className='side-item'+(gi===0&&ii===0?' active':'');it.textContent=label;it.onclick=()=>openLesson(it,label);items.appendChild(it)});grp.appendChild(head);grp.appendChild(items);box.appendChild(grp)});openLesson(box.querySelector('.side-item'),curriculum[0].items[0])}
-const UNLOCKED_LESSONS=new Set(['Кто такие инженеры и зачем они нужны','Что значит «мыслить как инженер»','Инженерия вокруг нас','Что такое колесо?']);
-const RESEARCH_MAP={
-'Что такое колесо?':'Сравнить движение с круглыми и многоугольными (квадратными) колёсами',
-'Размер и форма колеса':'Влияние диаметра колеса на скорость и проходимость препятствий',
-'Трение':'Моменты вращения: колёса прокручиваются, а машинка не едет — гладкие и рифлёные колёса',
-'Качение':'Широкие и узкие колёса: на гладкой поверхности и по тонкому слою воды',
-'Поступательное движение':'Сравнить движение машинки с разными движителями (резинка, толчок, мотор)',
-'Материалы для колёс':'Сравнение материалов колеса (пластик, резина) по сцеплению с поверхностью',
-'Надёжность':'Надёжность крепления оси — сколько циклов выдерживает до поломки',
-'Двигатель':'Передаточное число механизма: как оно влияет на скорость и силу тяги',
-'Конструкция автомобиля':'Форма кузова и сопротивление воздуху при движении',
-'Разработка собственного проекта автомобиля':'Краш-тест конструкции: на какой скорости и от чего она ломается'
-};
-function researchKey(title){return title.replace(/[^a-zа-яё0-9]/gi,'_')}
-function openLesson(el,title){
-  document.querySelectorAll('.side-item,.side-pin').forEach(x=>x.classList.remove('active'));
-  if(el)el.classList.add('active');
-  const unlocked=UNLOCKED_LESSONS.has(title);
-  const task=RESEARCH_MAP[title];
-  let html=`<h2>${title}</h2><p>Видеоурок и материалы по теме.</p><div class="video">▶ Видеоурок — заглушка</div>`;
-  if(task){
-    const k=researchKey(title);
+// ---------- Курс в личном кабинете: данные из базы ----------
+// Этапы полосы внизу кабинета: номера модулей (modules.sort), входящих в каждый этап.
+// Для курсов без настройки модули делятся на 4 этапа поровну.
+const COURSE_STAGES={wheel:[[0],[1,2,3],[4,5],[6]]};
+let dash={modules:[],lessons:[],progress:{},materials:[],calls:{},userId:null,slug:null,current:null};
+let openToken=0;
+async function openCourseDashboard(i){const session=await requireLogin();if(!session)return;
+  selectedCourse=i;const slug=courseSlug[i];const uid=session.user.id;
+  dash={modules:[],lessons:[],progress:{},materials:[],calls:{},userId:uid,slug,current:null};
+  dashCourse.textContent=courses[i][1];dashIntro.textContent='Слева — программа по темам, материалы и исследования. Материалы открываются вместе с темой.';
+  sideAccordion.innerHTML='<p class="note">Загружаем программу…</p>';lessonArea.innerHTML='';showPage('dashboard');
+  const[{data:course,error},{data:prog},{data:calls}]=await Promise.all([
+    sb.from('courses').select('modules(id,sort,title,lessons(id,sort,title,research_task))').eq('slug',slug).single(),
+    sb.from('lesson_progress').select('lesson_id,status,teacher_comment').eq('user_id',uid),
+    sb.from('lesson_calls').select('lesson_id,url,starts_at,note').eq('user_id',uid)]);
+  if(error||!course){sideAccordion.innerHTML='<p class="note">Не удалось загрузить программу. Обновите страницу.</p>';return}
+  dash.modules=(course.modules||[]).sort((a,b)=>a.sort-b.sort);
+  dash.modules.forEach(m=>{m.lessons.sort((a,b)=>a.sort-b.sort);m.lessons.forEach(l=>{l.module=m;dash.lessons.push(l)})});
+  (prog||[]).forEach(p=>dash.progress[p.lesson_id]=p);
+  (calls||[]).forEach(c=>dash.calls[c.lesson_id]=c);
+  // Материалы курса: общие и личные этого ученика (база отдаёт только открытые темы)
+  const{data:mats}=await sb.from('materials').select('id,lesson_id,user_id,title,kind,url,sort').in('lesson_id',dash.lessons.map(l=>l.id));
+  dash.materials=(mats||[]).filter(m=>!m.user_id||m.user_id===uid).sort((a,b)=>a.sort-b.sort||a.id-b.id);
+  buildAccordion();
+  const next=dash.lessons.find(l=>isUnlocked(l)&&lessonStatus(l)!=='approved')||dash.lessons[0];
+  if(next)openLesson(next.id)}
+function lessonStatus(l){const p=dash.progress[l.id];return p?p.status:null}
+// Тема открыта, когда подтверждены все предыдущие темы курса (то же правило проверяет база)
+function isUnlocked(l){const idx=dash.lessons.indexOf(l);return dash.lessons.slice(0,idx).every(p=>lessonStatus(p)==='approved')}
+const STATUS_MARK={approved:' ✓',submitted:' ⏳'};
+function buildAccordion(){sideAccordion.innerHTML='';
+  dash.modules.forEach(m=>{const grp=document.createElement('div');grp.className='side-group';
+    const head=document.createElement('div');head.className='side-group-head';head.innerHTML=`<span>${escapeHtml(m.title)}</span><span class="chev">▸</span>`;head.onclick=()=>grp.classList.toggle('open');
+    const items=document.createElement('div');items.className='side-items';
+    m.lessons.forEach(l=>{const it=document.createElement('span');const locked=!isUnlocked(l);
+      it.className='side-item'+(locked?' locked':'');it.dataset.id=l.id;
+      it.textContent=l.title+(locked?' 🔒':(STATUS_MARK[lessonStatus(l)]||''));
+      it.onclick=()=>openLesson(l.id);items.appendChild(it)});
+    grp.appendChild(head);grp.appendChild(items);sideAccordion.appendChild(grp)});
+  updateProgress()}
+function splitStages(sorts){const out=[[],[],[],[]];sorts.forEach((s,i)=>out[Math.min(3,Math.floor(i*4/sorts.length))].push(s));return out}
+function updateProgress(){const total=dash.lessons.length,done=dash.lessons.filter(l=>lessonStatus(l)==='approved').length;
+  const pct=total?Math.round(done*100/total):0;dashProgressBar.style.width=pct+'%';dashProgressText.textContent=pct+'% пройдено';
+  const stages=COURSE_STAGES[dash.slug]||splitStages(dash.modules.map(m=>m.sort));
+  const steps=document.querySelectorAll('#dashTimeline .step');let activeSet=false;
+  stages.forEach((sorts,k)=>{const st=steps[k];if(!st)return;
+    const ls=dash.lessons.filter(l=>sorts.includes(l.module.sort));const isDone=ls.length>0&&ls.every(l=>lessonStatus(l)==='approved');
+    const isActive=!isDone&&!activeSet;if(isActive)activeSet=true;
+    st.classList.toggle('done',isDone);st.classList.toggle('active',isActive)})}
+// Занятие с преподавателем: ссылка на звонок (Телемост) открывается в новой вкладке
+function safeUrl(u){try{const x=new URL(u);return x.protocol==='https:'?x.href:'#'}catch(e){return '#'}}
+function callHtml(l){const c=dash.calls[l.id];
+  if(!c)return '<div class="video">📞 Ссылка на занятие с преподавателем появится здесь</div>';
+  const when=c.starts_at?new Date(c.starts_at).toLocaleString('ru-RU',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}):'';
+  return `<div class="video" style="gap:14px;align-content:center;text-align:center;padding:20px"><div>📞 Занятие с преподавателем${when?' — '+escapeHtml(when):''}</div>${c.note?`<p class="note">${escapeHtml(c.note)}</p>`:''}<div><a class="btn primary" style="font-size:15px" href="${escapeHtml(safeUrl(c.url))}" target="_blank" rel="noopener">Подключиться к звонку</a></div></div>`}
+// Материалы: ссылка открывается как есть, файл — по временной ссылке из закрытого хранилища
+function materialLinks(list){return list.map(m=>m.kind==='link'
+  ?`<a href="${escapeHtml(safeUrl(m.url))}" target="_blank" rel="noopener">${escapeHtml(m.title)}</a>`
+  :`<a href="#" onclick="openMaterialFile(${m.id});return false">${escapeHtml(m.title)}</a>`).join('')}
+async function openMaterialFile(id){const w=window.open('','_blank');
+  const{data:m}=await sb.from('materials').select('storage_path').eq('id',id).maybeSingle();
+  const{data,error}=m?await sb.storage.from('materials').createSignedUrl(m.storage_path,300):{error:true};
+  if(error||!data){if(w)w.close();alert('Не удалось открыть файл. Попробуйте ещё раз.');return}
+  if(w)w.location=data.signedUrl;else location.href=data.signedUrl}
+// Вкладка «Материалы»: всё из открытых тем, по заголовкам тем
+function openMaterials(){flushSave();dash.current=null;++openToken;
+  document.querySelectorAll('.side-item,.side-pin').forEach(x=>x.classList.toggle('active',x.dataset.id==='materials'));
+  const groups=dash.lessons.filter(isUnlocked).map(l=>({l,list:dash.materials.filter(m=>m.lesson_id===l.id)})).filter(g=>g.list.length);
+  lessonArea.innerHTML=`<h2>Материалы</h2><p>Материалы всех открытых тем. Новые появляются здесь по мере прохождения курса.</p>`+
+    (groups.length?groups.map(g=>`<div class="materials"><h3>${escapeHtml(g.l.title)}</h3>${materialLinks(g.list)}</div>`).join('')
+      :'<p class="note">Пока материалов нет — они появятся здесь, когда откроются темы.</p>')}
+function statusHtml(l){const p=dash.progress[l.id],c=p&&p.teacher_comment?`<p class="note">Комментарий преподавателя: ${escapeHtml(p.teacher_comment)}</p>`:'';
+  if(p&&p.status==='approved')return `<p>✓ Тема подтверждена преподавателем.</p>${c}`;
+  if(p&&p.status==='submitted')return `<p>⏳ Тема отправлена на проверку. Преподаватель посмотрит её и откроет следующую тему.</p>${c}`;
+  return `<p class="note">Изучите тему${l.research_task?' и заполните исследование':''}, затем отправьте её преподавателю на проверку.</p><button class="btn primary" onclick="submitLesson()">Отправить на проверку</button><p class="note" id="submitMsg"></p>`}
+async function openLesson(id){flushSave();const l=dash.lessons.find(x=>x.id===id);if(!l)return;dash.current=l;const token=++openToken;
+  document.querySelectorAll('.side-item,.side-pin').forEach(x=>x.classList.toggle('active',x.dataset.id===String(id)));
+  const item=document.querySelector(`.side-item[data-id="${id}"]`);if(item)item.closest('.side-group').classList.add('open');
+  const title=escapeHtml(l.title),task=l.research_task?escapeHtml(l.research_task):'';
+  if(!isUnlocked(l)){lessonArea.innerHTML=`<h2>${title}</h2><p class="note">Тема откроется, когда преподаватель подтвердит предыдущие темы.</p>`+(task?`<div class="research-card"><h4>🔬 Исследование по теме</h4><p class="research-q">${task}</p></div>`:'');return}
+  lessonArea.innerHTML=`<h2>${title}</h2><p class="note">Загружаем тему…</p>`;
+  const{data:answer}=task?await sb.from('research_answers').select('hypothesis,method,result,conclusion').eq('user_id',dash.userId).eq('lesson_id',id).maybeSingle():{data:null};
+  if(token!==openToken)return;
+  let html=`<h2>${title}</h2><p>Занятие с преподавателем и материалы по теме.</p>${callHtml(l)}`;
+  if(task){const a=answer||{};const f=(name,label)=>`<label>${label}<textarea rows="2" data-f="${name}">${escapeHtml(a[name]||'')}</textarea></label>`;
     html+=`<div class="research-card"><h4>🔬 Исследование по теме</h4><p class="research-q">${task}</p>
-      <div class="research-fields">
-        <label>Гипотеза<textarea rows="2" data-k="${k}_h" oninput="saveField(this)"></textarea></label>
-        <label>Как измеряем<textarea rows="2" data-k="${k}_m" oninput="saveField(this)"></textarea></label>
-        <label>Результат<textarea rows="2" data-k="${k}_r" oninput="saveField(this)"></textarea></label>
-        <label>Вывод<textarea rows="2" data-k="${k}_c" oninput="saveField(this)"></textarea></label>
-      </div></div>`;
-  }
-  html+=`<div class="materials"><h3>Материалы темы</h3>`;
-  if(unlocked){
-    html+=`<p>Тема подтверждена — материалы доступны и останутся здесь и дальше.</p><a href="#" onclick="return false">Скачать конспект: ${title}.pdf</a><a href="#" onclick="return false">Скачать задание: ${title}.pdf</a>`;
-  }else{
-    html+=`<p class="note">Материалы откроются здесь, когда преподаватель подтвердит прохождение этой темы на занятии.</p>`;
-  }
-  html+=`</div>`;
+      <div class="research-fields">${f('hypothesis','Гипотеза')}${f('method','Как измеряем')}${f('result','Результат')}${f('conclusion','Вывод')}</div>
+      <p class="note" id="researchSaved" style="margin-top:10px"></p></div>`}
+  html+=`<div class="materials"><h3>Проверка темы</h3>${statusHtml(l)}</div>`;
+  const mats=dash.materials.filter(m=>m.lesson_id===l.id);
+  html+=`<div class="materials"><h3>Материалы темы</h3>${mats.length?materialLinks(mats):'<p class="note">Материалы к этой теме скоро появятся здесь и во вкладке «Материалы».</p>'}</div>`;
   lessonArea.innerHTML=html;
-  if(task){
-    const k=researchKey(title);
-    document.querySelectorAll('.research-fields textarea').forEach(inp=>{const v=localStorage.getItem('research_'+inp.dataset.k);if(v)inp.value=v});
-  }
-}
-function saveField(inp){localStorage.setItem('research_'+inp.dataset.k,inp.value)}
+  lessonArea.querySelectorAll('.research-fields textarea').forEach(t=>t.addEventListener('input',()=>scheduleSave(l.id)))}
+// Ответы на исследование сохраняются в базу через 0,8 с после последнего ввода
+let saveTimer=null,pendingSave=null;
+function scheduleSave(lessonId){const row={user_id:dash.userId,lesson_id:lessonId};
+  lessonArea.querySelectorAll('.research-fields textarea').forEach(t=>row[t.dataset.f]=t.value);
+  pendingSave=row;const m=document.getElementById('researchSaved');if(m)m.textContent='Сохраняем…';
+  clearTimeout(saveTimer);saveTimer=setTimeout(flushSave,800)}
+async function flushSave(){clearTimeout(saveTimer);const row=pendingSave;pendingSave=null;if(!row)return;
+  const{error}=await sb.from('research_answers').upsert(row);
+  const m=document.getElementById('researchSaved');
+  if(m&&dash.current&&dash.current.id===row.lesson_id)m.textContent=error?'Не удалось сохранить — проверьте интернет и попробуйте ещё раз.':'Сохранено';
+  if(error)console.error(error)}
+async function submitLesson(){const l=dash.current;if(!l)return;await flushSave();
+  const btn=lessonArea.querySelector('.materials .btn.primary');if(btn)btn.disabled=true;
+  const{error}=await sb.rpc('submit_lesson',{p_lesson_id:l.id});
+  if(error){if(btn)btn.disabled=false;const m=document.getElementById('submitMsg');if(m)m.textContent='Не удалось отправить: '+error.message;return}
+  dash.progress[l.id]=Object.assign({},dash.progress[l.id],{lesson_id:l.id,status:'submitted'});
+  buildAccordion();openLesson(l.id)}
 
 // ---------- Вход в личный кабинет ----------
 const AUTH_ERRORS={
