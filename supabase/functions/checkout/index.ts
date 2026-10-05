@@ -44,6 +44,11 @@ Deno.serve(async (req) => {
     return fail('bad_request', 'Неверный запрос');
   }
 
+  // Оплата возможна только после принятия оферты и согласия на обработку персональных данных
+  if (body.offer_accepted !== true) {
+    return fail('offer_required', 'Чтобы продолжить, примите условия оферты и дайте согласие на обработку персональных данных');
+  }
+
   const parentName = clean(body.parent_name);
   const contact = clean(body.contact);
 
@@ -103,7 +108,10 @@ Deno.serve(async (req) => {
 
   const { data: order, error: orderError } = await admin
     .from('orders')
-    .insert({ user_id: userId, course_id: course.id, amount: course.price, provider: DEMO ? 'demo' : 'yookassa' })
+    .insert({
+      user_id: userId, course_id: course.id, amount: course.price, provider: DEMO ? 'demo' : 'yookassa',
+      offer_accepted_at: new Date().toISOString(),
+    })
     .select('id')
     .single();
   if (orderError) {

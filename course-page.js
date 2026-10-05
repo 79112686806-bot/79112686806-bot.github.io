@@ -28,9 +28,9 @@
     return `<nav class="crumbs" aria-label="Навигация"><a href="/" onclick="return go(event,'home')">Главная</a> › <a href="/programmy/" onclick="return go(event,'courses')">Программы</a> › <span>${esc(c.title)}</span></nav>
 <div class="eyebrow">Программа ${idx + 1}</div>
 <h1 class="course-title">Курс «${esc(c.title)}» — ${esc(lower(c.subtitle))}</h1>
-<p class="section-intro">${esc(c.description)} Онлайн-курс для школьников 9–14 лет: самостоятельные исследования, обсуждение с преподавателем и собственный инженерный проект.</p>
+<p class="section-intro">${esc(c.description)} Онлайн-курс для школьников 9–14 лет: самостоятельные видеоуроки и исследования, встречи с преподавателем и собственный инженерный проект.</p>
 <div class="features how-steps">
-  <div class="feature"><strong>Формат</strong><p>Онлайн, через личный кабинет: занятия с преподавателем, материалы, задания и чат по каждой теме.</p></div>
+  <div class="feature"><strong>Формат</strong><p>Онлайн, через личный кабинет: самостоятельные видеоуроки и задания, встречи с преподавателем на ключевых этапах и чат по каждой теме.</p></div>
   <div class="feature"><strong>Программа</strong><p>${program}</p></div>
   <div class="feature"><strong>Стоимость</strong><p>${price} ₽ за весь курс. Первое занятие — со скидкой 50%.</p></div>
 </div>
@@ -42,7 +42,7 @@ ${modules.length
     ? modules.map((m) => `<h3>${esc(m.title)}</h3><ul class="course-lessons">${m.lessons.map((l) => `<li>${esc(l.title)}${l.research_task ? `<small>🔬 Исследование: ${esc(l.research_task)}</small>` : ''}</li>`).join('')}</ul>`).join('\n')
     : '<p>Подробная программа появится здесь в ближайшее время.</p>'}
 <h2>Как проходят занятия</h2>
-<p>Перед встречей школьник изучает тему и ищет ответы на вопросы. На занятии он рассказывает, что узнал, обсуждает вопросы с преподавателем и вместе с ним думает, как усовершенствовать устройство. <a href="/kak-prohodyat-zanyatiya/" onclick="return go(event,'how')">Подробнее о формате занятий</a></p>`;
+<p>Курс устроен как маршрут: часть тем школьник проходит самостоятельно — видеоуроки, материалы и задания открываются модуль за модулем, а на ключевых этапах встречается с преподавателем онлайн, чтобы обсудить изученное и поработать над собственным проектом. На протяжении всего курса мы на связи в чате. <a href="/kak-prohodyat-zanyatiya/" onclick="return go(event,'how')">Подробнее о формате занятий</a></p>`;
   }
 
   root.coursePageHtml = coursePageHtml;

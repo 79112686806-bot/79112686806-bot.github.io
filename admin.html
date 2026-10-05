@@ -80,7 +80,7 @@ label.filebtn{display:inline-block;border:1px solid var(--accent);color:var(--ac
 <body>
 <header id="top" hidden>
   <b>Инженерный клуб · админ</b>
-  <nav class="tabs"><a href="#queue" data-tab="queue">Очередь<span class="navcount" id="qCount" hidden></span></a><a href="#calls" data-tab="calls">Занятия<span class="navcount" id="cCount" hidden></span></a><a href="#students" data-tab="students">Ученики</a><a href="#materials" data-tab="materials">Материалы курса</a><a href="#leads" data-tab="leads">Заявки<span class="navcount" id="lCount" hidden></span></a></nav>
+  <nav class="tabs"><a href="#queue" data-tab="queue">Очередь<span class="navcount" id="qCount" hidden></span></a><a href="#calls" data-tab="calls">Занятия<span class="navcount" id="cCount" hidden></span></a><a href="#students" data-tab="students">Ученики</a><a href="#materials" data-tab="materials">Материалы курса</a><a href="#reviews" data-tab="reviews">Отзывы<span class="navcount" id="rCount" hidden></span></a><a href="#videos" data-tab="videos">Видео</a><a href="#leads" data-tab="leads">Заявки<span class="navcount" id="lCount" hidden></span></a></nav>
   <span class="me" id="meEmail"></span>
   <a href="./" title="Открыть сайт">← На сайт</a>
   <button onclick="logout()">Выйти</button>
@@ -91,6 +91,7 @@ label.filebtn{display:inline-block;border:1px solid var(--accent);color:var(--ac
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
 <script src="chat.js"></script>
+<script src="home-blocks.js"></script>
 <script>
 const sb=supabase.createClient(window.APP_CONFIG.supabaseUrl,window.APP_CONFIG.supabaseKey);
 const app=document.getElementById('app');
@@ -132,6 +133,8 @@ function route(){closeAdminChat();matView=null;const h=location.hash.slice(1)||'
   if(tab==='materials')return showMaterials(arg?+arg:undefined);
   if(tab==='calls')return showCalls();
   if(tab==='leads')return showLeads();
+  if(tab==='reviews')return showReviews();
+  if(tab==='videos')return showVideos();
   return showQueue()}
 
 // ---------- Очередь: новые сообщения и темы на проверке ----------
@@ -140,18 +143,20 @@ async function loadQueueData(){const[{data:threads},{data:subs}]=await Promise.a
     sb.from('lesson_progress').select('user_id,lesson_id,submitted_at,lessons(title,modules(course_id))').eq('status','submitted').order('submitted_at')]);
   return{threads:threads||[],subs:subs||[]}}
 function setQueueCount(n){const el=document.getElementById('qCount');el.hidden=!n;el.textContent=n;document.title=(n?'('+n+') ':'')+'Админ-панель — Инженерный клуб'}
-async function refreshQueueCount(){const[{threads,subs},calls,leads]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads()]);
-  setQueueCount(threads.filter(t=>t.unread>0).length+subs.length+leads);setBadge('cCount',todayCalls(calls.calls).length);setBadge('lCount',leads)}
+async function refreshQueueCount(){const[{threads,subs},calls,leads,revs]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads(),countPendingReviews()]);
+  setQueueCount(threads.filter(t=>t.unread>0).length+subs.length+leads+revs);setBadge('cCount',todayCalls(calls.calls).length);setBadge('lCount',leads);setBadge('rCount',revs)}
+async function countPendingReviews(){const{count}=await sb.from('reviews').select('id',{count:'exact',head:true}).eq('status','pending');return count||0}
 function setBadge(id,n){const el=document.getElementById(id);el.hidden=!n;el.textContent=n}
 async function countNewLeads(){const{count}=await sb.from('leads').select('id',{count:'exact',head:true}).eq('status','new');return count||0}
 function threadPreview(t){if(t.last_deleted)return 'Сообщение удалено';return (t.last_from_student?'':'Вы: ')+((t.last_body||'').slice(0,140)||(t.last_has_files?'📎 Вложение':''))}
 async function showQueue(){if(!app.querySelector('#queueView'))app.innerHTML='<p class="muted">Загрузка очереди…</p>';
-  const[{threads,subs},cd,newLeads]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads()]);const unread=threads.filter(t=>t.unread>0);
-  const today=todayCalls(cd.calls);setQueueCount(unread.length+subs.length+newLeads);setBadge('cCount',today.length);setBadge('lCount',newLeads);
+  const[{threads,subs},cd,newLeads,pendRev]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads(),countPendingReviews()]);const unread=threads.filter(t=>t.unread>0);
+  const today=todayCalls(cd.calls);setQueueCount(unread.length+subs.length+newLeads+pendRev);setBadge('cCount',today.length);setBadge('lCount',newLeads);setBadge('rCount',pendRev);
   if((location.hash.slice(1)||'queue').split('/')[0]!=='queue')return;
   const link=(sid,cid,lid)=>`#student/${sid}/${cid}/${lid}`;
   app.innerHTML=`<div id="queueView"><h1>Очередь</h1>
     ${today.length?`<h2>📞 Занятия сегодня <span class="badge b-acc">${today.length}</span></h2><div class="card qlist">${today.map(callRowHtml).join('')}</div>`:''}
+    ${pendRev?`<h2>💬 Отзывы на проверке <span class="badge b-warn">${pendRev}</span></h2><p><a href="#reviews">Проверить отзывы →</a></p>`:''}
     ${newLeads?`<h2>📝 Новые заявки <span class="badge b-warn">${newLeads}</span></h2><p><a href="#leads">Открыть заявки →</a></p>`:''}
     <h2>💬 Новые сообщения ${unread.length?`<span class="badge b-warn">${unread.length}</span>`:''}</h2>
     ${unread.length?`<div class="card qlist">${unread.map(t=>`<a class="qitem" href="${link(t.student_id,t.course_id,t.lesson_id)}"><div class="t"><b>${esc(studentName(t.student_id))}</b><span class="muted">·</span>${esc(t.lesson_title)}<span class="badge b-warn">${t.unread} нов.</span></div><div class="small muted">${esc(threadPreview(t))} · ${fmtDate(t.last_at)}</div></a>`).join('')}</div>`:'<p class="muted">Новых сообщений нет.</p>'}
@@ -385,6 +390,63 @@ async function showCalls(){app.innerHTML='<p class="muted">Загрузка за
     ${noDate.length?`<h2>Без даты</h2><div class="card qlist">${noDate.map(callRowHtml).join('')}</div>`:''}
     <h2>🎥 Ждут видеозаписи</h2><p class="small muted">Прошедшие занятия, к которым ещё не добавлена запись для ученика.</p>
     ${needRec.length?`<div class="card qlist">${needRec.map(c=>`<a class="qitem" href="#student/${c.user_id}/${c.lessons?.modules?.course_id}/${c.lesson_id}"><div class="t"><b>${esc(studentName(c.user_id))}</b><span class="muted">·</span>${esc(c.lessons?.title)}</div><div class="small muted">занятие ${c.starts_at?fmtDate(c.starts_at):'без даты'}</div></a>`).join('')}</div>`:'<p class="muted">Все записи добавлены.</p>'}`}
+
+// ---------- «Отзывы»: проверка отзывов из кабинета и добавление своих ----------
+const RV_ST={pending:'на проверке',approved:'опубликован',rejected:'отклонён'};
+async function showReviews(){app.innerHTML='<p class="muted">Загрузка отзывов…</p>';
+  const[{data:list,error},{data:courses}]=await Promise.all([sb.from('reviews').select('*,courses(title)').order('created_at',{ascending:false}).limit(300),sb.from('courses').select('id,title').order('sort')]);
+  if(error){app.innerHTML='<p>Ошибка: '+esc(error.message)+' — выполните миграцию 20261005000013.</p>';return}
+  const pend=list.filter(r=>r.status==='pending'),rest=list.filter(r=>r.status!=='pending');setBadge('rCount',pend.length);
+  const row=r=>`<div class="lesson ${r.status==='pending'?'submitted':''}"><div class="row" style="justify-content:space-between"><b>${esc(r.author_name)} <span class="muted small">${r.author_role==='student'?'ученик':'родитель'}${r.courses?' · '+esc(r.courses.title):''}</span></b>
+    <span class="badge ${r.status==='approved'?'b-ok':r.status==='pending'?'b-warn':'b-mute'}">${RV_ST[r.status]}</span></div>
+    <div style="white-space:pre-wrap;margin-top:6px">${esc(r.text)}</div>
+    <div class="small muted" style="margin-top:6px">${fmtDate(r.created_at)} · ${r.source==='admin'?'добавлен вами':'из личного кабинета'}${r.publish_consent?' · автор согласен на публикацию':''}</div>
+    <div class="row" style="margin-top:8px">${r.status!=='approved'?`<button class="primary" onclick="setReview(${r.id},'approved')">Опубликовать</button>`:''}${r.status==='approved'?`<button onclick="setReview(${r.id},'rejected')">Снять с публикации</button>`:''}${r.status==='pending'?`<button onclick="setReview(${r.id},'rejected')">Отклонить</button>`:''}<button class="link small" onclick="deleteReview(${r.id},this)">удалить</button></div></div>`;
+  app.innerHTML=`<h1>Отзывы</h1><p class="small muted">Опубликованные отзывы видны на главной странице сайта (после следующей публикации сайта они попадают и в готовый HTML для поисковиков).</p>
+    <h2>На проверке ${pend.length?`<span class="badge b-warn">${pend.length}</span>`:''}</h2><div class="card">${pend.length?pend.map(row).join(''):'<p class="muted">Новых отзывов нет.</p>'}</div>
+    <h2>Добавить отзыв</h2><div class="card"><p class="small muted">Например, отзыв из мессенджера — только настоящий и с согласия автора на публикацию.</p>
+      <div class="grid"><label>Имя автора<input id="arName" maxlength="80"></label><label>Кто<select id="arRole"><option value="parent">родитель</option><option value="student">ученик</option></select></label>
+      <label>Курс<select id="arCourse"><option value="">—</option>${(courses||[]).map(c=>`<option value="${c.id}">${esc(c.title)}</option>`).join('')}</select></label></div>
+      <label class="small muted" style="display:block;margin-top:10px">Текст отзыва<textarea id="arText" rows="4" maxlength="2000" style="width:100%;margin-top:4px"></textarea></label>
+      <label class="small" style="display:flex;gap:8px;align-items:center;margin:8px 0"><input type="checkbox" id="arConsent"> Автор согласен на публикацию отзыва на сайте</label>
+      <button class="primary" onclick="addReview()">Опубликовать отзыв</button></div>
+    <h2>Все отзывы</h2><div class="card">${rest.length?rest.map(row).join(''):'<p class="muted">Пока пусто.</p>'}</div>`}
+async function setReview(id,status){const{error}=await sb.from('reviews').update({status,approved_at:status==='approved'?new Date().toISOString():null}).eq('id',id);
+  if(error)return toast('Ошибка: '+error.message);toast(status==='approved'?'Отзыв опубликован':'Отзыв скрыт');refreshQueueCount();showReviews()}
+async function deleteReview(id,b){if(!b.dataset.sure){b.dataset.sure='1';b.textContent='точно удалить?';return}
+  const{error}=await sb.from('reviews').delete().eq('id',id);if(error)return toast('Ошибка: '+error.message);toast('Удалено');refreshQueueCount();showReviews()}
+async function addReview(){const name=arName.value.trim(),text=arText.value.trim();
+  if(!name||text.length<10)return toast('Укажите имя и текст отзыва (от 10 символов)');if(!arConsent.checked)return toast('Нужно согласие автора на публикацию');
+  const{error}=await sb.from('reviews').insert({author_name:name,author_role:arRole.value,course_id:arCourse.value?+arCourse.value:null,text,status:'approved',source:'admin',publish_consent:true,approved_at:new Date().toISOString()});
+  if(error)return toast('Ошибка: '+error.message);toast('Отзыв опубликован');showReviews()}
+
+// ---------- «Видео» на главной (Rutube / VK Видео) ----------
+async function showVideos(){app.innerHTML='<p class="muted">Загрузка видео…</p>';
+  const{data:list,error}=await sb.from('site_videos').select('*').order('sort').order('id');
+  if(error){app.innerHTML='<p>Ошибка: '+esc(error.message)+' — выполните миграцию 20261005000013.</p>';return}
+  const vrow=v=>`<div class="lesson" id="vid-${v.id}"><div class="grid">
+      <label class="small muted">Название<input data-f="title" value="${esc(v.title)}" maxlength="150"></label>
+      <label class="small muted">Ссылка на видео<input data-f="url" value="${esc(v.url)}"></label>
+      <label class="small muted">Картинка-превью (необязательно)<input data-f="thumbnail_url" value="${esc(v.thumbnail_url)}" placeholder="https://…"></label>
+      <label class="small muted">Порядок<input data-f="sort" type="number" value="${v.sort}"></label></div>
+    <label class="small muted" style="display:block;margin-top:8px">Описание<textarea data-f="description" rows="2" maxlength="1000" style="width:100%;margin-top:4px">${esc(v.description)}</textarea></label>
+    <div class="row" style="margin-top:8px"><label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-f="published" ${v.published?'checked':''}> показывать на главной</label>
+      ${HomeBlocks.embedUrl(v.url)?'<span class="badge b-ok">ссылка распознана</span>':'<span class="badge b-warn">ссылка не распознана — нужна страница ролика Rutube или VK Видео</span>'}
+      <button class="primary" onclick="saveVideo(${v.id})">Сохранить</button><button class="link small" onclick="deleteVideo(${v.id},this)">удалить</button></div></div>`;
+  app.innerHTML=`<h1>Видео на главной</h1><p class="small muted">Загрузите ролик на Rutube или в VK Видео и вставьте ссылку на его страницу, например https://rutube.ru/video/… или https://vkvideo.ru/video-123_456. На сайте видео загружается только по нажатию — страница не тормозит.</p>
+    <h2>Добавить видео</h2><div class="card"><div class="grid"><label class="small muted">Название<input id="nvTitle" maxlength="150" placeholder="Например: О проекте"></label><label class="small muted">Ссылка на видео<input id="nvUrl" placeholder="https://rutube.ru/video/…"></label></div>
+      <label class="small muted" style="display:block;margin-top:8px">Описание<textarea id="nvDesc" rows="2" maxlength="1000" style="width:100%;margin-top:4px" placeholder="Пара предложений — их видят и посетители, и поисковики"></textarea></label>
+      <button class="primary" style="margin-top:8px" onclick="addVideo()">Добавить</button></div>
+    <h2>Видео (${list.length})</h2>${list.length?list.map(vrow).join(''):'<p class="muted">Пока нет видео — блок «Видео о проекте» на главной скрыт.</p>'}`}
+async function addVideo(){const title=nvTitle.value.trim(),url=nvUrl.value.trim();
+  if(!title)return toast('Укажите название');if(!HomeBlocks.embedUrl(url))return toast('Ссылка не распознана — нужна страница ролика Rutube или VK Видео');
+  const{error}=await sb.from('site_videos').insert({title,url,description:nvDesc.value.trim()||null});if(error)return toast('Ошибка: '+error.message);toast('Видео добавлено');showVideos()}
+async function saveVideo(id){const box=document.getElementById('vid-'+id),v={};box.querySelectorAll('[data-f]').forEach(el=>v[el.dataset.f]=el.type==='checkbox'?el.checked:el.value.trim());
+  v.sort=+v.sort||0;v.thumbnail_url=v.thumbnail_url||null;v.description=v.description||null;
+  if(!HomeBlocks.embedUrl(v.url))return toast('Ссылка не распознана — нужна страница ролика Rutube или VK Видео');
+  const{error}=await sb.from('site_videos').update(v).eq('id',id);if(error)return toast('Ошибка: '+error.message);toast('Сохранено');showVideos()}
+async function deleteVideo(id,b){if(!b.dataset.sure){b.dataset.sure='1';b.textContent='точно удалить?';return}
+  const{error}=await sb.from('site_videos').delete().eq('id',id);if(error)return toast('Ошибка: '+error.message);toast('Удалено');showVideos()}
 
 // ---------- «Заявки» с сайта ----------
 const LEAD_RU={new:'новая',in_progress:'в работе',done:'обработана'};

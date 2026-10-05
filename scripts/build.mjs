@@ -11,10 +11,35 @@ import { readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync, cpSync, e
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-require('../course-page.js'); // шаблон кладёт функции в globalThis (общий файл для браузера и сборки)
-const { coursePageHtml, coursePageStats } = globalThis;
+require('../course-page.js'); // шаблоны кладут функции в globalThis (общие файлы для браузера и сборки)
+require('../home-blocks.js');
+const { coursePageHtml, coursePageStats, HomeBlocks } = globalThis;
 
-const FILES = ['admin.html', 'chat.js', 'course-page.js', 'favicon.svg'];
+const FILES = ['admin.html', 'chat.js', 'course-page.js', 'home-blocks.js', 'favicon.svg'];
+
+// Реквизиты продавца (site-info.json) — для документов и подвала. Пустое поле → заметная пометка.
+const INFO = JSON.parse(readFileSync('site-info.json', 'utf8'));
+const INFO_LABELS = { legalName: 'ФИО индивидуального предпринимателя', legalShort: 'ИП Фамилия И. О.', inn: 'ИНН', ogrnip: 'ОГРНИП', address: 'адрес', email: 'электронная почта', phone: 'телефон', workHours: 'режим работы', docsDate: 'дата редакции', brand: 'название' };
+const infoValue = (k) => (INFO[k] ? String(INFO[k]).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]) : `<mark class="todo">[${INFO_LABELS[k] || k}]</mark>`);
+function requisitesHtml() {
+  const rows = [['Наименование', 'legalName'], ['ИНН', 'inn'], ['ОГРНИП', 'ogrnip'], ['Адрес', 'address'], ['Электронная почта', 'email'], ['Телефон', 'phone']];
+  const bank = ['bankName', 'bankAccount', 'bankCorr', 'bankBik'].some((k) => INFO[k])
+    ? [['Банк', 'bankName'], ['Расчётный счёт', 'bankAccount'], ['Корр. счёт', 'bankCorr'], ['БИК', 'bankBik']] : [];
+  return `<table class="req-table"><tbody>${[...rows, ...bank].map(([t, k]) => `<tr><th>${t}</th><td>${infoValue(k)}</td></tr>`).join('')}</tbody></table>`;
+}
+const fillInfo = (html) => html.replace(/\{\{(\w+)\}\}/g, (m, k) => (k === 'requisites' ? requisitesHtml() : infoValue(k)));
+
+// Документы для работы сайта в РФ (тексты — docs/*.html). Кроме контактов — закрыты от индексации:
+// одинаковые по смыслу юридические тексты считаются малоценными страницами.
+const DOCS = [
+  { path: '/kontakty/', file: 'kontakty', title: 'Контакты и реквизиты', index: true,
+    description: 'Контакты инженерного клуба для школьников 9–14 лет: электронная почта, телефон, режим работы и реквизиты.' },
+  { path: '/dokumenty/oferta/', file: 'oferta', title: 'Публичная оферта' },
+  { path: '/dokumenty/polzovatelskoe-soglashenie/', file: 'polzovatelskoe-soglashenie', title: 'Пользовательское соглашение' },
+  { path: '/dokumenty/politika-konfidencialnosti/', file: 'politika-konfidencialnosti', title: 'Политика обработки персональных данных' },
+  { path: '/dokumenty/soglasie-na-obrabotku/', file: 'soglasie-na-obrabotku', title: 'Согласие на обработку персональных данных' },
+  { path: '/dokumenty/oplata-i-vozvrat/', file: 'oplata-i-vozvrat', title: 'Оплата, получение услуги и возврат' },
+];
 const OUT = 'dist';
 const SITE_NAME = 'Инженерный клуб';
 
@@ -60,13 +85,26 @@ async function loadCourses() {
   }
 }
 
+// ---------- Видео и одобренные отзывы для главной (публичные данные) ----------
+async function loadPublic(path) {
+  try {
+    const res = await fetch(`${url}/rest/v1/${path}`, { headers: { apikey: key } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (e) {
+    console.warn(`⚠ Не удалось получить ${path.split('?')[0]}:`, e.message, '(таблица ещё не создана?)');
+    return [];
+  }
+}
+
 // ---------- SEO-блок <head> ----------
-function seoHead({ title, description, path, jsonld }) {
+// hide=true — страница закрыта от индексации (малоценная: черновой курс без программы, документы)
+function seoHead({ title, description, path, jsonld, hide }) {
   const u = abs(path);
   return `<!--seo-->
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
-<meta name="robots" content="${NOINDEX ? 'noindex, nofollow' : 'index, follow'}">
+<meta name="robots" content="${NOINDEX ? 'noindex, nofollow' : hide ? 'noindex, follow' : 'index, follow'}">
 ${u ? `<link rel="canonical" href="${u}">\n<meta property="og:url" content="${u}">\n` : ''}<meta property="og:type" content="website">
 <meta property="og:site_name" content="${SITE_NAME}">
 <meta property="og:locale" content="ru_RU">
@@ -93,14 +131,25 @@ const breadcrumbs = (items) => ({
 });
 
 // ---------- Страницы ----------
-function pageHtml(template, { head, show, courseBody, courseSlug }) {
+function pageHtml(template, { head, show, courseBody, courseSlug, docBody, docPath }) {
   let h = template.replace(/<!--seo-->[\s\S]*?<!--\/seo-->/, head);
   if (show !== 'home') {
     h = h.replace('<main id="homePage">', '<main id="homePage" style="display:none">');
     h = h.replace(`id="${show}Page" style="display:none"`, `id="${show}Page"`);
   }
   if (courseBody) h = h.replace('<div id="coursePageBody"></div>', `<div id="coursePageBody" data-slug="${esc(courseSlug)}">${courseBody}</div>`);
+  if (docBody) h = h.replace('<div id="docBody" class="doc"></div>', `<div id="docBody" class="doc" data-path="${esc(docPath)}">${docBody}</div>`);
   return h;
+}
+
+// Частые вопросы с главной → разметка FAQPage (ответы могут показываться прямо в выдаче)
+function faqJsonLd(template) {
+  const strip = (t) => t.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const items = [...template.matchAll(/<details class="faq-item"><summary>([\s\S]*?)<\/summary><div class="faq-a">([\s\S]*?)<\/div><\/details>/g)];
+  return items.length ? {
+    '@context': 'https://schema.org', '@type': 'FAQPage',
+    mainEntity: items.map(([, q, a]) => ({ '@type': 'Question', name: strip(q), acceptedAnswer: { '@type': 'Answer', text: strip(a) } })),
+  } : null;
 }
 
 function catalogGrid(courses) {
@@ -121,16 +170,29 @@ async function main() {
   if (existsSync('assets')) cpSync('assets', `${OUT}/assets`, { recursive: true });
   writeFileSync(`${OUT}/config.js`, `window.APP_CONFIG=${JSON.stringify({ supabaseUrl: url, supabaseKey: key })};\n`);
 
-  const courses = await loadCourses();
-  let template = readFileSync('index.html', 'utf8');
+  const [courses, videos, reviews] = await Promise.all([
+    loadCourses(),
+    loadPublic('site_videos?select=title,description,url,thumbnail_url,created_at&published=eq.true&order=sort,id'),
+    loadPublic('reviews?select=author_name,author_role,text,courses(title)&status=eq.approved&order=approved_at.desc&limit=12'),
+  ]);
+  let template = fillInfo(readFileSync('index.html', 'utf8')); // реквизиты в подвале
   if (courses.length) template = template.replace('<div class="courses" id="courseGrid"></div>', `<div class="courses" id="courseGrid">${catalogGrid(courses)}</div>`);
+  // видео и отзывы — в готовый HTML главной (видят поисковики); пустые блоки остаются скрытыми
+  const videosHtml = HomeBlocks.videosHtml(videos), reviewsHtml = HomeBlocks.reviewsHtml(reviews);
+  if (videosHtml) template = template.replace('<section class="home-block" id="homeVideos" hidden>', '<section class="home-block" id="homeVideos">').replace('<div class="video-grid" id="homeVideoList"></div>', `<div class="video-grid" id="homeVideoList">${videosHtml}</div>`);
+  if (reviewsHtml) template = template.replace('<section class="home-block" id="homeReviews" hidden>', '<section class="home-block" id="homeReviews">').replace('<div class="reviews" id="homeReviewList"></div>', `<div class="reviews" id="homeReviewList">${reviewsHtml}</div>`);
+  // видео с превью → разметка VideoObject
+  const videoLd = videos.filter((v) => v.thumbnail_url && HomeBlocks.embedUrl(v.url)).map((v) => ({
+    '@context': 'https://schema.org', '@type': 'VideoObject', name: v.title, description: v.description || v.title,
+    thumbnailUrl: v.thumbnail_url, uploadDate: v.created_at, embedUrl: HomeBlocks.embedUrl(v.url),
+  }));
 
   const pages = {
     home: {
       path: '/',
       title: 'Инженерный клуб — онлайн-занятия по инженерии для детей 9–14 лет',
       description: 'Онлайн-курсы инженерного мышления для школьников 9–14 лет: исследования, опыты и собственные проекты с преподавателем. 10 программ — от колеса до роботов. Первое занятие со скидкой 50%.',
-      jsonld: [organization],
+      jsonld: [organization, faqJsonLd(template), ...videoLd].filter(Boolean),
     },
     courses: {
       path: '/programmy/',
@@ -144,7 +206,7 @@ async function main() {
     how: {
       path: '/kak-prohodyat-zanyatiya/',
       title: 'Как проходят онлайн-занятия для детей 9–14 лет — Инженерный клуб',
-      description: 'Самостоятельная подготовка, обсуждение с преподавателем и собственный проект: как устроены онлайн-занятия инженерного клуба для школьников 9–14 лет.',
+      description: 'Онлайн-курс для школьников 9–14 лет как маршрут: самостоятельные видеоуроки, материалы и задания, встречи с преподавателем на ключевых этапах, свой проект и чат поддержки.',
       jsonld: [breadcrumbs([['Главная', '/'], ['Как проходят занятия', '/kak-prohodyat-zanyatiya/']])],
     },
   };
@@ -158,6 +220,8 @@ async function main() {
 
   for (const [i, c] of courses.entries()) {
     const st = coursePageStats(c);
+    // курс без программы — малоценная страница: не индексируем, пока программа не появится
+    const thin = !st.lessons;
     const path = `/kursy/${c.slug}/`;
     const title = `Курс «${c.title}» для детей 9–14 лет онлайн — ${SITE_NAME}`;
     const description = cut(`${c.description} Онлайн-курс для школьников 9–14 лет${st.lessons ? `: ${st.lessons} тем, исследования и собственный проект` : ''}. ${Number(c.price || 20000).toLocaleString('ru-RU')} ₽, первое занятие −50%.`, 200);
@@ -170,11 +234,24 @@ async function main() {
     };
     seoPages['course:' + c.slug] = { title, description };
     write(path, pageHtml(template, {
-      head: seoHead({ title, description, path, jsonld: [course, breadcrumbs([['Главная', '/'], ['Программы', '/programmy/'], [c.title, path]])] }),
+      head: seoHead({ title, description, path, hide: thin, jsonld: [course, breadcrumbs([['Главная', '/'], ['Программы', '/programmy/'], [c.title, path]])] }),
       show: 'course', courseBody: coursePageHtml(c, i), courseSlug: c.slug,
     }));
   }
   writeFileSync(`${OUT}/seo.js`, `window.SEO_PAGES=${JSON.stringify(seoPages)};\n`);
+
+  // Документы и контакты
+  for (const d of DOCS) {
+    const crumbs = `<nav class="crumbs" aria-label="Навигация"><a href="/" onclick="return go(event,'home')">Главная</a> › <span>${esc(d.title)}</span></nav>`;
+    const body = crumbs + fillInfo(readFileSync(`docs/${d.file}.html`, 'utf8'));
+    write(d.path, pageHtml(template, {
+      head: seoHead({ title: `${d.title} — ${SITE_NAME}`, description: d.description || `${d.title} сайта «${SITE_NAME}».`, path: d.path, hide: !d.index,
+        jsonld: [breadcrumbs([['Главная', '/'], [d.title, d.path]])] }),
+      show: 'doc', docBody: body, docPath: d.path,
+    }));
+  }
+  const todo = Object.keys(INFO_LABELS).filter((k) => !INFO[k]);
+  if (todo.length) console.warn('⚠ В site-info.json не заполнено:', todo.map((k) => INFO_LABELS[k]).join(', '));
 
   // robots.txt и sitemap.xml
   writeFileSync(`${OUT}/robots.txt`, NOINDEX
@@ -182,8 +259,8 @@ async function main() {
     : `User-agent: *\nAllow: /\nDisallow: /admin.html\n${SITE_URL ? `\nSitemap: ${SITE_URL}/sitemap.xml\n` : ''}`);
   if (SITE_URL && !NOINDEX) {
     const today = new Date().toISOString().slice(0, 10);
-    const urls = [['/', '1.0', 'weekly'], ['/programmy/', '0.9', 'weekly'], ['/kak-prohodyat-zanyatiya/', '0.7', 'monthly'],
-      ...courses.map((c) => [`/kursy/${c.slug}/`, c.status === 'available' ? '0.8' : '0.5', 'weekly'])];
+    const urls = [['/', '1.0', 'weekly'], ['/programmy/', '0.9', 'weekly'], ['/kak-prohodyat-zanyatiya/', '0.7', 'monthly'], ['/kontakty/', '0.5', 'monthly'],
+      ...courses.filter((c) => coursePageStats(c).lessons).map((c) => [`/kursy/${c.slug}/`, c.status === 'available' ? '0.8' : '0.5', 'weekly'])];
     writeFileSync(`${OUT}/sitemap.xml`, `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([p, pr, cf]) => `  <url><loc>${SITE_URL}${p}</loc><lastmod>${today}</lastmod><changefreq>${cf}</changefreq><priority>${pr}</priority></url>`).join('\n')}\n</urlset>\n`);
   }
 
