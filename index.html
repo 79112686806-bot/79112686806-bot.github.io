@@ -327,6 +327,18 @@ a.course{display:flex;text-decoration:none}
 .review figcaption small{display:block;font-family:"PT Serif",Georgia,serif;font-size:13px;color:var(--ink-soft)}
 @media(max-width:900px){.benefits{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.benefits{grid-template-columns:1fr}.home-block{margin-top:60px}.faq-item summary{font-size:20px}}
+/* Главная: одинаковый шаг между смысловыми блоками (заголовок, текст и кнопки первого экрана — одна группа) */
+:root{--home-gap:56px}
+.hero{padding-bottom:0!important}
+.hero>.promo,.hero>.schematic,.hero>.founders,.hero>.honest{margin-top:var(--home-gap)!important;margin-bottom:0!important}
+.hero>.hero-actions{margin-bottom:0!important}
+/* у карусели внутренние поля (18px сверху, 42px снизу) — вычитаем, чтобы на глаз шаг был таким же */
+.hero>.schematic{margin-top:calc(var(--home-gap) - 18px)!important}
+.hero>.founders{margin-top:calc(var(--home-gap) - 42px)!important}
+.hero>.founders-caption{margin-bottom:0!important}
+.home-block{margin-top:var(--home-gap)!important}
+#homePage{padding-bottom:var(--home-gap)}
+@media(max-width:600px){:root{--home-gap:44px}}
 /* Документы и подвал */
 .doc{max-width:860px}
 .doc h2{font-family:"Cormorant Garamond",Georgia,serif;font-size:26px;font-weight:700;color:var(--ink);margin:30px 0 10px}
@@ -337,9 +349,10 @@ a.course{display:flex;text-decoration:none}
 .req-table th,.req-table td{text-align:left;padding:7px 14px 7px 0;border-bottom:1px solid var(--line);vertical-align:top}
 .req-table th{font-weight:400;color:var(--ink-soft);white-space:nowrap}
 mark.todo{background:rgba(154,58,27,.15);color:var(--sanguine);padding:0 4px;border-radius:2px}
-.footer-docs{display:flex;gap:6px 18px;flex-wrap:wrap;margin-top:10px;font-family:"PT Serif",Georgia,serif;font-size:13px}
+.footer-links,.footer-docs{padding:0!important}
+.footer-docs{display:flex;gap:6px 18px;flex-wrap:wrap;margin-top:8px;font-family:"PT Serif",Georgia,serif;font-size:13px}
 .footer-docs a{color:var(--ink-soft)}
-.footer-legal{margin:10px 0 0;font-family:"PT Serif",Georgia,serif;font-size:13px;color:var(--ink-soft)}
+.footer-legal{margin:8px 0 0;font-family:"PT Serif",Georgia,serif;font-size:13px;color:var(--ink-soft)}
 .consent{display:flex!important;gap:10px;align-items:flex-start;font-weight:400!important;font-size:13px!important;line-height:1.5;margin:6px 0 10px;color:var(--ink-soft)}
 .consent input{width:auto!important;margin:3px 0 0!important;flex:none}
 .consent a{color:var(--sanguine)}
