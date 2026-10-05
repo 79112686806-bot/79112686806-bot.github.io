@@ -356,6 +356,47 @@ mark.todo{background:rgba(154,58,27,.15);color:var(--sanguine);padding:0 4px;bor
 .consent{display:flex!important;gap:10px;align-items:flex-start;font-weight:400!important;font-size:13px!important;line-height:1.5;margin:6px 0 10px;color:var(--ink-soft)}
 .consent input{width:auto!important;margin:3px 0 0!important;flex:none}
 .consent a{color:var(--sanguine)}
+/* ===== Анимации в духе инженерного наброска (отключаются при «уменьшить движение» в системе) ===== */
+.home-block>h2::after{content:"";display:block;width:64px;height:2px;margin:14px auto 0;background:var(--sanguine);opacity:.55;border-radius:2px}
+@media (prefers-reduced-motion:no-preference){
+  /* появление блоков при прокрутке — мягко поднимаются по очереди */
+  .js-anim .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease var(--d,0ms),transform .7s cubic-bezier(.2,.8,.2,1) var(--d,0ms)}
+  .js-anim .reveal.in{opacity:1;transform:none}
+  /* черта под заголовком «проводится» мелом */
+  .js-anim .home-block>h2.reveal::after{width:0;transition:width .9s cubic-bezier(.2,.8,.2,1) calc(var(--d,0ms) + .35s)}
+  .js-anim .home-block>h2.reveal.in::after{width:64px}
+  /* иконки программ прорисовываются пером при наведении */
+  .course:hover .icon .sk,.node:hover .visual .sk{stroke-dasharray:1;animation:sketch .9s ease both}
+  @keyframes sketch{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+  /* логотип-компас поворачивается */
+  .brand .logo{transition:transform .7s cubic-bezier(.2,.8,.2,1)}
+  .brand:hover .logo{transform:rotate(180deg)}
+  /* карточки приподнимаются, как лист бумаги */
+  .benefits .feature,.review,.route-card,.how-formats .feature,.video-card{transition:transform .3s ease,box-shadow .3s ease}
+  .benefits .feature:hover,.review:hover,.route-card:hover,.how-formats .feature:hover{transform:translateY(-4px) rotate(-.3deg);box-shadow:0 14px 28px rgba(70,35,10,.16)}
+  .video-card:hover{transform:translateY(-3px)}
+  .route-stop .route-mark{transition:transform .3s ease}
+  .route-stop:hover .route-mark{transform:scale(1.08) rotate(-6deg)}
+  /* кнопка ▶ пульсирует */
+  .video-frame button:hover .video-play{animation:playPulse 1.4s ease-out infinite}
+  @keyframes playPulse{0%{box-shadow:0 0 0 0 rgba(154,58,27,.45),0 0 0 7px rgba(242,228,196,.4)}100%{box-shadow:0 0 0 22px rgba(154,58,27,0),0 0 0 7px rgba(242,228,196,.4)}}
+  /* частые вопросы раскрываются плавно */
+  .faq-item[open] .faq-a{animation:faqIn .4s ease}
+  @keyframes faqIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  /* окно курса выезжает */
+  .modal.open .modal-card{animation:modalIn .35s cubic-bezier(.2,.8,.2,1)}
+  @keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+  /* прогресс в кабинете заполняется плавно */
+  .progress span{transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+  /* остановка маршрута «отмечается» при появлении */
+  .js-anim .route-stop.in .route-mark{animation:markPop .6s cubic-bezier(.2,.8,.2,1) calc(var(--d,0ms) + .2s) both}
+  @keyframes markPop{0%{transform:scale(.6)}60%{transform:scale(1.12)}100%{transform:none}}
+  /* кнопки: нажатие и «чернильная» волна от точки касания */
+  .btn{position:relative;overflow:hidden}
+  .btn:active{transform:translateY(1px) scale(.985)}
+  .ink{position:absolute;border-radius:50%;background:currentColor;opacity:.22;transform:scale(0);animation:ink .6s ease-out forwards;pointer-events:none}
+  @keyframes ink{to{transform:scale(1);opacity:0}}
+}
 /* Колонки кабинета могут сжиматься по ширине экрана (иначе на телефоне страница становится шире экрана) */
 .dashboard>*{min-width:0}
 /* ===== Телефоны и планшеты (сенсорный экран): облегчённая отрисовка.
@@ -533,8 +574,8 @@ const COURSE_ICONS=[`<svg viewBox="0 0 64 64" width="34" height="34" fill="none"
 </svg>`];
 const carousel=document.getElementById('homeCarousel');
 const carouselItems=[...courses,...courses];
-carouselItems.forEach((c,i)=>{const n=document.createElement('div');n.className='node';n.innerHTML=`<span class="visual">${COURSE_ICONS[i%10]}</span>`;n.onclick=()=>openCourse(i%10);carousel.appendChild(n)});
-const grid=document.getElementById('courseGrid');grid.innerHTML='';courses.forEach((c,i)=>{let el=document.createElement('a');el.className='course';el.href='/kursy/'+COURSE_SLUGS[i]+'/';el.innerHTML=`<span class="num">${String(i+1).padStart(2,'0')}</span><span class="icon">${COURSE_ICONS[i]}</span><h3>${c[1]}</h3><small>${c[2]}</small>`;el.onclick=e=>{if(e.ctrlKey||e.metaKey||e.shiftKey)return;e.preventDefault();openCourse(i)};grid.appendChild(el)});
+carouselItems.forEach((c,i)=>{const n=document.createElement('div');n.className='node';n.innerHTML=`<span class="visual">${COURSE_ICONS[i%10]}</span>`;n.onclick=()=>openCourse(i%10);carousel.appendChild(n)});setTimeout(()=>{if(typeof markSketch==='function')markSketch(carousel)});
+const grid=document.getElementById('courseGrid');grid.innerHTML='';courses.forEach((c,i)=>{let el=document.createElement('a');el.className='course';el.href='/kursy/'+COURSE_SLUGS[i]+'/';el.innerHTML=`<span class="num">${String(i+1).padStart(2,'0')}</span><span class="icon">${COURSE_ICONS[i]}</span><h3>${c[1]}</h3><small>${c[2]}</small>`;el.onclick=e=>{if(e.ctrlKey||e.metaKey||e.shiftKey)return;e.preventDefault();openCourse(i)};grid.appendChild(el)});if(typeof markSketch==="function")setTimeout(()=>{markSketch(grid);observeReveal(grid)});
 // Публичные разделы имеют свои адреса — их индексируют поисковики (готовые HTML-страницы собирает scripts/build.mjs)
 const ROUTES={home:'/',courses:'/programmy/',how:'/kak-prohodyat-zanyatiya/'};
 function showPage(p,push=true){['home','how','courses','course','doc','signup','requestSent','payment','myCourses','dashboard'].forEach(x=>{let el=document.getElementById(x==='home'?'homePage':x+'Page');if(el)el.style.display=x===p?'block':'none'});scrollTo(0,0);
@@ -549,7 +590,13 @@ function drawRoutes(){document.querySelectorAll('#howPage .route').forEach(ol=>{
   const [x0,y0]=pts[0];let d='M'+(x0+16)+' '+(y0-44)+' C'+(x0+22)+' '+(y0-26)+' '+(x0-8)+' '+(y0-18)+' '+x0+' '+y0;
   for(let k=1;k<pts.length;k++){const[xa,ya]=pts[k-1],[xb,yb]=pts[k],h=yb-ya,w=k%2?1:-1;
     d+=' C'+(xa-w*14)+' '+(ya+h*.7)+' '+(xb+w*14)+' '+(yb-h*.7)+' '+xb+' '+yb}
-  svg.setAttribute('viewBox','0 0 '+box.width+' '+box.height);svg.firstChild.setAttribute('d',d)})}
+  svg.setAttribute('viewBox','0 0 '+box.width+' '+box.height);svg.firstChild.setAttribute('d',d);
+  if(!REDUCED_MOTION){const id='rm'+[...document.querySelectorAll('#howPage .route')].indexOf(ol);let mask=svg.querySelector('mask');
+    if(!mask){mask=document.createElementNS('http://www.w3.org/2000/svg','mask');mask.id=id;const mp=document.createElementNS('http://www.w3.org/2000/svg','path');
+      mp.setAttribute('class','route-mask-path');mp.setAttribute('fill','none');mp.setAttribute('stroke','#fff');mp.setAttribute('stroke-width','14');mp.setAttribute('pathLength','1');mp.style.strokeDasharray='1';mp.style.strokeDashoffset='1';
+      mask.appendChild(mp);svg.appendChild(mask);svg.firstChild.setAttribute('mask','url(#'+id+')')}
+    mask.firstChild.setAttribute('d',d)}})
+  updateRouteDraw()}
 window.addEventListener('resize',()=>{clearTimeout(drawRoutes.t);drawRoutes.t=setTimeout(drawRoutes,150)});
 function setMeta(key){const m=(window.SEO_PAGES||{})[key];if(!m)return;document.title=m.title;const d=document.querySelector('meta[name="description"]');if(d)d.content=m.description}
 // Ссылка с onclick="return go(...)": обычный клик — без перезагрузки; Ctrl/колёсико — в новой вкладке
@@ -559,7 +606,7 @@ async function showCoursePage(slug,push=true){const i=COURSE_SLUGS.indexOf(slug)
   const body=document.getElementById('coursePageBody');
   if(body.dataset.slug!==slug){body.innerHTML='<p class="note">Загружаем программу…</p>';
     const{data}=await sb.from('courses').select('slug,title,subtitle,description,price,status,modules(sort,title,lessons(sort,title,research_task))').eq('slug',slug).maybeSingle();
-    body.innerHTML=coursePageHtml(data||{slug,title:courses[i][1],subtitle:courses[i][2],description:courses[i][3],status:'draft',modules:[]},i);body.dataset.slug=slug}
+    body.innerHTML=coursePageHtml(data||{slug,title:courses[i][1],subtitle:courses[i][2],description:courses[i][3],status:'draft',modules:[]},i);body.dataset.slug=slug;observeReveal(body)}
   showPage('course',false);const path='/kursy/'+slug+'/';if(push&&location.pathname!==path)history.pushState({},'',path);setMeta('course:'+slug)}
 function routePath(path){const db=document.getElementById('docBody');if(db&&db.dataset.path===path)return showPage('doc',false);
   const m=path.match(/^\/kursy\/([a-z0-9-]+)\/?$/);if(m)return showCoursePage(m[1],false);
@@ -820,7 +867,7 @@ async function loadHomeBlocks(){
     sb.from('reviews').select('author_name,author_role,text,courses(title)').eq('status','approved').order('approved_at',{ascending:false}).limit(12)]);
   const vh=HomeBlocks.videosHtml(videos||[]),rh=HomeBlocks.reviewsHtml(reviews||[]);
   const vl=document.getElementById('homeVideoList');if(!vl.querySelector('iframe')){vl.innerHTML=vh;homeVideos.hidden=!vh}
-  homeReviewList.innerHTML=rh;homeReviews.hidden=!rh}
+  homeReviewList.innerHTML=rh;homeReviews.hidden=!rh;observeReveal(document.getElementById('homePage'))}
 loadHomeBlocks();
 // ---------- Кабинет: отзыв о курсе (публикуется после проверки) ----------
 async function renderMyReview(uid,prof,list){const box=document.getElementById('myReview');if(!list.length){box.innerHTML='';return}
@@ -840,6 +887,29 @@ async function sendReview(uid,courseIdValue){const t=rvText.value.trim(),n=rvNam
   const{error}=await sb.from('reviews').insert({user_id:uid,author_name:n,author_role:rvRole.value,course_id:courseIdValue,text:t,publish_consent:true});
   if(error){console.error(error);return rvMsg.textContent='Не удалось отправить. Попробуйте ещё раз.'}
   rvText.value='';rvConsent.checked=false;rvMsg.textContent='Спасибо! Отзыв появится на сайте после проверки.'}
+// ---------- Анимации: появление при прокрутке, «перо» на иконках, чернильная волна ----------
+const REDUCED_MOTION=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const REVEAL_SEL='.home-block>h2,.home-block>.lead,.benefits .feature,.video-card,.review,.faq-item,.hero>.founders,#courseGrid .course,.route-stop,.how-formats .feature,#coursePageBody .features .feature,.course-lessons';
+let revealIO=null;
+function observeReveal(root){if(!revealIO)return;const groups=new Map();
+  (root||document).querySelectorAll(REVEAL_SEL).forEach(el=>{if(el.dataset.rv)return;el.dataset.rv='1';
+    const n=groups.get(el.parentElement)||0;groups.set(el.parentElement,n+1);el.style.setProperty('--d',Math.min(n,6)*80+'ms');
+    el.classList.add('reveal');revealIO.observe(el)})}
+// линии иконок — для эффекта «прорисовки пером»
+function markSketch(root){(root||document).querySelectorAll('.course .icon svg,.node .visual svg').forEach(svg=>svg.querySelectorAll('path,circle,line,rect,ellipse,polyline,polygon').forEach(el=>{if(el.classList.contains('sk'))return;el.setAttribute('pathLength','1');el.classList.add('sk')}))}
+function initAnimations(){markSketch();if(REDUCED_MOTION||!('IntersectionObserver' in window))return;
+  document.documentElement.classList.add('js-anim');
+  revealIO=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target;el.classList.add('in');revealIO.unobserve(el);
+    // после появления убираем служебный класс, чтобы вернуть обычные эффекты при наведении
+    setTimeout(()=>{el.classList.remove('reveal');el.style.removeProperty('--d')},1300)}),{rootMargin:'0px 0px -6% 0px'});
+  observeReveal();
+  document.addEventListener('pointerdown',e=>{const b=e.target.closest('.btn');if(!b)return;const r=b.getBoundingClientRect(),d=Math.max(r.width,r.height)*2.2,s=document.createElement('span');
+    s.className='ink';s.style.cssText='width:'+d+'px;height:'+d+'px;left:'+(e.clientX-r.left-d/2)+'px;top:'+(e.clientY-r.top-d/2)+'px';b.appendChild(s);setTimeout(()=>s.remove(),650)})}
+// тропа на странице «Как проходят занятия» прочерчивается по мере прокрутки
+function updateRouteDraw(){document.querySelectorAll('#howPage .route').forEach(ol=>{const m=ol.querySelector('.route-mask-path');if(!m)return;
+  const r=ol.getBoundingClientRect();if(!r.height)return;const p=Math.max(0,Math.min(1,(innerHeight*.85-r.top)/r.height));m.style.strokeDashoffset=String(1-p)})}
+let routeRaf=0;window.addEventListener('scroll',()=>{if(routeRaf)return;routeRaf=requestAnimationFrame(()=>{routeRaf=0;updateRouteDraw()})},{passive:true});
+initAnimations();
 routePath(location.pathname);
 function speak(text){if('speechSynthesis' in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ru-RU';u.rate=.95;speechSynthesis.speak(u)}}
 function speakWelcome(){speak(document.getElementById('welcomeText').textContent)}
