@@ -61,6 +61,36 @@ Deno.serve(async (req) => {
     return fail('course_unavailable', 'Этот курс пока недоступен для покупки');
   }
 
+  // Что покупают: пробное занятие, блоки и темы или весь курс. Сумму считает база (quote_order),
+  // цену из браузера не берём.
+  const kind = body.kind === 'trial' || body.kind === 'custom' ? body.kind : 'full';
+  const ids = (v: unknown) => (Array.isArray(v) ? v.map(Number).filter((n) => Number.isInteger(n) && n > 0).slice(0, 200) : []);
+  const moduleIds = kind === 'custom' ? ids(body.module_ids) : [];
+  const lessonIds = kind === 'custom' ? ids(body.lesson_ids) : [];
+  const quote = async (uid: string | null) => {
+    const { data, error } = await admin.rpc('quote_order', {
+      p_user_id: uid, p_course_id: course.id, p_kind: kind, p_module_ids: moduleIds, p_lesson_ids: lessonIds,
+    });
+    if (error) {
+      console.error('quote_order', error);
+      return { error: 'server' } as { amount?: number; lesson_ids?: number[] | null; error: string | null };
+    }
+    return (data && data[0]) || { error: 'server' };
+  };
+  const QUOTE_ERRORS: Record<string, [string, number]> = {
+    already_full: ['Этот курс уже полностью открыт в вашем личном кабинете', 409],
+    trial_used: ['Пробное занятие доступно только при первой покупке курса', 409],
+    module_partially_owned: ['Часть тем этого блока у вас уже куплена — выберите оставшиеся темы по отдельности', 409],
+    nothing_selected: ['Выберите блоки или темы', 400],
+    bad_module: ['Блок не найден — обновите страницу', 400],
+    no_lessons: ['В курсе пока нет тем', 400],
+    course_unavailable: ['Этот курс пока недоступен для покупки', 400],
+  };
+  const quoteFail = (code: string) => {
+    const [message, status] = QUOTE_ERRORS[code] ?? ['Не удалось рассчитать стоимость', 500];
+    return fail(code, message, status);
+  };
+
   // Кто покупает: вошедший пользователь или новый аккаунт
   let userId: string | null = null;
   let email = '';
@@ -80,6 +110,9 @@ Deno.serve(async (req) => {
     if (password.length < 8 || password.length > 72) {
       return fail('weak_password', 'Пароль должен быть от 8 до 72 символов');
     }
+    // проверяем выбор до создания аккаунта, чтобы не создавать его зря
+    const pre = await quote(null);
+    if (pre.error) return quoteFail(pre.error);
 
     const { data, error } = await admin.auth.admin.createUser({
       email,
@@ -98,18 +131,14 @@ Deno.serve(async (req) => {
     userId = data.user.id;
   }
 
-  const { data: enrolled } = await admin
-    .from('enrollments')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('course_id', course.id)
-    .maybeSingle();
-  if (enrolled) return fail('already_enrolled', 'Этот курс уже открыт в вашем личном кабинете', 409);
+  const q = await quote(userId);
+  if (q.error) return quoteFail(q.error);
 
   const { data: order, error: orderError } = await admin
     .from('orders')
     .insert({
-      user_id: userId, course_id: course.id, amount: course.price, provider: DEMO ? 'demo' : 'yookassa',
+      user_id: userId, course_id: course.id, amount: q.amount ?? 0, provider: DEMO ? 'demo' : 'yookassa',
+      kind, items: { module_ids: moduleIds, lesson_ids: q.lesson_ids ?? [] },
       offer_accepted_at: new Date().toISOString(),
     })
     .select('id')
@@ -129,14 +158,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    await sendWelcomeEmail(email, course.title);
+    const what = kind === 'trial' ? 'пробное занятие' : kind === 'custom' ? `выбранные темы (${(q.lesson_ids ?? []).length})` : 'весь курс';
+    await sendWelcomeEmail(email, course.title, what);
   } catch (e) {
     console.error('email', e); // курс уже открыт — ошибку письма покупателю не показываем
   }
   return json({ ok: true, demo: true });
 });
 
-async function sendWelcomeEmail(to: string, courseTitle: string) {
+async function sendWelcomeEmail(to: string, courseTitle: string, what: string) {
   const key = Deno.env.get('RESEND_API_KEY');
   if (!key) {
     console.log('RESEND_API_KEY не задан — письмо не отправлено');
@@ -145,7 +175,7 @@ async function sendWelcomeEmail(to: string, courseTitle: string) {
   const from = Deno.env.get('EMAIL_FROM') ?? 'Инженерный клуб <onboarding@resend.dev>';
   const html = `
 <h2>Добро пожаловать в Инженерный клуб!</h2>
-<p>Оплата прошла, курс «${escapeHtml(courseTitle)}» открыт в личном кабинете.</p>
+<p>Оплата прошла: курс «${escapeHtml(courseTitle)}», ${escapeHtml(what)}. Доступ открыт в личном кабинете.</p>
 <p><b>Логин для входа:</b> ${escapeHtml(to)}<br>
 <b>Пароль:</b> тот, который вы придумали при оформлении.</p>
 <p><a href="${SITE_URL}">Перейти на сайт</a> → «Личный кабинет».</p>

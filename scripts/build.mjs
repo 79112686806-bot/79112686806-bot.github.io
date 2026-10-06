@@ -17,12 +17,12 @@ const { coursePageHtml, coursePageStats, HomeBlocks } = globalThis;
 
 const FILES = ['admin.html', 'chat.js', 'course-page.js', 'home-blocks.js', 'favicon.svg'];
 
-// Реквизиты продавца (site-info.json) — для документов и подвала. Пустое поле → заметная пометка.
+// Данные самозанятого (site-info.json) — для документов и подвала. Пустое поле → заметная пометка.
 const INFO = JSON.parse(readFileSync('site-info.json', 'utf8'));
-const INFO_LABELS = { legalName: 'ФИО индивидуального предпринимателя', legalShort: 'ИП Фамилия И. О.', inn: 'ИНН', ogrnip: 'ОГРНИП', address: 'адрес', email: 'электронная почта', phone: 'телефон', workHours: 'режим работы', docsDate: 'дата редакции', brand: 'название' };
-const infoValue = (k) => (INFO[k] ? String(INFO[k]).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]) : `<mark class="todo">[${INFO_LABELS[k] || k}]</mark>`);
+const INFO_LABELS = { legalName: 'Фамилия Имя Отчество', legalShort: 'Фамилия И. О.', inn: 'ИНН', address: 'город или адрес для корреспонденции', email: 'электронная почта', phone: 'телефон', workHours: 'режим работы', docsDate: 'дата редакции', brand: 'название' };
+const infoValue = (k) => (k === 'npd' ? 'плательщик налога на профессиональный доход (самозанятый)' : INFO[k] ? String(INFO[k]).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]) : `<mark class="todo">[${INFO_LABELS[k] || k}]</mark>`);
 function requisitesHtml() {
-  const rows = [['Наименование', 'legalName'], ['ИНН', 'inn'], ['ОГРНИП', 'ogrnip'], ['Адрес', 'address'], ['Электронная почта', 'email'], ['Телефон', 'phone']];
+  const rows = [['ФИО', 'legalName'], ['Статус', 'npd'], ['ИНН', 'inn'], ['Адрес', 'address'], ['Электронная почта', 'email'], ['Телефон', 'phone']];
   const bank = ['bankName', 'bankAccount', 'bankCorr', 'bankBik'].some((k) => INFO[k])
     ? [['Банк', 'bankName'], ['Расчётный счёт', 'bankAccount'], ['Корр. счёт', 'bankCorr'], ['БИК', 'bankBik']] : [];
   return `<table class="req-table"><tbody>${[...rows, ...bank].map(([t, k]) => `<tr><th>${t}</th><td>${infoValue(k)}</td></tr>`).join('')}</tbody></table>`;
@@ -73,16 +73,18 @@ const cut = (t, n) => (t.length <= n ? t : t.slice(0, n - 1).replace(/\s+\S*$/, 
 
 // ---------- Курсы из базы (публичные данные каталога) ----------
 async function loadCourses() {
-  try {
-    const res = await fetch(`${url}/rest/v1/courses?select=slug,title,subtitle,description,price,status,sort,modules(sort,title,lessons(sort,title,research_task))&order=sort`, {
-      headers: { apikey: key },
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } catch (e) {
-    console.warn('⚠ Не удалось получить курсы из Supabase — страницы курсов не созданы:', e.message);
-    return [];
+  const program = 'modules(sort,title,lessons(sort,title,research_task))';
+  // с вариантами цен; если миграция с ценами ещё не выполнена — без них (цены возьмутся по умолчанию)
+  for (const fields of ['slug,title,subtitle,description,price,price_trial,price_trial_base,price_block,price_lesson,status,sort', 'slug,title,subtitle,description,price,status,sort']) {
+    try {
+      const res = await fetch(`${url}/rest/v1/courses?select=${fields},${program}&order=sort`, { headers: { apikey: key } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (e) {
+      console.warn('⚠ Не удалось получить курсы из Supabase' + (fields.includes('price_trial') ? ' с вариантами цен — пробую без них' : ' — страницы курсов не созданы') + ':', e.message);
+    }
   }
+  return [];
 }
 
 // ---------- Видео и одобренные отзывы для главной (публичные данные) ----------
@@ -191,7 +193,7 @@ async function main() {
     home: {
       path: '/',
       title: 'Инженерный клуб — онлайн-занятия по инженерии для детей 9–14 лет',
-      description: 'Онлайн-курсы инженерного мышления для школьников 9–14 лет: исследования, опыты и собственные проекты с преподавателем. 10 программ — от колеса до роботов. Первое занятие со скидкой 50%.',
+      description: 'Онлайн-курсы инженерного мышления для школьников 9–14 лет: исследования, опыты и собственные проекты с преподавателем. 10 программ — от колеса до роботов. Пробное занятие со скидкой 50%.',
       jsonld: [organization, faqJsonLd(template), ...videoLd].filter(Boolean),
     },
     courses: {
@@ -224,13 +226,13 @@ async function main() {
     const thin = !st.lessons;
     const path = `/kursy/${c.slug}/`;
     const title = `Курс «${c.title}» для детей 9–14 лет онлайн — ${SITE_NAME}`;
-    const description = cut(`${c.description} Онлайн-курс для школьников 9–14 лет${st.lessons ? `: ${st.lessons} тем, исследования и собственный проект` : ''}. ${Number(c.price || 20000).toLocaleString('ru-RU')} ₽, первое занятие −50%.`, 200);
+    const description = cut(`${c.description} Онлайн-курс для школьников 9–14 лет${st.lessons ? `: ${st.lessons} тем, исследования и собственный проект` : ''}. Пробное занятие — ${Number(c.price_trial || 1250).toLocaleString('ru-RU')} ₽, весь курс — ${Number(c.price || 37500).toLocaleString('ru-RU')} ₽.`, 200);
     const course = {
       '@context': 'https://schema.org', '@type': 'Course', name: `Курс «${c.title}»`, description: `${c.subtitle}. ${c.description}`,
       inLanguage: 'ru', provider: { '@type': 'Organization', name: SITE_NAME, ...(SITE_URL ? { sameAs: SITE_URL + '/' } : {}) },
       audience: { '@type': 'EducationalAudience', educationalRole: 'student', audienceType: 'Школьники 9–14 лет' },
       hasCourseInstance: { '@type': 'CourseInstance', courseMode: 'online' },
-      offers: { '@type': 'Offer', category: 'Paid', price: c.price || 20000, priceCurrency: 'RUB', availability: c.status === 'available' ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder', ...(abs(path) ? { url: abs(path) } : {}) },
+      offers: { '@type': 'AggregateOffer', category: 'Paid', lowPrice: c.price_trial || 1250, highPrice: c.price || 37500, offerCount: 3, priceCurrency: 'RUB', availability: c.status === 'available' ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder', ...(abs(path) ? { url: abs(path) } : {}) },
     };
     seoPages['course:' + c.slug] = { title, description };
     write(path, pageHtml(template, {

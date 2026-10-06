@@ -339,6 +339,30 @@ a.course{display:flex;text-decoration:none}
 .home-block{margin-top:var(--home-gap)!important}
 #homePage{padding-bottom:var(--home-gap)}
 @media(max-width:600px){:root{--home-gap:44px}}
+/* Варианты оплаты курса */
+.plans{display:grid;gap:10px;margin:6px 0 14px}
+.plan{display:flex!important;gap:12px;align-items:flex-start;padding:14px 16px;border:1px solid var(--line);border-radius:3px;background:rgba(255,250,236,.55);cursor:pointer;font-weight:400!important;font-size:15px!important;transition:border-color .2s,background .2s}
+.plan input{width:auto!important;margin:4px 0 0!important;flex:none;accent-color:var(--sanguine)}
+.plan-body{display:flex;flex-direction:column;gap:2px;min-width:0}
+.plan-body b{font-family:"Cormorant Garamond",Georgia,serif;font-size:21px;color:var(--ink)}
+.plan-price{font-family:"Cormorant Garamond",Georgia,serif;font-size:20px;font-weight:700;color:var(--sanguine)}
+.plan-price s{color:var(--ink-soft);font-weight:400;margin-right:4px}
+.plan-body small{color:var(--ink-soft);font-size:13.5px;line-height:1.5}
+.plan-on{border-color:var(--sanguine);background:rgba(154,58,27,.07);box-shadow:inset 0 0 0 1px var(--sanguine)}
+.plan-off{opacity:.55;cursor:default}
+.plan-picker{max-height:440px;overflow-y:auto;border:1px solid var(--line);border-radius:3px;padding:6px 12px;margin:0 0 12px;background:rgba(255,250,236,.4)}
+.pick-mod{padding:8px 0;border-bottom:1px solid var(--line)}
+.pick-mod:last-child{border-bottom:none}
+.pick-head,.pick-lessons label{display:flex!important;gap:10px;align-items:flex-start;font-weight:400!important;font-size:14px!important;cursor:pointer;margin:0!important}
+.pick-head input,.pick-lessons input{width:auto!important;margin:3px 0 0!important;flex:none;accent-color:var(--sanguine)}
+.pick-head b{font-family:"Cormorant Garamond",Georgia,serif;font-size:19px;color:var(--ink);display:block}
+.pick-head small{display:block;color:var(--ink-soft);font-size:13px}
+.pick-lessons{padding:4px 0 2px 26px;display:grid;gap:4px}
+.pick-lessons span{flex:1;min-width:0;color:var(--ink)}
+.pick-lessons em{font-style:normal;color:var(--ink-soft);font-size:13px;white-space:nowrap}
+.pick-lessons .owned{opacity:.6;cursor:default}
+.plan-total{font-size:17px;margin:4px 0 2px}
+.plan-total b{font-family:"Cormorant Garamond",Georgia,serif;font-size:26px;color:var(--sanguine)}
 /* Документы и подвал */
 .doc{max-width:860px}
 .doc h2{font-family:"Cormorant Garamond",Georgia,serif;font-size:26px;font-weight:700;color:var(--ink);margin:30px 0 10px}
@@ -422,7 +446,7 @@ mark.todo{background:rgba(154,58,27,.15);color:var(--sanguine);padding:0 4px;bor
 <div class="scraps" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="wrap">
 <nav><a class="brand" href="/" onclick="return go(event,'home')" style="text-decoration:none">
 <span class="logo"><i></i></span>ИНЖЕНЕРНЫЙ КЛУБ</a><button class="btn" style="margin-left:auto" onclick="enterCabinet()">Личный кабинет</button></nav>
-<main id="homePage"><header class="hero"><h1><span class="eyebrow">Развиваем инженерное мышление у школьников 9–14 лет</span> Исследовать. Придумывать. Создавать.</h1><p>Инженерное мышление. Генерация идей. Создание индивидуальных проектов.</p><div class="hero-actions"><a class="btn primary" href="/programmy/" onclick="return go(event,'courses')">Посмотреть программы</a><a class="btn" href="/kak-prohodyat-zanyatiya/" onclick="return go(event,'how')">Как проходят занятия</a></div><div class="promo" style="grid-template-columns:1fr;max-width:480px"><div class="promo-cell"><span class="promo-badge">−50%</span><span class="promo-text"><strong>Скидка 50% на первое занятие</strong></span></div></div><div class="schematic"><div class="schematic-track" id="homeCarousel"></div></div><div class="founders">
+<main id="homePage"><header class="hero"><h1><span class="eyebrow">Развиваем инженерное мышление у школьников 9–14 лет</span> Исследовать. Придумывать. Создавать.</h1><p>Инженерное мышление. Генерация идей. Создание индивидуальных проектов.</p><div class="hero-actions"><a class="btn primary" href="/programmy/" onclick="return go(event,'courses')">Посмотреть программы</a><a class="btn" href="/kak-prohodyat-zanyatiya/" onclick="return go(event,'how')">Как проходят занятия</a></div><div class="promo" style="grid-template-columns:1fr;max-width:480px"><div class="promo-cell"><span class="promo-badge">−50%</span><span class="promo-text"><strong>Скидка 50% на пробное занятие</strong></span></div></div><div class="schematic"><div class="schematic-track" id="homeCarousel"></div></div><div class="founders">
 <div class="founder-photo"><img src="/assets/founder.jpg" alt="Основатель Инженерного клуба" width="700" height="933" decoding="async"></div>
 <div class="founder-photo placeholder"><span>Фото скоро будет</span></div>
 </div>
@@ -443,7 +467,7 @@ mark.todo{background:rgba(154,58,27,.15);color:var(--sanguine);padding:0 4px;bor
 <details class="faq-item"><summary>Нужны ли знания физики или математики?</summary><div class="faq-a">Нет. Всё необходимое ребёнок узнаёт по ходу курса: из видеоуроков, материалов и обсуждений с преподавателем.</div></details>
 <details class="faq-item"><summary>Как проходят занятия?</summary><div class="faq-a">Часть тем школьник проходит самостоятельно — видеоуроки, материалы и задания в личном кабинете, а на ключевых этапах встречается с преподавателем онлайн: обсуждает изученное и работает над своим проектом. В чате можно задать вопрос в любой момент. Подробнее — на странице <a href="/kak-prohodyat-zanyatiya/" onclick="return go(event,'how')">«Как проходят занятия»</a>.</div></details>
 <details class="faq-item"><summary>Что понадобится для занятий?</summary><div class="faq-a">Компьютер, планшет или смартфон с интернетом, а для онлайн-встреч — камера и микрофон. Для опытов и исследований хватает подручных материалов.</div></details>
-<details class="faq-item"><summary>Сколько стоит курс?</summary><div class="faq-a">20 000 ₽ за весь курс, оплата один раз. Первое занятие — со скидкой 50%.</div></details>
+<details class="faq-item"><summary>Сколько стоит курс?</summary><div class="faq-a">Есть три варианта: пробное занятие — 1 250 ₽ вместо 2 500 ₽ (скидка 50%); отдельные блоки курса — по 10 000 ₽ или темы — по 3 500 ₽ за занятие; весь курс — 37 500 ₽. Если сначала купить пробное занятие или блоки, при покупке всего курса уже оплаченное засчитывается.</div></details>
 <details class="faq-item"><summary>Как быстро открывается доступ после оплаты?</summary><div class="faq-a">Сразу: курс и первая тема открываются в личном кабинете, а на почту приходит письмо с логином для входа.</div></details>
 <details class="faq-item"><summary>Можно ли вернуть деньги?</summary><div class="faq-a">Да. Отказаться от курса можно в любой момент — мы вернём деньги за вычетом стоимости уже открытых тем. Подробнее — на странице <a href="/dokumenty/oplata-i-vozvrat/">«Оплата, получение услуги и возврат»</a>.</div></details>
 <details class="faq-item"><summary>Как задать вопрос до покупки?</summary><div class="faq-a">Выберите <a href="/programmy/" onclick="return go(event,'courses')">программу</a> и оставьте заявку на консультацию — мы свяжемся с вами, ответим на вопросы и поможем выбрать курс.</div></details>
@@ -470,12 +494,12 @@ mark.todo{background:rgba(154,58,27,.15);color:var(--sanguine);padding:0 4px;bor
 <section class="section page" id="coursesPage" style="display:none"><h1 class="course-title">10 программ для школьников 9–14 лет</h1><p class="section-intro">Выберите тему, которая больше всего заинтересует ребёнка.</p><div class="courses" id="courseGrid"></div><div class="bottom"><a class="btn primary" href="/" onclick="return go(event,'home')">Вернуться на главную</a></div></section>
 <section class="section page" id="docPage" style="display:none"><div id="docBody" class="doc"></div><div class="bottom"><a class="btn" href="/" onclick="return go(event,'home')">На главную</a></div></section>
 <section class="section page" id="coursePage" style="display:none"><div id="coursePageBody"></div><div class="bottom"><a class="btn" href="/programmy/" onclick="return go(event,'courses')">Все программы</a></div></section>
-<section class="section page" id="signupPage" style="display:none"><h2>Заявка на курс</h2><p class="section-intro">Онлайн-формат: часть тем школьник проходит самостоятельно — видеоуроки, материалы и задания в личном кабинете, а на ключевых этапах занимается с преподавателем. На протяжении всего курса мы на связи в чате.</p><div class="option" style="max-width:460px;cursor:default"><h3 id="signupCourseName"></h3><p>Онлайн-формат: самостоятельные видеоуроки и задания в личном кабинете, встречи с преподавателем на ключевых этапах и чат поддержки.</p><b>20 000 ₽<br><small>за весь курс</small></b></div><div id="chosenForm"></div><div class="bottom"><a class="btn" href="/programmy/" onclick="return go(event,'courses')">Назад к программам</a></div></section>
+<section class="section page" id="signupPage" style="display:none"><h2>Заявка на курс</h2><p class="section-intro">Онлайн-формат: часть тем школьник проходит самостоятельно — видеоуроки, материалы и задания в личном кабинете, а на ключевых этапах занимается с преподавателем. На протяжении всего курса мы на связи в чате.</p><div class="option" style="max-width:460px;cursor:default"><h3 id="signupCourseName"></h3><p>Онлайн-формат: самостоятельные видеоуроки и задания в личном кабинете, встречи с преподавателем на ключевых этапах и чат поддержки.</p><b id="signupPrice">от 1 250 ₽<br><small>пробное занятие · весь курс — 37 500 ₽</small></b></div><div id="chosenForm"></div><div class="bottom"><a class="btn" href="/programmy/" onclick="return go(event,'courses')">Назад к программам</a></div></section>
 <section class="section page" id="requestSentPage" style="display:none"><h2>Заявка отправлена</h2><div class="payment"><p>Спасибо! Мы получили вашу заявку на курс «<span id="reqCourseName"></span>» и свяжемся с вами по указанному контакту в ближайшее время, чтобы ответить на вопросы и подобрать удобное время занятий.</p><a class="btn primary" href="/" onclick="return go(event,'home')">На главную</a></div></section>
-<section class="section page" id="paymentPage" style="display:none"><h2>Оплата курса</h2><div class="payment" id="paymentForm"><h3 id="paymentTitle"></h3><p id="paymentText"></p><p class="note" style="margin-bottom:14px">Онлайн-формат, доступ через личный кабинет. Первое занятие — со скидкой 50%.</p><div id="accountFields"></div><label>Номер карты</label><input placeholder="0000 0000 0000 0000"><label>Срок действия</label><input placeholder="ММ/ГГ"><label>Код</label><input placeholder="CVC"><label class="consent"><input type="checkbox" id="payConsent"><span>Я принимаю условия <a href="/dokumenty/oferta/" target="_blank">публичной оферты</a> и даю <a href="/dokumenty/soglasie-na-obrabotku/" target="_blank">согласие на обработку персональных данных</a> — своих и ребёнка</span></label><p class="note" id="payMsg"></p><button class="btn primary" onclick="completePayment()">Оплатить (демо)</button><p class="note">Это демонстрационная страница. Реальная оплата пока не подключена.</p></div><div class="payment" id="paymentSuccess" style="display:none"><h3>Оплата прошла успешно</h3><p>Курс открыт в личном кабинете. Письмо с логином для входа отправлено вам на почту.</p><p class="note" style="margin-bottom:14px">Если письмо не пришло в течение нескольких минут — проверьте папку «Спам» или напишите нам.</p><button class="btn primary" onclick="enterDashboard()">Войти в личный кабинет</button></div></section>
+<section class="section page" id="paymentPage" style="display:none"><h2>Оплата курса</h2><div class="payment" id="paymentForm"><h3 id="paymentTitle"></h3><p id="paymentText"></p><div id="planBox"></div><div id="accountFields"></div><label>Номер карты</label><input placeholder="0000 0000 0000 0000"><label>Срок действия</label><input placeholder="ММ/ГГ"><label>Код</label><input placeholder="CVC"><label class="consent"><input type="checkbox" id="payConsent"><span>Я принимаю условия <a href="/dokumenty/oferta/" target="_blank">публичной оферты</a> и даю <a href="/dokumenty/soglasie-na-obrabotku/" target="_blank">согласие на обработку персональных данных</a> — своих и ребёнка</span></label><p class="note" id="payMsg"></p><button class="btn primary" id="payBtn" onclick="completePayment()">Оплатить (демо)</button><p class="note">Это демонстрационная страница. Реальная оплата пока не подключена.</p></div><div class="payment" id="paymentSuccess" style="display:none"><h3>Оплата прошла успешно</h3><p>Доступ открыт в личном кабинете. Письмо с логином для входа отправлено вам на почту.</p><p class="note" style="margin-bottom:14px">Если письмо не пришло в течение нескольких минут — проверьте папку «Спам» или напишите нам.</p><button class="btn primary" onclick="enterDashboard()">Войти в личный кабинет</button></div></section>
 <section class="section page" id="myCoursesPage" style="display:none"><button class="btn" onclick="showPage('home')" style="margin-bottom:18px">← Вернуться на сайт</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button> <button class="btn primary" id="adminLink" onclick="location.href='/admin.html'" style="margin-bottom:18px;display:none">⚙ Панель администратора</button><h2>Личный кабинет</h2><p class="section-intro">Ваши курсы. Нажмите на курс, чтобы перейти к занятиям.</p><div class="courses" id="myCourseGrid"></div><div class="materials" id="myProfile" style="max-width:760px;margin-top:28px"></div><div class="materials" id="myReview" style="max-width:760px;margin-top:18px"></div></section>
 <section class="section page" id="dashboardPage" style="display:none"><button class="btn" onclick="enterCabinet()" style="margin-bottom:18px">← Мои курсы</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button><h2>Личный кабинет</h2><p class="section-intro" id="dashIntro"></p><div class="dashboard"><aside class="sidebar"><h3 id="dashCourse"></h3><p>Прогресс</p><div class="progress"><span id="dashProgressBar" style="width:0"></span></div><p class="note" id="dashProgressText">0% пройдено</p><hr style="border-color:var(--line)"><div id="sideAccordion"></div><span class="side-pin" data-id="materials" onclick="openMaterials()">📁 Материалы</span><span class="side-pin" data-id="chat" onclick="openChat()">💬 Чат с нами</span></aside><div><div class="lesson" id="lessonArea"></div><div class="timeline" id="dashTimeline"><div class="step"><div class="dot">1</div><small>Введение</small></div><div class="step"><div class="dot">2</div><small>Исследование</small></div><div class="step"><div class="dot">3</div><small>Модель</small></div><div class="step"><div class="dot">4</div><small>Проект</small></div></div></div></div></section>
-<footer>Инженерный клуб — занятия и проекты для школьников. Учимся сейчас, готовимся к будущему.<nav class="footer-links" aria-label="Разделы сайта"><a href="/programmy/" onclick="return go(event,'courses')">Программы</a><a href="/kak-prohodyat-zanyatiya/" onclick="return go(event,'how')">Как проходят занятия</a><a href="/kursy/wheel/" onclick="return go(event,'course','wheel')">Курс «Колесо»</a><a href="/kontakty/">Контакты</a></nav><nav class="footer-docs" aria-label="Документы"><a href="/dokumenty/oferta/">Публичная оферта</a><a href="/dokumenty/polzovatelskoe-soglashenie/">Пользовательское соглашение</a><a href="/dokumenty/politika-konfidencialnosti/">Политика обработки персональных данных</a><a href="/dokumenty/oplata-i-vozvrat/">Оплата и возврат</a><a href="/kontakty/">Контакты и реквизиты</a></nav><p class="footer-legal">{{legalShort}} · ИНН {{inn}} · ОГРНИП {{ogrnip}}</p></footer></div>
+<footer>Инженерный клуб — занятия и проекты для школьников. Учимся сейчас, готовимся к будущему.<nav class="footer-links" aria-label="Разделы сайта"><a href="/programmy/" onclick="return go(event,'courses')">Программы</a><a href="/kak-prohodyat-zanyatiya/" onclick="return go(event,'how')">Как проходят занятия</a><a href="/kursy/wheel/" onclick="return go(event,'course','wheel')">Курс «Колесо»</a><a href="/kontakty/">Контакты</a></nav><nav class="footer-docs" aria-label="Документы"><a href="/dokumenty/oferta/">Публичная оферта</a><a href="/dokumenty/polzovatelskoe-soglashenie/">Пользовательское соглашение</a><a href="/dokumenty/politika-konfidencialnosti/">Политика обработки персональных данных</a><a href="/dokumenty/oplata-i-vozvrat/">Оплата и возврат</a><a href="/kontakty/">Контакты и реквизиты</a></nav><p class="footer-legal">Самозанятый {{legalShort}} · ИНН {{inn}}</p></footer></div>
 <div class="modal" id="modal"><div class="modal-card"><button class="close" onclick="closeModal()">×</button><div id="modalContent"></div></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -493,8 +517,12 @@ const courses=[['⚙','Колесо','Первый технологически�
 // Адреса страниц курсов (/kursy/<slug>/) — в том же порядке, что и courses
 const COURSE_SLUGS=['wheel','phone','boats','optics','car','airplane','internet','robots','bioengineering','brain'];
 // Статусы курсов из базы: купить можно только курс со статусом available
-let courseStatus={},courseSlug={},courseId={};
-sb.from('courses').select('id,sort,status,slug').then(({data})=>{(data||[]).forEach(c=>{courseStatus[c.sort-1]=c.status;courseSlug[c.sort-1]=c.slug;courseId[c.sort-1]=c.id})});
+let courseStatus={},courseSlug={},courseId={},coursePrice={};
+// статусы и цены курсов; если поля цен в базе ещё не созданы — грузим без них
+(async()=>{let{data,error}=await sb.from('courses').select('id,sort,status,slug,price,price_trial,price_trial_base,price_block,price_lesson');
+  if(error)({data}=await sb.from('courses').select('id,sort,status,slug,price'));
+  (data||[]).forEach(c=>{courseStatus[c.sort-1]=c.status;courseSlug[c.sort-1]=c.slug;courseId[c.sort-1]=c.id;if(c.price_trial)coursePrice[c.sort-1]=c})})();
+const RUB=n=>Number(n||0).toLocaleString('ru-RU')+' ₽';
 function isAvailable(i){return courseStatus[i]==='available'}
 
 
@@ -615,7 +643,10 @@ function routePath(path){const db=document.getElementById('docBody');if(db&&db.d
   return showPage('home',false)}
 window.addEventListener('popstate',()=>routePath(location.pathname));function show(html){modalContent.innerHTML=html;modal.classList.add('open')}function closeModal(){modal.classList.remove('open')}function openCourse(i){selectedCourse=i;let c=courses[i];show(`<div class="eyebrow">Программа ${i+1}</div><h2>${c[1]}</h2><p><b>${c[2]}.</b> ${c[3]}</p><p>Часть тем школьник проходит самостоятельно — с видеоуроками, материалами и заданиями, а на ключевых этапах обсуждает идеи с преподавателем и разрабатывает собственный проект. Мы на связи в чате на протяжении всего курса.</p><p><a href="/kursy/${COURSE_SLUGS[i]}/" onclick="return go(event,'course','${COURSE_SLUGS[i]}')">Подробнее о программе курса →</a></p>${isAvailable(i)?`<button class="btn primary" onclick="closeModal();goSignup()">Выбрать этот курс</button>`:`<p class="note">Курс в разработке — запись откроется позже.</p>`}`)}
 async function goSignup(){if(!isAvailable(selectedCourse))return;signupCourseName.textContent=courses[selectedCourse][1];
-  if(await hasCourse(courseSlug[selectedCourse])){chosenForm.innerHTML='<div class="form"><p><b>Этот курс уже открыт в вашем личном кабинете.</b></p></div>';showPage('signup');return}
+  const pr=coursePrice[selectedCourse];if(pr)signupPrice.innerHTML='от '+RUB(pr.price_trial)+'<br><small>пробное занятие · весь курс — '+RUB(pr.price)+'</small>';
+  const st=await courseState(courseSlug[selectedCourse]);
+  if(st==='full'){chosenForm.innerHTML='<div class="form"><p><b>Этот курс уже открыт в вашем личном кабинете.</b></p></div>';showPage('signup');return}
+  if(st==='partial'){chosenForm.innerHTML='<div class="form"><p><b>Часть курса уже открыта в вашем личном кабинете.</b></p><p>Можно докупить блоки, отдельные темы или весь курс — уже оплаченное засчитывается.</p><button class="btn primary" onclick="goPayment()">Докупить</button></div>';showPage('signup');return}
 chosenForm.innerHTML=`<div class="form"><label>Имя родителя</label><input id="signupParent" placeholder="Как к вам обращаться"><label>Контакт для связи</label><input id="signupContact" placeholder="Телефон или Telegram"><label>Комментарий</label><textarea id="signupComment" rows="3" maxlength="2000" placeholder="Возраст ребёнка, интересы, удобное время"></textarea><input id="signupWebsite" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px"><label class="consent"><input type="checkbox" id="signupConsent"><span>Я даю <a href="/dokumenty/soglasie-na-obrabotku/" target="_blank">согласие на обработку персональных данных</a> и принимаю <a href="/dokumenty/politika-konfidencialnosti/" target="_blank">политику обработки персональных данных</a></span></label><p class="note" id="signupMsg"></p><div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px"><button class="btn" onclick="submitRequest()">Оставить заявку на консультацию</button><button class="btn primary" onclick="goPayment()">Оплатить и начать</button></div></div>`;showPage('signup')}
 async function submitRequest(){const contact=signupContact.value.trim();signupMsg.textContent='';
   if(contact.length<3){signupMsg.textContent='Укажите телефон или Telegram, чтобы мы могли с вами связаться.';signupContact.focus();return}
@@ -628,22 +659,69 @@ async function submitRequest(){const contact=signupContact.value.trim();signupMs
   if(error){console.error(error);signupMsg.textContent='Не удалось отправить заявку. Попробуйте ещё раз или напишите нам.';return}
   signupMsg.textContent='';done()}
 let buyer={};
-async function hasCourse(slug){const{data:{session}}=await sb.auth.getSession();if(!session)return false;
-  const{data}=await sb.from('enrollments').select('id,courses!inner(slug)').eq('user_id',session.user.id).eq('courses.slug',slug).limit(1);
-  return !!(data&&data.length)}
+// Курс у пользователя: 'full' — весь, 'partial' — часть тем, null — не куплен
+async function courseState(slug){const{data:{session}}=await sb.auth.getSession();if(!session)return null;
+  const{data}=await sb.from('enrollments').select('scope,courses!inner(slug)').eq('user_id',session.user.id).eq('courses.slug',slug).in('status',['active','finished']).limit(1);
+  return data&&data[0]?data[0].scope:null}
 function escapeHtml(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c])}
 async function goPayment(){if(window.signupParent)buyer={parent_name:signupParent.value.trim(),contact:signupContact.value.trim()};
-  paymentTitle.textContent='Онлайн-курс — '+courses[selectedCourse][1];paymentText.textContent='Стоимость: 20 000 ₽ за весь курс.';paymentForm.style.display='block';paymentSuccess.style.display='none';payMsg.textContent='';
+  paymentTitle.textContent='Онлайн-курс — '+courses[selectedCourse][1];paymentText.textContent='Выберите, как удобнее начать:';paymentForm.style.display='block';paymentSuccess.style.display='none';payMsg.textContent='';
   const{data:{session}}=await sb.auth.getSession();
   accountFields.innerHTML=session
     ?`<p class="note" style="margin-bottom:14px">Курс откроется в вашем аккаунте: <b>${escapeHtml(session.user.email)}</b></p>`
     :`<label>Email — будет логином для входа</label><input id="payEmail" type="email" autocomplete="email"><label>Придумайте пароль для личного кабинета</label><input id="payPassword" type="password" autocomplete="new-password" minlength="8"><label>Повторите пароль</label><input id="payPassword2" type="password" autocomplete="new-password"><p class="note" style="margin-bottom:14px">Не короче 8 символов. Пароль знаете только вы — в письме мы его не присылаем.</p>`;
-  showPage('payment')}
+  showPage('payment');planBox.innerHTML='<p class="note">Загружаем варианты оплаты…</p>';await loadPayCourse();renderPlans()}
+// ---------- Варианты оплаты: пробное занятие, блоки и темы, весь курс ----------
+// Сумма здесь — только для показа; к оплате её считает сервер (функция quote_order).
+let payCourse=null;
+const plural=(n,a,b,c)=>{const x=n%10,y=n%100;return x===1&&y!==11?a:x>=2&&x<=4&&(y<10||y>=20)?b:c};
+async function loadPayCourse(){const slug=courseSlug[selectedCourse];const{data:{session}}=await sb.auth.getSession();
+  const{data:c}=await sb.from('courses').select('id,title,price,price_trial,price_trial_base,price_block,price_lesson,modules(id,sort,title,lessons(id,sort,title))').eq('slug',slug).single();
+  const mods=((c&&c.modules)||[]).sort((a,b)=>a.sort-b.sort);mods.forEach(m=>m.lessons.sort((a,b)=>a.sort-b.sort));
+  let owned=new Set(),paid=0,scope=null;
+  if(session&&c){const uid=session.user.id;const[{data:e},{data:a},{data:o}]=await Promise.all([
+      sb.from('enrollments').select('scope').eq('user_id',uid).eq('course_id',c.id).maybeSingle(),
+      sb.from('lesson_access').select('lesson_id').eq('user_id',uid),
+      sb.from('orders').select('amount').eq('user_id',uid).eq('course_id',c.id).eq('status','paid')]);
+    scope=e?e.scope:null;(a||[]).forEach(x=>owned.add(x.lesson_id));paid=(o||[]).reduce((n,x)=>n+x.amount,0)}
+  payCourse={c,mods,owned,paid,scope,trialOk:!scope&&!paid}}
+function renderPlans(){const p=payCourse;if(!p||!p.c){planBox.innerHTML='<p class="note">Не удалось загрузить варианты оплаты. Обновите страницу.</p>';return}
+  const c=p.c,total=p.mods.reduce((n,m)=>n+m.lessons.length,0),first=p.mods[0]&&p.mods[0].lessons[0],full=Math.max(c.price-p.paid,0);
+  const plan=(v,title,price,text,dis)=>'<label class="plan'+(dis?' plan-off':'')+'"><input type="radio" name="plan" value="'+v+'"'+(dis?' disabled':'')+'><span class="plan-body"><b>'+title+'</b><span class="plan-price">'+price+'</span><small>'+text+'</small></span></label>';
+  planBox.innerHTML='<div class="plans" role="radiogroup" aria-label="Вариант оплаты">'+
+    (first?plan('trial','Пробное занятие','<s>'+RUB(c.price_trial_base)+'</s> '+RUB(c.price_trial),p.trialOk?'Первая тема «'+escapeHtml(first.title)+'» и встреча с преподавателем. Скидка 50%.':'Доступно только при первой покупке курса.',!p.trialOk):'')+
+    plan('custom','Блоки и темы','блок — '+RUB(c.price_block)+' · тема — '+RUB(c.price_lesson),'Выберите модули курса целиком или отдельные темы. Одна тема — занятие на час.')+
+    plan('full','Весь курс',(p.paid?'<s>'+RUB(c.price)+'</s> ':'')+RUB(full),'Все '+total+' '+plural(total,'тема','темы','тем')+' курса'+(p.paid?' — с учётом уже оплаченных '+RUB(p.paid):'')+'. Встречи с преподавателем на ключевых этапах.')+'</div>'+
+    '<div id="planPicker" class="plan-picker" hidden>'+p.mods.map(m=>{const ownedAny=m.lessons.some(l=>p.owned.has(l.id));
+      return '<div class="pick-mod"><label class="pick-head"><input type="checkbox" data-mod="'+m.id+'"'+(ownedAny?' disabled':'')+'><span><b>'+escapeHtml(m.title)+'</b><small>'+(ownedAny?'часть тем уже куплена — докупите оставшиеся по отдельности':'весь блок — '+RUB(c.price_block)+' · '+m.lessons.length+' '+plural(m.lessons.length,'тема','темы','тем'))+'</small></span></label>'+
+        '<div class="pick-lessons">'+m.lessons.map(l=>p.owned.has(l.id)
+          ?'<label class="owned"><input type="checkbox" checked disabled><span>'+escapeHtml(l.title)+'</span><em>куплено</em></label>'
+          :'<label><input type="checkbox" data-les="'+l.id+'" data-mod-of="'+m.id+'"><span>'+escapeHtml(l.title)+'</span><em>'+RUB(c.price_lesson)+'</em></label>').join('')+'</div></div>'}).join('')+'</div>'+
+    '<p class="plan-total">К оплате: <b id="planTotal">—</b></p><p class="note" id="planHint"></p>';
+  planBox.querySelectorAll('input').forEach(i=>i.addEventListener('change',updatePlan));
+  const def=planBox.querySelector('input[name=plan][value='+(p.trialOk&&first?'trial':'full')+']');if(def)def.checked=true;
+  updatePlan()}
+function planSelection(){const p=payCourse,c=p.c,el=planBox.querySelector('input[name=plan]:checked');if(!el)return null;const kind=el.value;
+  if(kind==='custom'){const mods=[...planBox.querySelectorAll('[data-mod]:checked')].map(i=>+i.dataset.mod);
+    const les=[...planBox.querySelectorAll('[data-les]:checked')].filter(i=>!mods.includes(+i.dataset.modOf)).map(i=>+i.dataset.les);
+    return{kind,module_ids:mods,lesson_ids:les,amount:mods.length*c.price_block+les.length*c.price_lesson}}
+  return{kind,module_ids:[],lesson_ids:[],amount:kind==='trial'?c.price_trial:Math.max(c.price-p.paid,0)}}
+function updatePlan(e){
+  // блок целиком включает все свои темы
+  if(e&&e.target.dataset.mod){const id=e.target.dataset.mod;planBox.querySelectorAll('[data-mod-of="'+id+'"]').forEach(i=>{i.checked=e.target.checked;i.disabled=e.target.checked})}
+  const sel=planSelection();planBox.querySelectorAll('.plan').forEach(l=>l.classList.toggle('plan-on',l.querySelector('input').checked));
+  planPicker.hidden=!sel||sel.kind!=='custom';
+  planTotal.textContent=sel&&sel.amount?RUB(sel.amount):'—';
+  const full=Math.max(payCourse.c.price-payCourse.paid,0);
+  planHint.textContent=sel&&sel.kind==='custom'?(!sel.amount?'Отметьте блоки или отдельные темы.':sel.amount>=full?'Выгоднее купить весь курс — '+RUB(full)+'.':''):'';
+  payBtn.textContent=sel&&sel.amount?'Оплатить '+RUB(sel.amount)+' (демо)':'Оплатить (демо)'}
 async function completePayment(){
   const btn=document.querySelector('#paymentForm .btn.primary');payMsg.textContent='';
   const{data:{session}}=await sb.auth.getSession();
   if(!payConsent.checked){payMsg.textContent='Чтобы продолжить, примите условия оферты и дайте согласие на обработку персональных данных.';return}
-  const body={course_slug:courseSlug[selectedCourse],...buyer,offer_accepted:true};
+  const sel=payCourse&&planSelection();if(!sel)return payMsg.textContent='Выберите вариант оплаты.';
+  if(sel.kind==='custom'&&!sel.module_ids.length&&!sel.lesson_ids.length)return payMsg.textContent='Отметьте блоки или отдельные темы.';
+  const body={course_slug:courseSlug[selectedCourse],...buyer,offer_accepted:true,kind:sel.kind,module_ids:sel.module_ids,lesson_ids:sel.lesson_ids};
   if(!session){const email=payEmail.value.trim(),password=payPassword.value;
     if(!email)return payMsg.textContent='Укажите email.';
     if(password.length<8)return payMsg.textContent='Пароль должен быть не короче 8 символов.';
@@ -682,18 +760,21 @@ async function saveMyProfile(){const{data:{session}}=await sb.auth.getSession();
 // Этапы полосы внизу кабинета: номера модулей (modules.sort), входящих в каждый этап.
 // Для курсов без настройки модули делятся на 4 этапа поровну.
 const COURSE_STAGES={wheel:[[0],[1,2,3],[4,5],[6]]};
-let dash={modules:[],lessons:[],progress:{},materials:[],calls:{},unread:{},userId:null,slug:null,current:null};
+let dash={modules:[],lessons:[],progress:{},materials:[],calls:{},unread:{},scope:'full',access:new Set(),userId:null,slug:null,current:null};
 let badgeChannel=null;
 let openToken=0;
 async function openCourseDashboard(i){const session=await requireLogin();if(!session)return;
   selectedCourse=i;const slug=courseSlug[i];const uid=session.user.id;
-  dash={modules:[],lessons:[],progress:{},materials:[],calls:{},unread:{},userId:uid,slug,current:null};
+  dash={modules:[],lessons:[],progress:{},materials:[],calls:{},unread:{},scope:'full',access:new Set(),userId:uid,slug,current:null};
   dashCourse.textContent=courses[i][1];dashIntro.textContent='Слева — программа по темам, материалы и исследования. Материалы открываются вместе с темой.';
   sideAccordion.innerHTML='<p class="note">Загружаем программу…</p>';lessonArea.innerHTML='';showPage('dashboard');
-  const[{data:course,error},{data:prog},{data:calls}]=await Promise.all([
+  const[{data:course,error},{data:prog},{data:calls},{data:enr},{data:acc}]=await Promise.all([
     sb.from('courses').select('modules(id,sort,title,lessons(id,sort,title,research_task))').eq('slug',slug).single(),
     sb.from('lesson_progress').select('lesson_id,status,teacher_comment').eq('user_id',uid),
-    sb.from('lesson_calls').select('lesson_id,url,starts_at,note,duration_min,ended_at').eq('user_id',uid)]);
+    sb.from('lesson_calls').select('lesson_id,url,starts_at,note,duration_min,ended_at').eq('user_id',uid),
+    sb.from('enrollments').select('scope,courses!inner(slug)').eq('user_id',uid).eq('courses.slug',slug).limit(1),
+    sb.from('lesson_access').select('lesson_id').eq('user_id',uid)]);
+  dash.scope=enr&&enr[0]?enr[0].scope:'full';(acc||[]).forEach(a=>dash.access.add(a.lesson_id));
   if(error||!course){sideAccordion.innerHTML='<p class="note">Не удалось загрузить программу. Обновите страницу.</p>';return}
   dash.modules=(course.modules||[]).sort((a,b)=>a.sort-b.sort);
   dash.modules.forEach(m=>{m.lessons.sort((a,b)=>a.sort-b.sort);m.lessons.forEach(l=>{l.module=m;dash.lessons.push(l)})});
@@ -709,13 +790,15 @@ async function openCourseDashboard(i){const session=await requireLogin();if(!ses
   const{data:mats}=await sb.from('materials').select('id,lesson_id,user_id,title,kind,url,sort').in('lesson_id',dash.lessons.map(l=>l.id));
   dash.materials=(mats||[]).filter(m=>!m.user_id||m.user_id===uid).sort((a,b)=>a.sort-b.sort||a.id-b.id);
   buildAccordion();
-  const next=dash.lessons.find(l=>isUnlocked(l)&&lessonStatus(l)!=='approved')||dash.lessons[0];
+  const next=dash.lessons.find(l=>isUnlocked(l)&&lessonStatus(l)!=='approved')||dash.lessons.find(isOwned)||dash.lessons[0];
   if(next)openLesson(next.id)}
 function lessonStatus(l){const p=dash.progress[l.id];return p?p.status:null}
 // Тема открыта, когда подтверждены все предыдущие темы курса (то же правило проверяет база)
-function isUnlocked(l){const idx=dash.lessons.indexOf(l);return dash.lessons.slice(0,idx).every(p=>lessonStatus(p)==='approved')}
+// тема куплена (весь курс или отдельно)
+function isOwned(l){return dash.scope==='full'||dash.access.has(l.id)}
+function isUnlocked(l){if(!isOwned(l))return false;const idx=dash.lessons.indexOf(l);return dash.lessons.slice(0,idx).filter(isOwned).every(p=>lessonStatus(p)==='approved')}
 const STATUS_MARK={approved:' ✓',submitted:' ⏳'};
-function itemText(l){const n=dash.unread[l.id];return l.title+(!isUnlocked(l)?' 🔒':(STATUS_MARK[lessonStatus(l)]||''))+(n?' 💬'+n:'')}
+function itemText(l){const n=dash.unread[l.id];return l.title+(!isOwned(l)?' 🛒':!isUnlocked(l)?' 🔒':(STATUS_MARK[lessonStatus(l)]||''))+(n?' 💬'+n:'')}
 function updateBadge(id){const l=dash.lessons.find(x=>x.id===id),it=document.querySelector(`.side-item[data-id="${id}"]`);if(l&&it)it.textContent=itemText(l)}
 function buildAccordion(){sideAccordion.innerHTML='';
   dash.modules.forEach(m=>{const grp=document.createElement('div');grp.className='side-group';
@@ -728,7 +811,7 @@ function buildAccordion(){sideAccordion.innerHTML='';
     grp.appendChild(head);grp.appendChild(items);sideAccordion.appendChild(grp)});
   updateProgress()}
 function splitStages(sorts){const out=[[],[],[],[]];sorts.forEach((s,i)=>out[Math.min(3,Math.floor(i*4/sorts.length))].push(s));return out}
-function updateProgress(){const total=dash.lessons.length,done=dash.lessons.filter(l=>lessonStatus(l)==='approved').length;
+function updateProgress(){const mine=dash.lessons.filter(isOwned),total=mine.length,done=mine.filter(l=>lessonStatus(l)==='approved').length;
   const pct=total?Math.round(done*100/total):0;dashProgressBar.style.width=pct+'%';dashProgressText.textContent=pct+'% пройдено';
   const stages=COURSE_STAGES[dash.slug]||splitStages(dash.modules.map(m=>m.sort));
   const steps=document.querySelectorAll('#dashTimeline .step');let activeSet=false;
@@ -776,6 +859,7 @@ async function openLesson(id){flushSave();closeChat();const l=dash.lessons.find(
   document.querySelectorAll('.side-item,.side-pin').forEach(x=>x.classList.toggle('active',x.dataset.id===String(id)));
   const item=document.querySelector(`.side-item[data-id="${id}"]`);if(item)item.closest('.side-group').classList.add('open');
   const title=escapeHtml(l.title),task=l.research_task?escapeHtml(l.research_task):'';
+  if(!isOwned(l)){lessonArea.innerHTML=`<h2>${title}</h2><p>Эта тема не входит в оплаченные. Можно докупить её отдельно, целым блоком или весь курс — уже оплаченное засчитывается.</p><button class="btn primary" onclick="goPayment()">Докупить темы или весь курс</button>`;return}
   if(!isUnlocked(l)){lessonArea.innerHTML=`<h2>${title}</h2><p class="note">Тема откроется, когда преподаватель подтвердит предыдущие темы.</p>`+(task?`<div class="research-card"><h4>🔬 Исследование по теме</h4><p class="research-q">${task}</p></div>`:'');return}
   lessonArea.innerHTML=`<h2>${title}</h2><p class="note">Загружаем тему…</p>`;
   const{data:answer}=task?await sb.from('research_answers').select('hypothesis,method,result,conclusion').eq('user_id',dash.userId).eq('lesson_id',id).maybeSingle():{data:null};

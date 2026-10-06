@@ -219,28 +219,36 @@ async function enroll(uid){const courseId=+enrollSel.value;const{error}=await sb
 
 // ---------- Темы курса: статусы, ответы, подтверждение ----------
 async function loadCourse(s,courseId){closeAdminChat();const box=document.getElementById('courseBox');box.innerHTML='<p class="muted">Загрузка тем…</p>';
-  const[{data:course},{data:prog},{data:answers},{data:threads},{data:calls},{data:personal}]=await Promise.all([
+  const[{data:course},{data:prog},{data:answers},{data:threads},{data:calls},{data:personal},{data:enr},{data:acc}]=await Promise.all([
     sb.from('courses').select('title,modules(id,sort,title,lessons(id,sort,title,research_task))').eq('id',courseId).single(),
     sb.from('lesson_progress').select('lesson_id,status,submitted_at,approved_at,teacher_comment').eq('user_id',s.id),
     sb.from('research_answers').select('lesson_id,hypothesis,method,result,conclusion,updated_at').eq('user_id',s.id),
     sb.rpc('admin_threads',{p_student_id:s.id}),
     sb.from('lesson_calls').select('lesson_id,url,starts_at,note,duration_min,ended_at').eq('user_id',s.id),
-    sb.from('materials').select('id,lesson_id,title,kind,url,storage_path,created_at').eq('user_id',s.id).order('id')]);
+    sb.from('materials').select('id,lesson_id,title,kind,url,storage_path,created_at').eq('user_id',s.id).order('id'),
+    sb.from('enrollments').select('scope').eq('user_id',s.id).eq('course_id',courseId).maybeSingle(),
+    sb.from('lesson_access').select('lesson_id').eq('user_id',s.id)]);
   const modules=(course?.modules||[]).sort((a,b)=>a.sort-b.sort);const lessons=[];
   modules.forEach(m=>{m.lessons.sort((a,b)=>a.sort-b.sort);m.lessons.forEach(l=>lessons.push(l))});
   const progress={};(prog||[]).forEach(p=>progress[p.lesson_id]=p);
   const ans={};(answers||[]).forEach(a=>ans[a.lesson_id]=a);
   const unread={},hasThread={};(threads||[]).forEach(t=>{unread[t.lesson_id]=t.unread;hasThread[t.lesson_id]=true});
   const callMap={};(calls||[]).forEach(c=>callMap[c.lesson_id]=c);matCache={};(personal||[]).forEach(m=>matCache[m.id]=m);
-  card={student:s,courseId,lessons,progress,answers:ans,unread,hasThread,calls:callMap,personal:personal||[]};
+  card={student:s,courseId,lessons,progress,answers:ans,unread,hasThread,calls:callMap,personal:personal||[],scope:(enr&&enr.scope)||'full',access:new Set((acc||[]).map(x=>x.lesson_id))};
   const approved=lessons.filter(l=>progress[l.id]?.status==='approved').length;
+  const ownedN=lessons.filter(isOwned).length;
   box.innerHTML=`<h2>${esc(course?.title)} — темы <span class="muted small">(подтверждено ${approved} из ${lessons.length})</span></h2>
+    <p class="row"><span class="badge ${card.scope==='full'?'b-ok':'b-warn'}">доступ: ${card.scope==='full'?'весь курс':'куплено '+ownedN+' из '+lessons.length+' тем'}</span>${card.scope==='full'?'':`<button onclick="openFullCourse()">Открыть весь курс</button><span class="small muted">например, если ученик доплатил не через сайт</span>`}</p>
     <div class="card">${modules.map(m=>`<div class="module">${esc(m.title)}</div>${m.lessons.map(lessonRow).join('')}`).join('')}</div>`}
-function isUnlocked(l){const i=card.lessons.indexOf(l);return card.lessons.slice(0,i).every(p=>card.progress[p.id]?.status==='approved')}
+// тема куплена учеником (весь курс или отдельно); открыта — куплена и подтверждены все предыдущие купленные
+function isOwned(l){return card.scope==='full'||card.access.has(l.id)}
+function isUnlocked(l){if(!isOwned(l))return false;const i=card.lessons.indexOf(l);return card.lessons.slice(0,i).filter(isOwned).every(p=>card.progress[p.id]?.status==='approved')}
+async function openFullCourse(){const{error}=await sb.from('enrollments').update({scope:'full'}).eq('user_id',card.student.id).eq('course_id',card.courseId);
+  if(error)return toast('Ошибка: '+error.message);toast('Весь курс открыт');loadCourse(card.student,card.courseId)}
 function lessonRow(l){const p=card.progress[l.id],st=p?.status,a=card.answers[l.id],open=isUnlocked(l);
   const badge=st==='approved'?`<span class="badge b-ok">✓ подтверждена ${fmtDate(p.approved_at)}</span>`
     :st==='submitted'?`<span class="badge b-warn">⏳ на проверке с ${fmtDate(p.submitted_at)}</span>`
-    :open?'<span class="badge b-acc">открыта, изучает</span>':'<span class="badge b-mute">🔒 закрыта</span>';
+    :open?'<span class="badge b-acc">открыта, изучает</span>':!isOwned(l)?'<span class="badge b-mute">🛒 не куплено</span>':'<span class="badge b-mute">🔒 закрыта</span>';
   const hasAns=a&&(a.hypothesis||a.method||a.result||a.conclusion);
   const answersHtml=l.research_task?`<div class="answers"><div class="muted small">🔬 ${esc(l.research_task)}</div>${hasAns?
     [['Гипотеза','hypothesis'],['Как измеряем','method'],['Результат','result'],['Вывод','conclusion']].map(([t,k])=>`<div><b>${t}:</b> ${esc(a[k])||'<span class="muted">—</span>'}</div>`).join('')+`<div class="small muted">изменено ${fmtDate(a.updated_at)}</div>`
