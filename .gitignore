@@ -11,3 +11,6 @@ node_modules/
 .vercel
 .env*
 !.env.example
+
+# Исходники фотографий (на сайт идут сжатые копии из assets/)
+images/

@@ -112,7 +112,9 @@ ${u ? `<link rel="canonical" href="${u}">\n<meta property="og:url" content="${u}
 <meta property="og:locale" content="ru_RU">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
-${SITE_URL ? `<meta property="og:image" content="${SITE_URL}/assets/founder.jpg">\n` : ''}<meta name="twitter:card" content="summary">
+${SITE_URL ? `<meta property="og:image" content="${SITE_URL}/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">\n` : ''}<meta name="twitter:card" content="summary">
 ${(jsonld || []).map((j) => `<script type="application/ld+json">${JSON.stringify(j).replace(/</g, '\\u003c')}</script>`).join('\n')}
 <!--/seo-->`;
 }
