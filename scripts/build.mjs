@@ -13,9 +13,10 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 require('../course-page.js'); // шаблоны кладут функции в globalThis (общие файлы для браузера и сборки)
 require('../home-blocks.js');
-const { coursePageHtml, coursePageStats, HomeBlocks } = globalThis;
+require('../memo.js');
+const { coursePageHtml, coursePageStats, HomeBlocks, Memo } = globalThis;
 
-const FILES = ['admin.html', 'chat.js', 'course-page.js', 'home-blocks.js', 'favicon.svg'];
+const FILES = ['admin.html', 'chat.js', 'course-page.js', 'home-blocks.js', 'memo.js', 'favicon.svg'];
 
 // Данные самозанятого (site-info.json) — для документов и подвала. Пустое поле → заметная пометка.
 const INFO = JSON.parse(readFileSync('site-info.json', 'utf8'));
@@ -174,10 +175,11 @@ async function main() {
   if (existsSync('assets')) cpSync('assets', `${OUT}/assets`, { recursive: true });
   writeFileSync(`${OUT}/config.js`, `window.APP_CONFIG=${JSON.stringify({ supabaseUrl: url, supabaseKey: key })};\n`);
 
-  const [courses, videos, reviews] = await Promise.all([
+  const [courses, videos, reviews, memoVideoList] = await Promise.all([
     loadCourses(),
     loadPublic('site_videos?select=title,description,url,thumbnail_url,created_at&published=eq.true&order=sort,id'),
     loadPublic('reviews?select=author_name,author_role,text,courses(title)&status=eq.approved&order=approved_at.desc&limit=12'),
+    loadPublic('memo_videos?select=slug,url'),
   ]);
   let template = fillInfo(readFileSync('index.html', 'utf8')); // реквизиты в подвале
   if (courses.length) template = template.replace('<div class="courses" id="courseGrid"></div>', `<div class="courses" id="courseGrid">${catalogGrid(courses)}</div>`);
@@ -257,13 +259,15 @@ async function main() {
   const todo = Object.keys(INFO_LABELS).filter((k) => !INFO[k]);
   if (todo.length) console.warn('⚠ В site-info.json не заполнено:', todo.map((k) => INFO_LABELS[k]).join(', '));
 
+  const memoPaths = buildMemo(Object.fromEntries(memoVideoList.map((v) => [v.slug, v.url])));
+
   // robots.txt и sitemap.xml
   writeFileSync(`${OUT}/robots.txt`, NOINDEX
     ? 'User-agent: *\nDisallow: /\n'
     : `User-agent: *\nAllow: /\nDisallow: /admin.html\n${SITE_URL ? `\nSitemap: ${SITE_URL}/sitemap.xml\n` : ''}`);
   if (SITE_URL && !NOINDEX) {
     const today = new Date().toISOString().slice(0, 10);
-    const urls = [['/', '1.0', 'weekly'], ['/programmy/', '0.9', 'weekly'], ['/kak-prohodyat-zanyatiya/', '0.7', 'monthly'], ['/kontakty/', '0.5', 'monthly'],
+    const urls = [['/', '1.0', 'weekly'], ['/programmy/', '0.9', 'weekly'], ['/kak-prohodyat-zanyatiya/', '0.7', 'monthly'], ['/kontakty/', '0.5', 'monthly'], ...memoPaths,
       ...courses.filter((c) => coursePageStats(c).lessons).map((c) => [`/kursy/${c.slug}/`, c.status === 'available' ? '0.8' : '0.5', 'weekly'])];
     writeFileSync(`${OUT}/sitemap.xml`, `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([p, pr, cf]) => `  <url><loc>${SITE_URL}${p}</loc><lastmod>${today}</lastmod><changefreq>${cf}</changefreq><priority>${pr}</priority></url>`).join('\n')}\n</urlset>\n`);
   }
@@ -271,6 +275,100 @@ async function main() {
   if (NOINDEX) console.log('Режим NOINDEX: сайт закрыт от поисковиков (тестовая копия).');
   console.log(`Готово: ${OUT}/ — главная, программы, «как проходят занятия», курсов: ${courses.length}` +
     `${SITE_URL ? `, sitemap.xml (${SITE_URL})` : ' (SITE_URL не задан — sitemap.xml и канонические адреса появятся после его указания)'}`);
+}
+
+// ---------- Игра «Мемо»: /igra/, истории карточек /igra/<slug>/, форма идеи /igra/ideya/ ----------
+function buildMemo(memoVideos) {
+  if (!existsSync('content/memo.json')) return [];
+  const cards = JSON.parse(readFileSync('content/memo.json', 'utf8'));
+  const tpl = readFileSync('memo.html', 'utf8');
+  const scripts = (extra = '') => `<script src="/config.js"></script>\n<script src="/home-blocks.js"></script>\n${extra}<script src="/memo.js"></script>`;
+  const page = (head, main, extra) => tpl.replace(/<!--seo-->[\s\S]*?<!--\/seo-->/, head).replace('<!--memo-main-->', main).replace('<!--memo-scripts-->', scripts(extra));
+  const crumbs = (items) => `<nav class="crumbs" aria-label="Навигация">${items.map(([t, p]) => (p ? `<a href="${p}">${esc(t)}</a>` : `<span>${esc(t)}</span>`)).join(' › ')}</nav>`;
+  // мягкие переносы в длинных словах (по слогам): «Самовосстанавливающиеся» не вылезает из узкой подписи
+  const shy = (t) => esc(t).replace(/[А-Яа-яЁё]{12,}/g, (w) => w.replace(/([аеёиоуыэюя])(?=[бвгджзйклмнпрстфхцчшщ][аеёиоуыэюя])/gi, '$1&shy;'));
+  const grid = `<ul class="memo-grid">${cards.map((c) => `<li><a href="/igra/${c.slug}/" data-memo-card="${c.slug}"><img src="${Memo.img(c.slug, true)}" alt="Карточка «${esc(c.title)}»" width="240" height="360" loading="lazy">${shy(c.title)}</a></li>`).join('')}</ul>`;
+
+  // данные для игры: тексты карточек + ссылки на видео на момент сборки
+  mkdirSync(`${OUT}/igra`, { recursive: true });
+  writeFileSync(`${OUT}/igra/memo-data.js`, `window.MEMO_CARDS=${JSON.stringify(cards)};\nwindow.MEMO_VIDEOS=${JSON.stringify(memoVideos)};\n`);
+
+  // Игра
+  write('/igra/', page(seoHead({
+    title: 'Мемо «Инженерия» — онлайн-игра на пары для детей — Инженерный клуб',
+    description: 'Найди пары карточек и узнай 25 историй великих изобретений и изобретателей: от колеса до квантовых технологий. Бесплатная игра на память с видео и опытами для детей 9–14 лет.',
+    path: '/igra/',
+    jsonld: [breadcrumbs([['Главная', '/'], ['Игра «Мемо»', '/igra/']]), {
+      '@context': 'https://schema.org', '@type': 'ItemList', name: 'Истории карточек мемо «Инженерия»',
+      itemListElement: cards.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.title, ...(abs(`/igra/${c.slug}/`) ? { url: abs(`/igra/${c.slug}/`) } : {}) })),
+    }],
+  }), `<main>${crumbs([['Главная', '/'], ['Игра «Мемо»']])}
+<p class="eyebrow">Играй и узнавай</p>
+<h1>Мемо «Инженерия»</h1>
+<p class="lead">Переворачивай карточки и ищи пары. Нашёл пару — открывается история изобретения или изобретателя: коротко, интересно, с опытом, который можно повторить дома, и видео. Но будь внимателен: после трёх промахов подряд карточки перемешиваются заново.</p>
+<div class="memo-bar"><div class="memo-levels" role="group" aria-label="Сложность"><button type="button" data-level="easy">6 пар</button><button type="button" data-level="mid">10 пар</button><button type="button" data-level="hard">15 пар</button></div>
+<div class="memo-score" aria-live="polite"><span>Ходов: <b id="memoMoves">0</b></span><span>Пар: <b id="memoPairs">0</b> из <b id="memoTotal">6</b></span><span class="memo-miss" title="3 промаха подряд — карточки перемешаются">Промахи: <span id="memoMiss"></span></span></div>
+<button type="button" class="btn" data-memo-again>Перемешать</button></div>
+<p class="memo-note" id="memoNote" role="status"></p>
+<div class="memo-board" id="memoBoard"><noscript>Для игры включите JavaScript. Истории карточек можно прочитать ниже.</noscript></div>
+<div class="memo-win" id="memoWin" hidden><h2>Все пары найдены! 🎉</h2><p>Ходов: <b data-moves></b>. Сыграем ещё раз — попадутся новые карточки.</p><button type="button" class="btn primary" data-memo-again>Играть ещё</button></div>
+<h2>Твоя коллекция: <span id="memoCount">0</span> из ${cards.length}</h2>
+<p>Каждая найденная пара попадает в коллекцию (✓). Все истории можно читать и без игры — просто нажми на карточку.</p>
+${grid}
+<h2>Придумал свою карточку?</h2>
+<p>Предложи идею для следующего набора. Если идея нам понравится — пришлём подарок, а карточка может попасть в новую игру.</p>
+<p><a class="btn primary" href="/igra/ideya/">Предложить свою идею</a></p>
+</main>
+<dialog class="memo-story" id="memoStory" aria-labelledby="memoStoryTitle"><div class="story-scroll"><form method="dialog"><button class="story-close" aria-label="Закрыть">✕</button></form><div class="story-body"></div><form method="dialog" class="story-cta"><button class="btn primary">Играть дальше</button></form></div></dialog>`,
+  '<script src="/igra/memo-data.js"></script>\n'));
+
+  // Истории карточек
+  for (const [i, c] of cards.entries()) {
+    const path = `/igra/${c.slug}/`;
+    const short = (c.sections.find((s) => s.key === 'short') || {}).text || c.hook;
+    const prev = cards[(i + cards.length - 1) % cards.length], next = cards[(i + 1) % cards.length];
+    write(path, page(seoHead({
+      title: `${c.title}${c.years ? ` (${c.years})` : ''} — история для детей | Мемо «Инженерия»`,
+      description: cut(`${c.hook} ${short}`, 200), path,
+      jsonld: [breadcrumbs([['Главная', '/'], ['Игра «Мемо»', '/igra/'], [c.title, path]]), {
+        '@context': 'https://schema.org', '@type': 'Article', headline: c.title, description: cut(short, 200), inLanguage: 'ru',
+        audience: { '@type': 'EducationalAudience', educationalRole: 'student', audienceType: 'Дети 9–14 лет' },
+        timeRequired: `PT${Memo.readMinutes(c)}M`, publisher: { '@type': 'Organization', name: SITE_NAME },
+        ...(SITE_URL ? { image: `${SITE_URL}${Memo.img(c.slug)}`, mainEntityOfPage: abs(path) } : {}),
+      }],
+    }), `<main class="story" data-memo-page="${c.slug}">${crumbs([['Главная', '/'], ['Игра «Мемо»', '/igra/'], [c.title]])}
+<div class="story-top"><img src="${Memo.img(c.slug)}" alt="Карточка мемо «${esc(c.title)}»" width="640" height="960"><div><p class="eyebrow">Карточка ${c.n} из ${cards.length}</p><h1>${esc(c.title)}</h1>${Memo.storyHtml(c, cards, { video: memoVideos[c.slug] })}</div></div>
+${c.slug === 'tvoya-ideya' ? '<p class="story-cta"><a class="btn primary" href="/igra/ideya/">Предложить свою идею</a></p>' : ''}
+<nav class="story-nav" aria-label="Другие карточки"><a class="btn" href="/igra/${prev.slug}/">← ${esc(prev.title)}</a><a class="btn primary" href="/igra/">Играть в мемо</a><a class="btn" href="/igra/${next.slug}/">${esc(next.title)} →</a></nav>
+</main>`));
+  }
+
+  // Форма идеи (QR на коробке). Закрыта от индексации — служебная страница.
+  write('/igra/ideya/', page(seoHead({
+    title: 'Предложи идею для новой карточки мемо — Инженерный клуб',
+    description: 'Придумай изобретение или героя для следующего набора мемо «Инженерия». Лучшие идеи получат подарки и призы.',
+    path: '/igra/ideya/', hide: true,
+    jsonld: [breadcrumbs([['Главная', '/'], ['Игра «Мемо»', '/igra/'], ['Предложить идею', '/igra/ideya/']])],
+  }), `<main class="idea">${crumbs([['Главная', '/'], ['Игра «Мемо»', '/igra/'], ['Предложить идею']])}
+<p class="eyebrow">Твоя карточка может стать следующей</p>
+<h1>Предложи свою идею</h1>
+<p class="lead">Какое изобретение, учёного или технологию будущего ты бы добавил в мемо «Инженерия»? Расскажи — мы читаем каждую идею.</p>
+<ul class="idea-gifts"><li><b>💡</b>Придумай карточку: что это и почему это важно</li><li><b>📬</b>Мы прочитаем и свяжемся со взрослым</li><li><b>🎁</b>Если идея понравится — подарки и призы</li></ul>
+<form class="idea-form" id="ideaForm">
+<div class="idea-row"><label>Как тебя зовут<input name="child_name" required maxlength="60" autocomplete="given-name"></label><label>Сколько лет<input name="age" type="number" min="4" max="18" inputmode="numeric"></label></div>
+<label>Название карточки <small>— изобретение, человек или технология</small><input name="idea_title" required minlength="2" maxlength="120" placeholder="Например: лифт"></label>
+<label>Расскажи об идее <small>— что это, как работает, чем удивляет</small><textarea name="idea_text" required minlength="10" maxlength="3000"></textarea></label>
+<label>Телефон или почта взрослого <small>— чтобы сообщить о подарке</small><input name="contact" required minlength="3" maxlength="200"></label>
+<input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+<label class="idea-consent"><input type="checkbox" required> <span>Я родитель (законный представитель) и даю <a href="/dokumenty/soglasie-na-obrabotku/" target="_blank">согласие на обработку персональных данных</a> — своих и ребёнка — по <a href="/dokumenty/politika-konfidencialnosti/" target="_blank">политике</a>.</span></label>
+<p class="idea-msg" id="ideaMsg" role="status"></p>
+<button class="btn primary" type="submit">Отправить идею</button>
+</form>
+<div class="idea-done" id="ideaDone" hidden><h2>Спасибо! Идея у нас 🎉</h2><p>Мы прочитаем её и напишем взрослому, если она попадёт в следующий набор.</p><p><a class="btn primary" href="/igra/">Вернуться к игре</a></p></div>
+</main>`));
+
+  console.log(`Игра «Мемо»: /igra/, историй — ${cards.length}, форма идеи /igra/ideya/`);
+  return [['/igra/', '0.7', 'monthly'], ...cards.map((c) => [`/igra/${c.slug}/`, '0.5', 'monthly'])];
 }
 
 main().catch((e) => { console.error(e); process.exitCode = 1; });

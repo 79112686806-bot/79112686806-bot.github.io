@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--seo--><title>Мемо «Инженерия»</title><!--/seo-->
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Marck+Script&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#3a2313;--ink-soft:#6e4b2c;--sanguine:#9a3a1b;--paper:#e8d4aa;--paper-light:#f2e4c4;--desk:#24160c;--line:rgba(74,44,20,.26)}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--desk) radial-gradient(ellipse at 50% 0,#3b2513,transparent 70%);color:var(--ink);font-family:"PT Serif",Georgia,serif;font-size:18px;line-height:1.7}
+a{color:var(--sanguine)}
+.wrap{position:relative;width:min(1160px,calc(100% - 32px));margin:28px auto 40px;padding:10px clamp(16px,5vw,64px) 6px;border-radius:6px;
+  background:radial-gradient(ellipse at 50% 30%,rgba(255,246,222,.6),transparent 70%),var(--paper);
+  box-shadow:inset 0 0 80px rgba(110,58,16,.5),inset 0 0 18px rgba(85,38,8,.6),0 22px 40px rgba(0,0,0,.55)}
+nav{display:flex;align-items:center;gap:12px;padding:18px 0;flex-wrap:wrap}
+.brand{display:flex;gap:12px;align-items:center;font-family:"Cormorant Garamond",Georgia,serif;font-size:22px;font-weight:700;color:var(--ink);text-decoration:none}
+.logo{width:34px;height:34px;border:2px solid var(--sanguine);border-radius:50%;display:grid;place-items:center;position:relative}
+.logo:before,.logo:after{content:"";position:absolute;background:var(--sanguine)}.logo:before{width:2px;height:24px}.logo:after{height:2px;width:24px}
+.logo i{width:8px;height:8px;background:var(--sanguine);border-radius:50%;z-index:1}
+.nav-links{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
+.btn{display:inline-block;border-radius:4px;border:1.5px solid var(--sanguine);color:var(--sanguine);background:transparent;font:700 15px/1.2 "PT Serif",Georgia,serif;padding:11px 20px;text-decoration:none;cursor:pointer;transition:.2s}
+.btn.primary{background:var(--sanguine);color:var(--paper-light);box-shadow:inset 0 0 0 3px var(--sanguine),inset 0 0 0 4px rgba(242,228,196,.45)}
+.btn:hover{background:#7d2c12;border-color:#7d2c12;color:var(--paper-light)}
+.btn:focus-visible,.mcard:focus-visible,a:focus-visible{outline:2px dashed var(--sanguine);outline-offset:3px}
+h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif;font-weight:700;line-height:1.1;color:var(--ink)}
+h1{font-size:clamp(36px,5.6vw,64px);margin:10px 0 12px}
+h2{font-size:clamp(28px,3.6vw,40px);margin:40px 0 10px}
+.eyebrow{font-family:"Marck Script",cursive;font-size:24px;color:var(--sanguine);margin:0}
+.lead{font-size:19px;max-width:760px;margin:0 0 20px}
+.crumbs{font-size:15px;color:var(--ink-soft);margin-top:6px}.crumbs a{color:var(--ink-soft)}
+footer{font-size:14px;color:var(--ink-soft);border-top:1px solid var(--line);margin-top:40px;padding:18px 0 14px;display:flex;flex-wrap:wrap;gap:6px 18px}
+footer a{color:var(--ink-soft)}
+
+/* ---------- Игровое поле ---------- */
+.memo-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;margin:18px 0 16px}
+.memo-levels{display:flex;gap:6px;flex-wrap:wrap}
+.memo-levels button{font:700 15px "PT Serif",Georgia,serif;padding:8px 14px;border:1.5px solid var(--line);border-radius:30px;background:rgba(255,248,230,.4);color:var(--ink);cursor:pointer}
+.memo-levels button[aria-pressed=true]{border-color:var(--sanguine);background:var(--sanguine);color:var(--paper-light)}
+.memo-score{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:16px;align-items:center}.memo-score b{color:var(--sanguine)}
+.memo-miss{display:inline-flex;align-items:center;gap:6px}#memoMiss{display:inline-flex;gap:4px}
+#memoMiss i{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--sanguine);transition:.2s}#memoMiss i.on{background:var(--sanguine);transform:scale(1.15)}
+.memo-note{min-height:0;margin:-6px 0 10px;font-size:16px;color:var(--sanguine);font-weight:700}.memo-note:empty{display:none}
+.shuffling .mcard{transition:transform .6s cubic-bezier(.5,0,.6,1),opacity .6s;transform:translateY(-30px) rotate(calc((var(--i) - 8) * 9deg)) scale(.6);opacity:0}
+.memo-board{display:grid;gap:clamp(6px,1.2vw,14px);grid-template-columns:repeat(6,1fr);perspective:1200px;margin-bottom:10px}
+.memo-board[data-size="10"]{grid-template-columns:repeat(7,1fr)}
+.memo-board[data-size="15"]{grid-template-columns:repeat(10,1fr)}
+.mcard{all:unset;cursor:pointer;aspect-ratio:2/3;display:block;position:relative;border-radius:8px;-webkit-tap-highlight-color:transparent}
+.mcard-in{position:absolute;inset:0;transition:transform .6s cubic-bezier(.3,1.4,.5,1);transform-style:preserve-3d}
+.mcard.open .mcard-in,.mcard.done .mcard-in{transform:rotateY(180deg)}
+.mcard-back,.mcard-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:8px;overflow:hidden;box-shadow:0 4px 10px rgba(40,20,5,.35)}
+.mcard-face{transform:rotateY(180deg)}
+.mcard img{width:100%;height:100%;object-fit:cover;display:block}
+.mcard:not(.open):not(.done):hover .mcard-in{transform:translateY(-4px) rotateZ(-1deg)}
+.mcard.done .mcard-face{box-shadow:0 0 0 3px #c9a227,0 6px 16px rgba(40,20,5,.4);animation:glow 1s ease}
+@keyframes glow{40%{transform:scale(1.06)}}
+.dealt .mcard{animation:deal .5s backwards cubic-bezier(.2,.9,.3,1.2);animation-delay:calc(var(--i) * 35ms)}
+@keyframes deal{from{opacity:0;transform:translateY(-40px) rotate(-8deg) scale(.8)}}
+.memo-win{text-align:center;padding:22px;margin:16px 0;border:2px dashed var(--sanguine);border-radius:10px;background:rgba(255,248,230,.45)}
+.memo-win h2{margin:0 0 6px}
+@media (max-width:760px){
+  .memo-board{grid-template-columns:repeat(4,1fr)}
+  .memo-board[data-size="10"]{grid-template-columns:repeat(5,1fr)}
+  .memo-board[data-size="15"]{grid-template-columns:repeat(6,1fr)}
+}
+@media (prefers-reduced-motion:reduce){.mcard-in{transition-duration:.01s}.dealt .mcard,.mcard.done .mcard-face{animation:none}}
+
+/* ---------- Коллекция / список историй ---------- */
+.memo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:14px;padding:0;list-style:none}
+.memo-grid a{display:block;text-decoration:none;color:var(--ink);font-size:15px;line-height:1.3;text-align:center;overflow-wrap:anywhere;hyphens:auto;-webkit-hyphens:auto}
+.memo-grid img{width:100%;height:auto;aspect-ratio:2/3;border-radius:6px;display:block;margin-bottom:6px;box-shadow:0 3px 8px rgba(40,20,5,.3);transition:.2s}
+.memo-grid a:hover img{transform:translateY(-4px)}
+.memo-grid a{position:relative}
+.memo-grid a.got::after{content:"✓";position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;background:#2f6b2f;color:#fff;font-size:15px;line-height:26px}
+
+/* ---------- История ---------- */
+.story-top>div{max-width:700px}
+@media (min-width:701px){.story-top>img{position:sticky;top:20px}}
+.story-top{display:grid;grid-template-columns:minmax(0,300px) 1fr;gap:28px;align-items:start}
+.story-top img{width:100%;height:auto;border-radius:10px;box-shadow:0 8px 20px rgba(40,20,5,.4)}
+.story-meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:15px;color:var(--ink-soft);margin:0 0 8px}
+.story-meta span{background:rgba(255,248,230,.5);border:1px solid var(--line);border-radius:20px;padding:2px 12px}
+.story-hook{font-size:21px;font-style:italic;margin:6px 0 12px}
+.story-part h2,.story-part h3{font-size:clamp(25px,3vw,32px);margin:30px 0 6px;display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.story-ico{font-size:.75em;width:1.4em;text-align:center}
+.story-adult{font:700 14px "PT Serif",Georgia,serif;background:#f6dcb4;border:1.5px solid var(--sanguine);color:var(--sanguine);border-radius:20px;padding:3px 10px}
+.story-part p{margin:0 0 10px}.story-part ul{margin:0 0 10px;padding-left:24px}
+.story-short{background:rgba(255,248,230,.5);border-left:4px solid var(--sanguine);padding:2px 18px 6px;border-radius:0 8px 8px 0}
+.story-short h2,.story-short h3{margin-top:12px}
+.story-fact{background:rgba(154,58,27,.08);padding:2px 18px 6px;border-radius:8px}
+.story-fact h2,.story-fact h3{margin-top:12px}
+.story-chips{list-style:none;padding:0!important;display:flex;flex-wrap:wrap;gap:10px}
+.story-chips a{display:flex;align-items:center;gap:8px;padding:5px 14px 5px 5px;border:1.5px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);background:rgba(255,248,230,.5);font-size:16px}
+.story-chips a:hover{border-color:var(--sanguine)}
+.story-chips img{width:28px;height:42px;object-fit:cover;border-radius:3px}
+.story-video{margin:14px 0}
+.video-frame{position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#1a0f07}
+.video-frame button{all:unset;cursor:pointer;position:absolute;inset:0;display:grid;place-items:center}
+.video-frame button img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;filter:blur(1px)}
+.video-play{position:relative;width:70px;height:70px;border-radius:50%;background:var(--sanguine);color:#fff;display:grid;place-items:center;font-size:28px;padding-left:5px;box-shadow:0 4px 18px rgba(0,0,0,.5)}
+.video-label{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:#fff;font-weight:700;text-shadow:0 1px 4px #000}
+.video-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.story-nav{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:34px 0 0}
+.story-cta{margin:20px 0 0;display:flex;gap:10px;flex-wrap:wrap}
+@media (max-width:700px){.story-top{grid-template-columns:1fr}.story-top img{max-width:260px;margin:0 auto}}
+
+/* ---------- Окно истории в игре ---------- */
+dialog.memo-story{border:0;padding:0;width:min(900px,calc(100% - 20px));max-height:calc(100% - 20px);border-radius:10px;background:var(--paper);color:var(--ink);box-shadow:0 30px 80px rgba(0,0,0,.7)}
+dialog.memo-story::backdrop{background:rgba(20,10,3,.75)}
+dialog.memo-story[open]{animation:pop .45s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes pop{from{opacity:0;transform:scale(.85) rotateY(40deg)}}
+.story-scroll{max-height:calc(100dvh - 20px);overflow:auto;padding:22px clamp(16px,4vw,40px) 26px}
+.story-close{position:sticky;top:0;float:right;z-index:2;width:44px;height:44px;border-radius:50%;border:1.5px solid var(--sanguine);background:var(--paper-light);color:var(--sanguine);font-size:22px;cursor:pointer;margin:-8px -14px 0 8px}
+.story-head{display:grid;grid-template-columns:minmax(0,230px) 1fr;gap:24px}
+.story-head h2{margin:0 0 10px}
+.story-card{width:100%;height:auto;border-radius:10px;box-shadow:0 8px 20px rgba(40,20,5,.4)}
+@media (max-width:700px){.story-head{grid-template-columns:1fr}.story-card{max-width:190px;margin:0 auto}}
+
+/* ---------- Форма идеи ---------- */
+.idea{max-width:720px}
+.idea-gifts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0 6px;padding:0;list-style:none}
+.idea-gifts li{background:rgba(255,248,230,.5);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:16px;line-height:1.45}
+.idea-gifts b{display:block;font-size:26px}
+.idea-form label{display:block;font-weight:700;font-size:16px;margin-top:14px}
+.idea-form small{font-weight:400;color:var(--ink-soft)}
+.idea-form input,.idea-form textarea{width:100%;font:inherit;font-size:17px;padding:12px 14px;border:1.5px solid var(--line);border-radius:8px;background:var(--paper-light);color:var(--ink);margin-top:4px}
+.idea-form textarea{min-height:160px;resize:vertical}
+.idea-form input:focus,.idea-form textarea:focus{outline:2px solid var(--sanguine);border-color:transparent}
+.idea-row{display:grid;grid-template-columns:1fr 140px;gap:12px}
+.idea-consent{display:flex!important;gap:10px;align-items:flex-start;font-weight:400!important;font-size:15px!important;line-height:1.5}
+.idea-consent input{width:auto;margin-top:5px}
+.idea-msg{min-height:24px;font-size:16px}.idea-msg.error{color:#a3171b}
+.hp{position:absolute;left:-9999px}
+.idea-done{text-align:center;padding:26px;border:2px dashed var(--sanguine);border-radius:10px;background:rgba(255,248,230,.5)}
+@media (max-width:700px){.idea-gifts{grid-template-columns:1fr}.idea-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav><a class="brand" href="/"><span class="logo"><i></i></span>ИНЖЕНЕРНЫЙ КЛУБ</a>
+<span class="nav-links"><a class="btn" href="/igra/">Игра «Мемо»</a><a class="btn" href="/programmy/">Программы</a></span></nav>
+<!--memo-main-->
+<footer><span>Инженерный клуб — занятия и проекты для школьников 9–14 лет.</span><a href="/">Главная</a><a href="/igra/">Игра «Мемо»</a><a href="/igra/ideya/">Предложить идею</a><a href="/kontakty/">Контакты</a><a href="/dokumenty/politika-konfidencialnosti/">Политика ПДн</a></footer>
+</div>
+<!--memo-scripts-->
+</body>
+</html>

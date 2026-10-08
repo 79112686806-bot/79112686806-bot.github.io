@@ -14,3 +14,14 @@ node_modules/
 
 # Исходники фотографий (на сайт идут сжатые копии из assets/)
 images/
+
+# Исходники игры «Мемо» (PNG ≈100 МБ, документ, коробка): на сайт идут сжатые копии из assets/memo/ и content/memo.json
+Карточки МЕМО/
+
+# Ролики мемо: зависимости, картинки для рендера и готовые видео
+video/node_modules/
+video/public/cards/
+video/out/
+video/public/voice/
+video/whisper/
+video/whisper-models/

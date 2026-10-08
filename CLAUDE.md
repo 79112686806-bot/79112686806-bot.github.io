@@ -46,6 +46,12 @@
   отдельные темы, весь курс (минус уже оплаченное). Цены — в courses.price*, сумму считает
   только сервер (quote_order). Доступ: enrollments.scope full/partial + lesson_access;
   купленные темы открываются по порядку после подтверждения преподавателем.
+- Игра «Мемо «Инженерия»: исходники (PNG карточек, документ с историями, развёртка коробки) — в папке
+  «Карточки МЕМО/» (в git не попадает). `npm run memo:import` → content/memo.json (тексты из .docx),
+  `npm run memo:images` → assets/memo/*.webp, `npm run memo:qr` → «Коробка с QR.png» и QR/ (2 кода на /igra/,
+  1 на /igra/ideya/). Шаблон страниц — memo.html, логика — memo.js; сборка делает /igra/, /igra/<slug>/,
+  /igra/ideya/. Идеи детей — таблица memo_ideas, видео к карточкам — memo_videos (вкладка «Игра» в админке).
+  Ролики — отдельный проект video/ (Remotion): `npm run prepare-cards`, `npm run render` → video/out/*.mp4.
 - Клиент Supabase в странице — глобальная переменная `sb`.
 - Локально: `npm run dev` → http://localhost:3000.
 - Публикация: push в main → .github/workflows/pages.yml собирает dist/ и выкладывает

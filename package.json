@@ -4,6 +4,13 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "dev": "node scripts/build.mjs && npx --yes serve dist -l 3000"
+    "dev": "node scripts/build.mjs && npx --yes serve dist -l 3000",
+    "memo:import": "node scripts/memo-import.mjs",
+    "memo:images": "node scripts/memo-images.mjs",
+    "memo:qr": "node scripts/memo-qr.mjs"
+  },
+  "devDependencies": {
+    "qrcode": "1.5",
+    "sharp": "^0.33.5"
   }
 }

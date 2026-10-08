@@ -80,7 +80,7 @@ label.filebtn{display:inline-block;border:1px solid var(--accent);color:var(--ac
 <body>
 <header id="top" hidden>
   <b>Инженерный клуб · админ</b>
-  <nav class="tabs"><a href="#queue" data-tab="queue">Очередь<span class="navcount" id="qCount" hidden></span></a><a href="#calls" data-tab="calls">Занятия<span class="navcount" id="cCount" hidden></span></a><a href="#students" data-tab="students">Ученики</a><a href="#materials" data-tab="materials">Материалы курса</a><a href="#reviews" data-tab="reviews">Отзывы<span class="navcount" id="rCount" hidden></span></a><a href="#videos" data-tab="videos">Видео</a><a href="#leads" data-tab="leads">Заявки<span class="navcount" id="lCount" hidden></span></a></nav>
+  <nav class="tabs"><a href="#queue" data-tab="queue">Очередь<span class="navcount" id="qCount" hidden></span></a><a href="#calls" data-tab="calls">Занятия<span class="navcount" id="cCount" hidden></span></a><a href="#students" data-tab="students">Ученики</a><a href="#materials" data-tab="materials">Материалы курса</a><a href="#reviews" data-tab="reviews">Отзывы<span class="navcount" id="rCount" hidden></span></a><a href="#videos" data-tab="videos">Видео</a><a href="#leads" data-tab="leads">Заявки<span class="navcount" id="lCount" hidden></span></a><a href="#memo" data-tab="memo">Игра<span class="navcount" id="iCount" hidden></span></a></nav>
   <span class="me" id="meEmail"></span>
   <a href="./" title="Открыть сайт">← На сайт</a>
   <button onclick="logout()">Выйти</button>
@@ -92,6 +92,7 @@ label.filebtn{display:inline-block;border:1px solid var(--accent);color:var(--ac
 <script src="config.js"></script>
 <script src="chat.js"></script>
 <script src="home-blocks.js"></script>
+<script src="/igra/memo-data.js"></script>
 <script>
 const sb=supabase.createClient(window.APP_CONFIG.supabaseUrl,window.APP_CONFIG.supabaseKey);
 const app=document.getElementById('app');
@@ -107,7 +108,7 @@ async function start(){
   const{data:isAdmin}=await sb.rpc('is_admin');
   if(!isAdmin){app.innerHTML=`<div class="center card"><h1>Нет доступа</h1><p class="muted">Этот раздел только для администратора.</p><p><a href="./">На сайт</a> · <button class="link" onclick="logout()">Выйти</button></p></div>`;return}
   me=session.user;document.getElementById('top').hidden=false;document.getElementById('meEmail').textContent=me.email;
-  window.addEventListener('hashchange',route);await loadStudents();route();
+  window.addEventListener('hashchange',route);await loadStudents();route();countNewIdeas();
   refreshQueueCount();setInterval(refreshQueueCount,60000);
   sb.channel('admin-messages').on('postgres_changes',{event:'INSERT',schema:'public',table:'lesson_messages'},p=>{
     const m=p.new;if(m.author_id!==m.student_id)return; // интересны только сообщения учеников
@@ -135,6 +136,7 @@ function route(){closeAdminChat();matView=null;const h=location.hash.slice(1)||'
   if(tab==='leads')return showLeads();
   if(tab==='reviews')return showReviews();
   if(tab==='videos')return showVideos();
+  if(tab==='memo')return showMemo();
   return showQueue()}
 
 // ---------- Очередь: новые сообщения и темы на проверке ----------
@@ -455,6 +457,39 @@ async function saveVideo(id){const box=document.getElementById('vid-'+id),v={};b
   const{error}=await sb.from('site_videos').update(v).eq('id',id);if(error)return toast('Ошибка: '+error.message);toast('Сохранено');showVideos()}
 async function deleteVideo(id,b){if(!b.dataset.sure){b.dataset.sure='1';b.textContent='точно удалить?';return}
   const{error}=await sb.from('site_videos').delete().eq('id',id);if(error)return toast('Ошибка: '+error.message);toast('Удалено');showVideos()}
+
+// ---------- «Игра»: идеи детей для новых карточек и видео к историям ----------
+const IDEA_RU={new:'новая',liked:'понравилась',gifted:'подарок отправлен',rejected:'не подошла'};
+async function countNewIdeas(){const{count,error}=await sb.from('memo_ideas').select('id',{count:'exact',head:true}).eq('status','new');if(!error)setBadge('iCount',count||0)}
+async function showMemo(){app.innerHTML='<p class="muted">Загрузка…</p>';
+  const[{data:ideas,error},{data:vids}]=await Promise.all([sb.from('memo_ideas').select('*').order('created_at',{ascending:false}).limit(300),sb.from('memo_videos').select('slug,url')]);
+  if(error){app.innerHTML='<p>Ошибка: '+esc(error.message)+' — выполните миграцию 20261008000015_memo_game.sql.</p>';return}
+  const vmap=Object.fromEntries((vids||[]).map(v=>[v.slug,v.url])),cards=window.MEMO_CARDS||[];
+  setBadge('iCount',ideas.filter(i=>i.status==='new').length);
+  app.innerHTML=`<h1>Игра «Мемо»</h1><p class="small muted">Страница игры: <a href="/igra/" target="_blank">/igra/</a> · форма идеи (QR на коробке): <a href="/igra/ideya/" target="_blank">/igra/ideya/</a></p>
+    <h2>Идеи для новых карточек <span class="muted small">(${ideas.length})</span></h2>
+    ${ideas.length?`<table><thead><tr><th>Дата</th><th>Ребёнок</th><th>Идея</th><th>Контакт взрослого</th><th>Статус</th></tr></thead><tbody>${ideas.map(i=>`<tr style="cursor:default${i.status==='new'?';background:#fffaf0':''}">
+      <td class="small">${fmtDate(i.created_at)}</td><td>${esc(i.child_name)}${i.age?`<div class="small muted">${i.age} лет</div>`:''}</td>
+      <td style="max-width:420px"><b>${esc(i.idea_title)}</b><div class="small" style="white-space:pre-wrap;margin-top:4px">${esc(i.idea_text)}</div></td>
+      <td><b>${esc(i.contact)}</b></td>
+      <td><select onchange="setIdeaStatus(${i.id},this)">${Object.entries(IDEA_RU).map(([k,v])=>`<option value="${k}" ${k===i.status?'selected':''}>${v}</option>`).join('')}</select></td></tr>`).join('')}</tbody></table>`
+      :'<p class="muted">Идей пока нет. Они появятся, когда дети отсканируют QR-код на коробке.</p>'}
+    <h2>Видео к историям карточек</h2>
+    <p class="small muted">Загрузите ролик на Rutube или в VK Видео и вставьте ссылку на его страницу. Видео появится в окне найденной пары и на странице карточки сразу, без пересборки сайта.</p>
+    ${cards.length?cards.map(c=>`<div class="lesson" id="mv-${c.slug}"><div class="row" style="align-items:center;gap:10px">
+      <img src="/assets/memo/${c.slug}-s.webp" alt="" width="30" height="45" style="border-radius:3px">
+      <b style="min-width:220px">${c.n}. ${esc(c.title)}</b>
+      <input data-f="url" value="${esc(vmap[c.slug]||'')}" placeholder="https://rutube.ru/video/…" style="flex:1;min-width:220px">
+      <button class="primary" onclick="saveMemoVideo('${c.slug}')">Сохранить</button>
+      ${vmap[c.slug]?(HomeBlocks.embedUrl(vmap[c.slug])?'<span class="badge b-ok">есть видео</span>':'<span class="badge b-warn">ссылка не распознана</span>'):''}
+      <a class="small" href="/igra/${c.slug}/" target="_blank">страница</a></div></div>`).join('')
+      :'<p class="muted">Нет данных карточек — соберите сайт (npm run build).</p>'}`}
+async function setIdeaStatus(id,sel){const{error}=await sb.from('memo_ideas').update({status:sel.value}).eq('id',id);
+  if(error)return toast('Ошибка: '+error.message);toast('Статус: '+IDEA_RU[sel.value]);sel.closest('tr').style.background=sel.value==='new'?'#fffaf0':'';countNewIdeas()}
+async function saveMemoVideo(slug){const url=document.querySelector(`#mv-${slug} [data-f=url]`).value.trim();
+  if(!url){const{error}=await sb.from('memo_videos').delete().eq('slug',slug);if(error)return toast('Ошибка: '+error.message);toast('Видео убрано');return showMemo()}
+  if(!HomeBlocks.embedUrl(url))return toast('Ссылка не распознана — нужна страница ролика Rutube или VK Видео');
+  const{error}=await sb.from('memo_videos').upsert({slug,url,updated_at:new Date().toISOString()});if(error)return toast('Ошибка: '+error.message);toast('Видео сохранено');showMemo()}
 
 // ---------- «Заявки» с сайта ----------
 const LEAD_RU={new:'новая',in_progress:'в работе',done:'обработана'};
