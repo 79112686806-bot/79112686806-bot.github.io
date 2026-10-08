@@ -240,6 +240,30 @@ table.research th{font-family:"Cormorant Garamond",Georgia,serif;font-size:16px;
 table.research input::placeholder{color:rgba(58,35,19,.4)}
 table.research input:focus{background:rgba(154,58,27,.07)}
 .research-wrap{border-radius:3px}
+/* таблицы замеров исследования (research.js) */
+.research-fields.one{grid-template-columns:1fr}
+.research-tables{margin:16px 0}
+.rtable{margin:0 0 18px}
+.rtable h5{font-family:"Cormorant Garamond",Georgia,serif;font-size:20px;font-weight:700;color:var(--ink);margin:0 0 8px}
+.rtable h5 small{font-family:"PT Serif",Georgia,serif;font-size:14px;font-weight:400;color:var(--ink-soft)}
+.rt-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.rtable table{border-collapse:collapse;min-width:100%;font-size:15px}
+.rtable th,.rtable td{border:1px solid var(--line);padding:0;text-align:center}
+.rtable thead th{padding:8px 10px;font-weight:700;font-size:14px;color:var(--sanguine);background:rgba(154,58,27,.06);white-space:nowrap}
+.rtable tbody th{padding:8px 12px;text-align:left;font-weight:400;min-width:140px;background:rgba(255,250,236,.35)}
+.rtable input{width:100%;min-width:72px;border:0;background:transparent;font:inherit;font-size:16px;padding:9px 8px;text-align:center;color:var(--ink)}
+.rtable input.rt-name{text-align:left;min-width:130px}
+.rtable input:focus{outline:2px solid rgba(154,58,27,.45);outline-offset:-2px;background:rgba(255,250,236,.8)}
+.rtable td.rt-avg{padding:8px 10px;font-weight:700;color:var(--sanguine);min-width:80px}
+@media (max-width:640px){
+  .rtable tbody th,.rtable thead th:first-child{position:sticky;left:0;z-index:1;background:#efdcb5;box-shadow:1px 0 0 var(--line)}
+  .rtable tbody th{min-width:96px;max-width:120px;padding:6px 8px;font-size:14px;line-height:1.3}
+  .rtable input{min-width:56px;padding:8px 4px}
+  .rtable input.rt-name{min-width:90px;font-size:14px}
+  .rtable thead th{padding:6px;font-size:13px}
+  .rtable td.rt-avg{min-width:60px;padding:6px}
+}
+.rt-add{margin-top:6px;border:1px dashed var(--line);background:none;color:var(--sanguine);font:inherit;font-size:14px;padding:6px 12px;border-radius:3px;cursor:pointer}
 
 /* кабинет */
 .progress{background:rgba(74,44,20,.15);border-radius:2px}
@@ -506,6 +530,7 @@ mark.todo{background:rgba(154,58,27,.15);color:var(--sanguine);padding:0 4px;bor
 <script src="/chat.js"></script>
 <script src="/course-page.js"></script>
 <script src="/home-blocks.js"></script>
+<script src="/research.js"></script>
 <script src="/seo.js"></script>
 <script>
 // Параметры ссылки из письма (invite / recovery / ошибка) — запоминаем до того, как клиент разберёт адрес
@@ -768,8 +793,9 @@ async function openCourseDashboard(i){const session=await requireLogin();if(!ses
   dash={modules:[],lessons:[],progress:{},materials:[],calls:{},unread:{},scope:'full',access:new Set(),userId:uid,slug,current:null};
   dashCourse.textContent=courses[i][1];dashIntro.textContent='Слева — программа по темам, материалы и исследования. Материалы открываются вместе с темой.';
   sideAccordion.innerHTML='<p class="note">Загружаем программу…</p>';lessonArea.innerHTML='';showPage('dashboard');
+  const courseQ=f=>sb.from('courses').select(`modules(id,sort,title,lessons(id,sort,title,research_task${f}))`).eq('slug',slug).single();
   const[{data:course,error},{data:prog},{data:calls},{data:enr},{data:acc}]=await Promise.all([
-    sb.from('courses').select('modules(id,sort,title,lessons(id,sort,title,research_task))').eq('slug',slug).single(),
+    courseQ(',research_plan').then(res=>res.error?courseQ(''):res),
     sb.from('lesson_progress').select('lesson_id,status,teacher_comment').eq('user_id',uid),
     sb.from('lesson_calls').select('lesson_id,url,starts_at,note,duration_min,ended_at').eq('user_id',uid),
     sb.from('enrollments').select('scope,courses!inner(slug)').eq('user_id',uid).eq('courses.slug',slug).limit(1),
@@ -862,13 +888,17 @@ async function openLesson(id){flushSave();closeChat();const l=dash.lessons.find(
   if(!isOwned(l)){lessonArea.innerHTML=`<h2>${title}</h2><p>Эта тема не входит в оплаченные. Можно докупить её отдельно, целым блоком или весь курс — уже оплаченное засчитывается.</p><button class="btn primary" onclick="goPayment()">Докупить темы или весь курс</button>`;return}
   if(!isUnlocked(l)){lessonArea.innerHTML=`<h2>${title}</h2><p class="note">Тема откроется, когда преподаватель подтвердит предыдущие темы.</p>`+(task?`<div class="research-card"><h4>🔬 Исследование по теме</h4><p class="research-q">${task}</p></div>`:'');return}
   lessonArea.innerHTML=`<h2>${title}</h2><p class="note">Загружаем тему…</p>`;
-  const{data:answer}=task?await sb.from('research_answers').select('hypothesis,method,result,conclusion').eq('user_id',dash.userId).eq('lesson_id',id).maybeSingle():{data:null};
+  const plan=l.research_plan&&l.research_plan.tables?l.research_plan:null;
+  const ansQ=f=>sb.from('research_answers').select('hypothesis,method,result,conclusion'+f).eq('user_id',dash.userId).eq('lesson_id',id).maybeSingle();
+  const{data:answer}=task?await (plan?ansQ(',data').then(res=>res.error?ansQ(''):res):ansQ('')):{data:null};
   if(token!==openToken)return;
   let html=`<h2>${title}</h2><p>Занятие с преподавателем и материалы по теме.</p>${callHtml(l)}`;
   if(task){const a=answer||{};const f=(name,label)=>`<label>${label}<textarea rows="2" data-f="${name}">${escapeHtml(a[name]||'')}</textarea></label>`;
-    html+=`<div class="research-card"><h4>🔬 Исследование по теме</h4><p class="research-q">${task}</p>
-      <div class="research-fields">${f('hypothesis','Гипотеза')}${f('method','Как измеряем')}${f('result','Результат')}${f('conclusion','Вывод')}</div>
-      <p class="note" id="researchSaved" style="margin-top:10px"></p></div>`}
+    // с шаблоном — гипотеза, таблицы замеров и вывод; без шаблона — четыре текстовых поля, как раньше
+    html+=`<div class="research-card"><h4>🔬 Исследование по теме</h4><p class="research-q">${task}</p>`+(plan
+      ?`<div class="research-fields one">${f('hypothesis','Гипотеза')}</div><div class="research-tables">${Research.editHtml(plan,a.data)}</div><div class="research-fields one">${f('conclusion','Вывод')}</div>`
+      :`<div class="research-fields">${f('hypothesis','Гипотеза')}${f('method','Как измеряем')}${f('result','Результат')}${f('conclusion','Вывод')}</div>`)+
+      `<p class="note" id="researchSaved" style="margin-top:10px"></p></div>`}
   html+=`<div class="materials"><h3>Проверка темы</h3>${statusHtml(l)}</div>`;
   const mats=dash.materials.filter(m=>m.lesson_id===l.id);
   // Занятие назначено, а записи (личного материала) ещё нет — показываем, что она появится
@@ -877,6 +907,7 @@ async function openLesson(id){flushSave();closeChat();const l=dash.lessons.find(
   html+=chatHtml();
   lessonArea.innerHTML=html;
   lessonArea.querySelectorAll('.research-fields textarea').forEach(t=>t.addEventListener('input',()=>scheduleSave(l.id)));
+  const tables=lessonArea.querySelector('.research-tables');if(tables&&plan)Research.bind(tables,plan,()=>scheduleSave(l.id));
   loadChat(l)}
 // ---------- Чат темы (модуль chat.js) ----------
 let chatWidget=null;
@@ -893,6 +924,8 @@ async function openChat(){let l=dash.current;
 let saveTimer=null,pendingSave=null;
 function scheduleSave(lessonId){const row={user_id:dash.userId,lesson_id:lessonId};
   lessonArea.querySelectorAll('.research-fields textarea').forEach(t=>row[t.dataset.f]=t.value);
+  const tables=lessonArea.querySelector('.research-tables'),l=dash.lessons.find(x=>x.id===lessonId);
+  if(tables&&l&&l.research_plan)row.data=Research.collect(tables,l.research_plan);
   pendingSave=row;const m=document.getElementById('researchSaved');if(m)m.textContent='Сохраняем…';
   clearTimeout(saveTimer);saveTimer=setTimeout(flushSave,800)}
 async function flushSave(){clearTimeout(saveTimer);const row=pendingSave;pendingSave=null;if(!row)return;

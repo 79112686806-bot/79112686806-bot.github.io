@@ -52,6 +52,9 @@
   1 на /igra/ideya/). Шаблон страниц — memo.html, логика — memo.js; сборка делает /igra/, /igra/<slug>/,
   /igra/ideya/. Идеи детей — таблица memo_ideas, видео к карточкам — memo_videos (вкладка «Игра» в админке).
   Ролики — отдельный проект video/ (Remotion): `npm run prepare-cards`, `npm run render` → video/out/*.mp4.
+- Исследования: шаблон таблиц темы — lessons.research_plan (jsonb), данные ученика — research_answers.data;
+  research.js рисует таблицы (ввод в кабинете, просмотр в админке), среднее считает сам. На сайте —
+  только названия и таблицы, без объяснений (объяснения — на занятиях). Методички — content/issledovaniya-*.md.
 - Клиент Supabase в странице — глобальная переменная `sb`.
 - Локально: `npm run dev` → http://localhost:3000.
 - Публикация: push в main → .github/workflows/pages.yml собирает dist/ и выкладывает

@@ -49,6 +49,10 @@ tbody tr:hover{background:#fbf7f1}
 .lesson .actions{margin-top:8px}
 .answers{margin-top:8px;padding:10px;background:#faf8f4;border-radius:6px;font-size:14px}
 .answers div{margin-bottom:6px;white-space:pre-wrap}
+.answers-tables .rtable{margin:10px 0}.answers-tables h5{margin:0 0 4px;font-size:14px}.answers-tables h5 small{font-weight:400;color:var(--muted)}
+.answers-tables .rt-scroll{overflow-x:auto}.answers-tables table{border-collapse:collapse;font-size:13px}.answers-tables th,.answers-tables td{border:1px solid #e3ddd2;padding:4px 8px;text-align:center;white-space:pre-wrap}
+.answers-tables tbody th{text-align:left;font-weight:400}.answers-tables .rt-avg{font-weight:700}
+.answers-tables div{margin-bottom:0}
 .center{max-width:380px;margin:80px auto}
 .center input{width:100%;margin:4px 0 12px}
 :root{--chat-accent:#9a3a1b;--chat-line:#e4ddd1;--chat-mine:#f6e6de;--chat-other:#fff;--chat-muted:#776b5d;--chat-menu:#fff}
@@ -92,6 +96,7 @@ label.filebtn{display:inline-block;border:1px solid var(--accent);color:var(--ac
 <script src="config.js"></script>
 <script src="chat.js"></script>
 <script src="home-blocks.js"></script>
+<script src="research.js"></script>
 <script src="/igra/memo-data.js"></script>
 <script>
 const sb=supabase.createClient(window.APP_CONFIG.supabaseUrl,window.APP_CONFIG.supabaseKey);
@@ -222,9 +227,12 @@ async function enroll(uid){const courseId=+enrollSel.value;const{error}=await sb
 // ---------- Темы курса: статусы, ответы, подтверждение ----------
 async function loadCourse(s,courseId){closeAdminChat();const box=document.getElementById('courseBox');box.innerHTML='<p class="muted">Загрузка тем…</p>';
   const[{data:course},{data:prog},{data:answers},{data:threads},{data:calls},{data:personal},{data:enr},{data:acc}]=await Promise.all([
-    sb.from('courses').select('title,modules(id,sort,title,lessons(id,sort,title,research_task))').eq('id',courseId).single(),
+    // с шаблонами таблиц исследований; без миграции 016 — без них
+    sb.from('courses').select('title,modules(id,sort,title,lessons(id,sort,title,research_task,research_plan))').eq('id',courseId).single()
+      .then(res=>res.error?sb.from('courses').select('title,modules(id,sort,title,lessons(id,sort,title,research_task))').eq('id',courseId).single():res),
     sb.from('lesson_progress').select('lesson_id,status,submitted_at,approved_at,teacher_comment').eq('user_id',s.id),
-    sb.from('research_answers').select('lesson_id,hypothesis,method,result,conclusion,updated_at').eq('user_id',s.id),
+    sb.from('research_answers').select('lesson_id,hypothesis,method,result,conclusion,data,updated_at').eq('user_id',s.id)
+      .then(res=>res.error?sb.from('research_answers').select('lesson_id,hypothesis,method,result,conclusion,updated_at').eq('user_id',s.id):res),
     sb.rpc('admin_threads',{p_student_id:s.id}),
     sb.from('lesson_calls').select('lesson_id,url,starts_at,note,duration_min,ended_at').eq('user_id',s.id),
     sb.from('materials').select('id,lesson_id,title,kind,url,storage_path,created_at').eq('user_id',s.id).order('id'),
@@ -251,9 +259,12 @@ function lessonRow(l){const p=card.progress[l.id],st=p?.status,a=card.answers[l.
   const badge=st==='approved'?`<span class="badge b-ok">✓ подтверждена ${fmtDate(p.approved_at)}</span>`
     :st==='submitted'?`<span class="badge b-warn">⏳ на проверке с ${fmtDate(p.submitted_at)}</span>`
     :open?'<span class="badge b-acc">открыта, изучает</span>':!isOwned(l)?'<span class="badge b-mute">🛒 не куплено</span>':'<span class="badge b-mute">🔒 закрыта</span>';
-  const hasAns=a&&(a.hypothesis||a.method||a.result||a.conclusion);
+  const plan=l.research_plan&&l.research_plan.tables?l.research_plan:null;
+  const hasAns=a&&(a.hypothesis||a.method||a.result||a.conclusion||Research.filled(a.data));
+  // с шаблоном: гипотеза, таблицы замеров, вывод; без шаблона — четыре поля
+  const fields=plan?[['Гипотеза','hypothesis'],['Вывод','conclusion']]:[['Гипотеза','hypothesis'],['Как измеряем','method'],['Результат','result'],['Вывод','conclusion']];
   const answersHtml=l.research_task?`<div class="answers"><div class="muted small">🔬 ${esc(l.research_task)}</div>${hasAns?
-    [['Гипотеза','hypothesis'],['Как измеряем','method'],['Результат','result'],['Вывод','conclusion']].map(([t,k])=>`<div><b>${t}:</b> ${esc(a[k])||'<span class="muted">—</span>'}</div>`).join('')+`<div class="small muted">изменено ${fmtDate(a.updated_at)}</div>`
+    fields.map(([t,k])=>`<div><b>${t}:</b> ${esc(a[k])||'<span class="muted">—</span>'}</div>`).join('')+(plan?`<div class="answers-tables">${Research.viewHtml(plan,a.data)}</div>`:'')+`<div class="small muted">изменено ${fmtDate(a.updated_at)}</div>`
     :'<div class="muted small">Ученик ещё ничего не написал.</div>'}</div>`:'';
   const actions=st==='approved'
     ?`${p.teacher_comment?`<div class="small">Ваш комментарий: ${esc(p.teacher_comment)}</div>`:''}<button class="link small" onclick="revoke(${l.id},this)">Отменить подтверждение</button>`

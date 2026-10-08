@@ -16,7 +16,7 @@ require('../home-blocks.js');
 require('../memo.js');
 const { coursePageHtml, coursePageStats, HomeBlocks, Memo } = globalThis;
 
-const FILES = ['admin.html', 'chat.js', 'course-page.js', 'home-blocks.js', 'memo.js', 'favicon.svg'];
+const FILES = ['admin.html', 'chat.js', 'course-page.js', 'home-blocks.js', 'memo.js', 'research.js', 'favicon.svg'];
 
 // Данные самозанятого (site-info.json) — для документов и подвала. Пустое поле → заметная пометка.
 const INFO = JSON.parse(readFileSync('site-info.json', 'utf8'));
