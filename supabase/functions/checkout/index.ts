@@ -8,7 +8,8 @@
 //   DEMO_PAYMENTS  — 'true', пока не подключена ЮKassa. ПЕРЕД ЗАПУСКОМ ВЫКЛЮЧИТЬ.
 //   SITE_URL       — адрес сайта для ссылки в письме
 //   RESEND_API_KEY — ключ Resend; без него письмо не отправляется
-//   EMAIL_FROM     — отправитель, например «Инженерный клуб <hello@ваш-домен>»
+//   EMAIL_FROM     — отправитель, например «Инженерный клуб <noreply@engineeringclub.ru>»
+//   EMAIL_REPLY_TO — куда приходят ответы на письмо (по умолчанию почта клуба из site-info.json)
 // SUPABASE_URL и SUPABASE_SERVICE_ROLE_KEY Supabase подставляет сам.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -173,18 +174,21 @@ async function sendWelcomeEmail(to: string, courseTitle: string, what: string) {
     return;
   }
   const from = Deno.env.get('EMAIL_FROM') ?? 'Инженерный клуб <onboarding@resend.dev>';
+  // у noreply@ нет почтового ящика — ответы родителей уходят на почту клуба
+  const replyTo = Deno.env.get('EMAIL_REPLY_TO') ?? 'engineeringclub@yandex.com';
   const html = `
 <h2>Добро пожаловать в Инженерный клуб!</h2>
 <p>Оплата прошла: курс «${escapeHtml(courseTitle)}», ${escapeHtml(what)}. Доступ открыт в личном кабинете.</p>
 <p><b>Логин для входа:</b> ${escapeHtml(to)}<br>
 <b>Пароль:</b> тот, который вы придумали при оформлении.</p>
 <p><a href="${SITE_URL}">Перейти на сайт</a> → «Личный кабинет».</p>
-<p>Забыли пароль? В окне входа нажмите «Забыли пароль?» — пришлём ссылку для нового.</p>`;
+<p>Забыли пароль? В окне входа нажмите «Забыли пароль?» — пришлём ссылку для нового.</p>
+<p>Есть вопрос? Просто ответьте на это письмо — мы прочитаем и поможем.</p>`;
 
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from, to, subject: 'Доступ к курсу открыт — Инженерный клуб', html }),
+    body: JSON.stringify({ from, to, reply_to: replyTo, subject: 'Доступ к курсу открыт — Инженерный клуб', html }),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
 }
