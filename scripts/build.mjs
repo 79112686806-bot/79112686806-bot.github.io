@@ -305,13 +305,16 @@ function buildMemo(memoVideos) {
   }), `<main>${crumbs([['Главная', '/'], ['Игра «Мемо»']])}
 <p class="eyebrow">Играй и узнавай</p>
 <h1>Мемо «Инженерия»</h1>
-<p class="lead">Переворачивай карточки и ищи пары. Нашёл пару — открывается история изобретения или изобретателя: коротко, интересно, с опытом, который можно повторить дома, и видео. Но будь внимателен: после трёх промахов подряд карточки перемешиваются заново.</p>
-<div class="memo-bar"><div class="memo-levels" role="group" aria-label="Сложность"><button type="button" data-level="easy">6 пар</button><button type="button" data-level="mid">10 пар</button><button type="button" data-level="hard">15 пар</button></div>
-<div class="memo-score" aria-live="polite"><span>Ходов: <b id="memoMoves">0</b></span><span>Пар: <b id="memoPairs">0</b> из <b id="memoTotal">6</b></span><span class="memo-miss" title="3 промаха подряд — карточки перемешаются">Промахи: <span id="memoMiss"></span></span></div>
-<button type="button" class="btn" data-memo-again>Перемешать</button></div>
+<p class="lead">Переворачивай карточки и ищи пары. Нашёл пару — открывается история изобретения или изобретателя: коротко, интересно, с опытом, который можно повторить дома, и видео. Собирай очки и комбо, получай звёзды, звания и призы — или сыграй вдвоём с другом.</p>
+<div class="memo-profile" id="memoProfile" hidden><div class="mp-rank"><span class="mp-ico" id="mpIco" aria-hidden="true">🔩</span><div class="mp-info"><b id="mpRank">Новичок</b><div class="mp-xp"><i id="mpXpBar"></i></div><small id="mpXpText"></small></div></div><span class="mp-streak" id="mpStreak" title="Дней подряд"></span><button type="button" class="mp-btn" id="mpHint" title="Подсказка: на секунду показать все карточки">💡 <b id="mpHints">0</b></button><button type="button" class="mp-btn" id="mpPrizes">🏆 Призы</button></div>
+<div class="memo-bar"><div class="memo-levels" role="group" aria-label="Режим"><button type="button" data-mode="solo">Один</button><button type="button" data-mode="duel">Вдвоём</button></div>
+<div class="memo-levels" role="group" aria-label="Сложность"><button type="button" data-level="easy">6 пар</button><button type="button" data-level="mid">10 пар</button><button type="button" data-level="hard">15 пар</button></div>
+<button type="button" class="btn" data-memo-again>Заново</button></div>
+<div class="memo-score" id="memoSolo" aria-live="polite"><span>Очки: <b id="memoPoints">0</b></span><span>Комбо: <b id="memoCombo">×1</b></span><span>Ходов: <b id="memoMoves">0</b></span><span>Пар: <b id="memoPairs">0</b> из <b id="memoTotal">6</b></span><span class="memo-miss" id="memoMissWrap">Промахи: <span id="memoMiss"></span></span></div>
+<div class="memo-duel" id="memoDuel" hidden aria-live="polite"><div class="pl" data-p="0"><input value="Игрок 1" maxlength="16" aria-label="Имя первого игрока"><span><b data-pairs>0</b> пар</span></div><div class="pl" data-p="1"><input value="Игрок 2" maxlength="16" aria-label="Имя второго игрока"><span><b data-pairs>0</b> пар</span></div></div>
 <p class="memo-note" id="memoNote" role="status"></p>
 <div class="memo-board" id="memoBoard"><noscript>Для игры включите JavaScript. Истории карточек можно прочитать ниже.</noscript></div>
-<div class="memo-win" id="memoWin" hidden><h2>Все пары найдены! 🎉</h2><p>Ходов: <b data-moves></b>. Сыграем ещё раз — попадутся новые карточки.</p><button type="button" class="btn primary" data-memo-again>Играть ещё</button></div>
+<div class="memo-win" id="memoWin" hidden></div>
 <h2>Твоя коллекция: <span id="memoCount">0</span> из ${cards.length}</h2>
 <p>Каждая найденная пара попадает в коллекцию (✓). Все истории можно читать и без игры — просто нажми на карточку.</p>
 ${grid}
@@ -319,6 +322,8 @@ ${grid}
 <p>Предложи идею для следующего набора. Если идея нам понравится — пришлём подарок, а карточка может попасть в новую игру.</p>
 <p><a class="btn primary" href="/igra/ideya/">Предложить свою идею</a></p>
 </main>
+<dialog class="memo-prizes" id="memoPrizes" aria-labelledby="memoPrizesTitle"><div class="story-scroll"><form method="dialog"><button class="story-close" aria-label="Закрыть">✕</button></form><div class="prizes-body"></div></div></dialog>
+<div class="memo-toasts" id="memoToasts" aria-live="polite"></div>
 <dialog class="memo-story" id="memoStory" aria-labelledby="memoStoryTitle"><div class="story-scroll"><form method="dialog"><button class="story-close" aria-label="Закрыть">✕</button></form><div class="story-body"></div><form method="dialog" class="story-cta"><button class="btn primary">Играть дальше</button></form></div></dialog>`,
   '<script src="/igra/memo-data.js"></script>\n'));
 

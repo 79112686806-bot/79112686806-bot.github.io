@@ -63,85 +63,306 @@
   }
 
   // ---------- Игра на пары ----------
-  const LEVELS = { easy: 6, mid: 10, hard: 15 };
-  const MAX_MISSES = 3; // столько промахов подряд — и карточки сдаются заново
+  // Уровни: число пар и сколько промахов подряд можно сделать, прежде чем карточки перемешаются (только «Один»)
+  const LEVELS = { easy: { pairs: 6, misses: 3 }, mid: { pairs: 10, misses: 5 }, hard: { pairs: 15, misses: 8 } };
   const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const plural = (n, one, few, many) => (n % 10 === 1 && n % 100 !== 11 ? one : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? few : many);
+
+  // ---------- Профиль игрока: опыт, звания, подсказки, достижения, призы (в этом браузере) ----------
+  const RANKS = [
+    [0, 'Новичок', '🔩'], [2000, 'Юный механик', '🔧'], [6000, 'Подмастерье', '⚙'], [12000, 'Изобретатель', '💡'],
+    [20000, 'Конструктор', '📐'], [32000, 'Главный инженер', '🏗'], [50000, 'Легенда инженерии', '🏆'],
+  ];
+  // Рубашки карточек — призы за звания (номер звания, с которого открывается)
+  const BACKS = [
+    ['classic', 'Классика', 0, ''], ['blueprint', 'Синий чертёж', 1, 'hue-rotate(185deg) saturate(1.5)'],
+    ['chalk', 'Красный мел', 2, 'hue-rotate(-25deg) saturate(2.2)'], ['emerald', 'Изумруд', 3, 'hue-rotate(95deg) saturate(1.7)'],
+    ['night', 'Ночная мастерская', 4, 'invert(.88) hue-rotate(180deg) saturate(1.4)'], ['gold', 'Золото', 5, 'sepia(1) saturate(3.2) brightness(1.08)'],
+    ['legend', 'Пурпур легенды', 6, 'hue-rotate(290deg) saturate(2.4)'],
+  ];
+  const ACH = [
+    ['first_pair', '🔩', 'Первая пара', 'Найди первую пару'],
+    ['combo3', '🔥', 'Комбо ×3', 'Три пары подряд без промаха'],
+    ['combo5', '⚡', 'Комбо ×5', 'Пять пар подряд без промаха'],
+    ['perfect', '🎯', 'Без промахов', 'Пройди раунд, не промахнувшись ни разу'],
+    ['stars3', '⭐', 'Три звезды', 'Получи три звезды за раунд'],
+    ['win_mid', '🥈', '10 пар', 'Пройди уровень «10 пар»'],
+    ['win_hard', '🥇', '15 пар', 'Пройди уровень «15 пар»'],
+    ['collect10', '📚', 'Коллекционер', 'Собери 10 карточек'],
+    ['collect25', '🏆', 'Вся коллекция', 'Собери все 25 карточек'],
+    ['streak3', '📅', 'Три дня подряд', 'Играй три дня подряд'],
+    ['streak7', '🗓', 'Неделя подряд', 'Играй семь дней подряд'],
+    ['hint', '💡', 'Хитрость', 'Используй подсказку'],
+    ['duel', '🤝', 'Дуэль', 'Сыграй вдвоём до конца'],
+  ];
+  const PKEY = 'memoProfile';
+  const today = () => new Date().toISOString().slice(0, 10);
+  function loadProfile() {
+    let p = {};
+    try { p = JSON.parse(localStorage.getItem(PKEY) || '{}'); } catch (e) {}
+    return { xp: 0, hints: 1, ach: [], best: {}, back: 'classic', streak: 0, lastDay: '', games: 0, ...p };
+  }
+  const saveProfile = (p) => { try { localStorage.setItem(PKEY, JSON.stringify(p)); } catch (e) {} };
+  const rankOf = (xp) => { let i = 0; RANKS.forEach((r, k) => { if (xp >= r[0]) i = k; }); return i; };
 
   function initGame() {
     const board = document.getElementById('memoBoard');
     if (!board || !root.MEMO_CARDS) return;
     const cards = root.MEMO_CARDS;
-    const moves = document.getElementById('memoMoves'), pairs = document.getElementById('memoPairs'), total = document.getElementById('memoTotal');
-    const missEl = document.getElementById('memoMiss'), note = document.getElementById('memoNote');
-    let first = null, lock = false, nMoves = 0, nPairs = 0, misses = 0, level = 'easy';
-    try { level = localStorage.getItem('memoLevel') || level; } catch (e) {}
+    const $ = (id) => document.getElementById(id);
+    const note = $('memoNote'), win = $('memoWin'), toasts = $('memoToasts');
+    let P = loadProfile();
+    let level = 'easy', mode = 'solo';
+    try { level = localStorage.getItem('memoLevel') || level; mode = localStorage.getItem('memoMode') || mode; } catch (e) {}
+    if (!LEVELS[level]) level = 'easy';
+    // состояние раунда
+    let first = null, lock = false, moves = 0, pairs = 0, misses = 0, missesTotal = 0, reshuffles = 0, combo = 0, points = 0;
+    let turn = 0, duel = [{ pairs: 0 }, { pairs: 0 }];
 
+    // ---------- уведомления ----------
+    function toast(html, kind = '') {
+      const t = document.createElement('div');
+      t.className = 'memo-toast ' + kind; t.innerHTML = html;
+      toasts.appendChild(t);
+      while (toasts.children.length > 3) toasts.firstElementChild.remove();   // не больше трёх сразу
+      setTimeout(() => t.classList.add('out'), 2600);
+      setTimeout(() => t.remove(), 3100);
+    }
+    function floatText(el, text) {
+      const r = el.getBoundingClientRect(), f = document.createElement('div');
+      f.className = 'memo-float'; f.textContent = text;
+      f.style.left = (r.left + r.width / 2 + scrollX) + 'px'; f.style.top = (r.top + scrollY) + 'px';
+      document.body.appendChild(f); setTimeout(() => f.remove(), 1200);
+    }
+
+    // ---------- профиль ----------
+    function award(id) {
+      if (P.ach.includes(id)) return;
+      const a = ACH.find((x) => x[0] === id); if (!a) return;
+      P.ach.push(id); addXp(200, false);
+      toast(`<b>${a[1]} Достижение: ${esc(a[2])}</b><small>${esc(a[3])} · +200 опыта</small>`, 'ach');
+    }
+    function addXp(n, show = true) {
+      const before = rankOf(P.xp);
+      P.xp += n; saveProfile(P);
+      const after = rankOf(P.xp);
+      if (after > before) {
+        const back = BACKS.find((b) => b[2] === after);
+        toast(`<b>${RANKS[after][2]} Новое звание: ${esc(RANKS[after][1])}!</b>${back ? `<small>Приз — рубашка «${esc(back[1])}». Выбери её в «Призах».</small>` : ''}`, 'rank');
+      }
+      if (show) renderProfile();
+    }
+    function renderProfile() {
+      const box = $('memoProfile'); if (!box) return;
+      box.hidden = false;
+      const r = rankOf(P.xp), next = RANKS[r + 1];
+      $('mpIco').textContent = RANKS[r][2];
+      $('mpRank').textContent = RANKS[r][1];
+      $('mpXpBar').style.width = next ? `${Math.round(((P.xp - RANKS[r][0]) / (next[0] - RANKS[r][0])) * 100)}%` : '100%';
+      $('mpXpText').textContent = next ? `${P.xp} / ${next[0]} опыта до звания «${next[1]}»` : `${P.xp} опыта — высшее звание!`;
+      $('mpHints').textContent = P.hints;
+      $('mpHint').disabled = !P.hints || mode !== 'solo';
+      $('mpStreak').textContent = P.streak > 1 ? `🔥 ${P.streak} ${plural(P.streak, 'день', 'дня', 'дней')} подряд` : '';
+      applyBack();
+    }
+    function applyBack() {
+      const b = BACKS.find((x) => x[0] === P.back) || BACKS[0];
+      board.style.setProperty('--back-filter', b[3] || 'none');
+      board.dataset.back = b[0];
+    }
+    // серия дней и ежедневная подсказка — при первом раунде за день
+    function dailyCheck() {
+      const d = today();
+      if (P.lastDay === d) return;
+      const y = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+      P.streak = P.lastDay === y ? P.streak + 1 : 1;
+      P.lastDay = d; P.hints += 1; saveProfile(P);
+      toast(`<b>☀ Ежедневный бонус: +1 подсказка 💡</b>${P.streak > 1 ? `<small>Ты играешь ${P.streak} ${plural(P.streak, 'день', 'дня', 'дней')} подряд!</small>` : '<small>Заходи завтра — бонус будет снова.</small>'}`);
+      if (P.streak >= 3) award('streak3');
+      if (P.streak >= 7) award('streak7');
+    }
+
+    // ---------- раздача ----------
+    const cfg = () => LEVELS[level];
     // reshuffle=true — после промахов: новые карточки из всех 25 (и найденные тоже), найденные пары раунда возвращаются в игру
     function deal(reshuffle) {
-      const n = LEVELS[level] || 6;
-      // при новой игре сначала карточки, которых ещё нет в коллекции, — чтобы за несколько игр собрать все 25
+      const n = cfg().pairs;
       const have = found();
       const pick = reshuffle === true ? shuffle([...cards]).slice(0, n)
         : [...shuffle(cards.filter((c) => !have.has(c.slug))), ...shuffle(cards.filter((c) => have.has(c.slug)))].slice(0, n);
       const deck = shuffle([...pick, ...pick]);
-      if (reshuffle !== true) { nMoves = 0; if (note) note.textContent = ''; }
-      first = null; lock = false; nPairs = 0; misses = 0;
-      moves.textContent = nMoves; showMisses(); pairs.textContent = 0; total.textContent = n;
+      if (reshuffle !== true) { moves = 0; points = 0; missesTotal = 0; reshuffles = 0; note.textContent = ''; turn = 0; duel = [{ pairs: 0 }, { pairs: 0 }]; }
+      first = null; lock = false; pairs = 0; misses = 0; combo = 0;
       board.dataset.size = n;
       board.innerHTML = deck.map((c, i) =>
         `<button type="button" class="mcard" data-slug="${c.slug}" aria-label="Карточка ${i + 1}, закрыта" style="--i:${i}">` +
         `<span class="mcard-in"><span class="mcard-back"><img src="/assets/memo/back-s.webp" alt="" width="240" height="360"></span>` +
         `<span class="mcard-face"><img src="${img(c.slug, true)}" alt="" width="240" height="360" loading="lazy"></span></span></button>`).join('');
-      document.querySelectorAll('.memo-levels button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.level === level));
-      document.getElementById('memoWin').hidden = true;
+      document.querySelectorAll('[data-level]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.level === level));
+      document.querySelectorAll('[data-mode]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === mode));
+      $('memoSolo').hidden = mode !== 'solo';
+      $('memoDuel').hidden = mode !== 'duel';
+      win.hidden = true;
       board.classList.remove('dealt'); void board.offsetWidth; board.classList.add('dealt');
+      renderScore(); renderProfile();
     }
-
-    function showMisses() {
-      if (missEl) missEl.innerHTML = Array.from({ length: MAX_MISSES }, (_, i) => `<i class="${i < misses ? 'on' : ''}"></i>`).join('');
+    function renderScore() {
+      $('memoPoints').textContent = points;
+      $('memoCombo').textContent = '×' + Math.max(1, Math.min(combo, 5));
+      $('memoMoves').textContent = moves;
+      $('memoPairs').textContent = pairs; $('memoTotal').textContent = cfg().pairs;
+      $('memoMiss').innerHTML = Array.from({ length: cfg().misses }, (_, i) => `<i class="${i < misses ? 'on' : ''}"></i>`).join('');
+      $('memoMissWrap').title = `${cfg().misses} промахов подряд — карточки перемешаются`;
+      document.querySelectorAll('#memoDuel .pl').forEach((el, i) => {
+        el.classList.toggle('turn', i === turn);
+        el.querySelector('[data-pairs]').textContent = duel[i].pairs;
+      });
     }
+    const name = (i) => esc(document.querySelectorAll('#memoDuel .pl input')[i].value.trim() || `Игрок ${i + 1}`);
 
+    // ---------- ход ----------
     board.addEventListener('click', (e) => {
       const b = e.target.closest('.mcard');
       if (!b || lock || b.classList.contains('open') || b.classList.contains('done')) return;
       const card = cards.find((c) => c.slug === b.dataset.slug);
       b.classList.add('open'); b.setAttribute('aria-label', card.title);
       if (!first) { first = b; return; }
-      nMoves++; moves.textContent = nMoves;
-      if (first.dataset.slug === b.dataset.slug) {
-        const pair = [first, b]; first = null; lock = true;
-        nPairs++; pairs.textContent = nPairs; misses = 0; showMisses();
-        setTimeout(() => {
-          pair.forEach((x) => x.classList.add('done'));
-          addFound(card.slug); markCollection();
-          openStory(card, () => { lock = false; if (nPairs === (LEVELS[level] || 6)) win(); });
-        }, 650);
-      } else {
-        const pair = [first, b]; first = null; lock = true;
-        misses++; showMisses();
-        setTimeout(() => {
-          pair.forEach((x) => { x.classList.remove('open'); x.setAttribute('aria-label', 'Карточка закрыта'); });
-          if (misses < MAX_MISSES) { lock = false; return; }
-          // три промаха подряд: все карточки (и найденные) закрываются, разлетаются и сдаются новые
-          if (note) note.textContent = `${MAX_MISSES} промаха подряд — карточки перемешались! Найденные пары тоже вернулись в игру.`;
-          board.querySelectorAll('.mcard').forEach((x) => x.classList.remove('done', 'open'));
-          setTimeout(() => { board.classList.add('shuffling'); setTimeout(() => { board.classList.remove('shuffling'); deal(true); }, 650); }, 500);
-        }, 1000);
-      }
+      moves++;
+      const pair = [first, b]; first = null; lock = true;
+      if (pair[0].dataset.slug === b.dataset.slug) onPair(pair, card, b); else miss(pair);
+      renderScore();
     });
 
-    function win() {
-      const w = document.getElementById('memoWin');
-      w.querySelector('[data-moves]').textContent = nMoves;
-      w.hidden = false;
-      w.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    function onPair(pair, card, el) {
+      pairs++;
+      const isNew = !found().has(card.slug);
+      addFound(card.slug); markCollection();
+      if (mode === 'duel') {
+        duel[turn].pairs++;
+        setTimeout(() => {
+          pair.forEach((x) => x.classList.add('done', `p${turn}`));
+          toast(`<b>${name(turn)}: пара «${esc(card.title)}»!</b><small>Ходи ещё раз. История — в коллекции ниже.</small>`);
+          lock = false; renderScore();
+          if (pairs === cfg().pairs) finishDuel();
+        }, 600);
+        return;
+      }
+      combo++; misses = 0;
+      const mult = Math.min(combo, 5), gain = 100 * mult + (isNew ? 50 : 0);
+      points += gain;
+      floatText(el, `+${gain}${mult > 1 ? ` ×${mult}!` : ''}`);
+      award('first_pair');
+      if (combo === 3) { award('combo3'); P.hints++; saveProfile(P); toast('<b>🔥 Комбо ×3! +1 подсказка 💡</b>'); }
+      if (combo === 5) award('combo5');
+      const n = found().size;
+      if (n >= 10) award('collect10');
+      if (n >= cards.length) award('collect25');
+      setTimeout(() => {
+        pair.forEach((x) => x.classList.add('done'));
+        openStory(card, () => { lock = false; if (pairs === cfg().pairs) finishSolo(); });
+      }, 650);
     }
 
-    document.querySelectorAll('.memo-levels button').forEach((b) => b.addEventListener('click', () => {
+    function miss(pair) {
+      if (mode === 'duel') {
+        setTimeout(() => {
+          pair.forEach((x) => { x.classList.remove('open'); x.setAttribute('aria-label', 'Карточка закрыта'); });
+          turn = 1 - turn; lock = false; renderScore();
+          note.innerHTML = `Ход: <b>${name(turn)}</b>`;
+        }, 1000);
+        return;
+      }
+      combo = 0; misses++; missesTotal++;
+      setTimeout(() => {
+        pair.forEach((x) => { x.classList.remove('open'); x.setAttribute('aria-label', 'Карточка закрыта'); });
+        if (misses < cfg().misses) { lock = false; return; }
+        // лимит промахов подряд: все карточки (и найденные) закрываются, разлетаются и сдаются новые
+        reshuffles++;
+        note.textContent = `${cfg().misses} ${plural(cfg().misses, 'промах', 'промаха', 'промахов')} подряд — карточки перемешались! Найденные пары тоже вернулись в игру.`;
+        board.querySelectorAll('.mcard').forEach((x) => x.classList.remove('done', 'open'));
+        setTimeout(() => { board.classList.add('shuffling'); setTimeout(() => { board.classList.remove('shuffling'); deal(true); }, 650); }, 500);
+      }, 1000);
+    }
+
+    // ---------- конец раунда ----------
+    function finishSolo() {
+      const n = cfg().pairs;
+      const stars = reshuffles ? 1 : missesTotal <= Math.ceil(n / 2) ? 3 : 2;
+      const bonus = stars * 100 + (missesTotal === 0 ? 300 : 0);
+      points += bonus;
+      const best = P.best[level] || 0, record = points > best;
+      if (record) P.best[level] = points;
+      P.games++; saveProfile(P);
+      addXp(points);
+      if (missesTotal === 0) award('perfect');
+      if (stars === 3) { award('stars3'); P.hints++; saveProfile(P); }
+      if (level === 'mid') award('win_mid');
+      if (level === 'hard') award('win_hard');
+      renderProfile(); renderScore();
+      win.innerHTML = `<div class="win-stars">${[1, 2, 3].map((k) => `<span class="${k <= stars ? 'on' : ''}" style="--k:${k}">★</span>`).join('')}</div>
+        <h2>Все пары найдены!${record ? ' <span class="win-record">Новый рекорд!</span>' : ''}</h2>
+        <p class="win-points"><b>${points}</b> ${plural(points, 'очко', 'очка', 'очков')}</p>
+        <p>Ходов: <b>${moves}</b> · промахов: <b>${missesTotal}</b> · бонус за звёзды: <b>+${bonus}</b>${stars === 3 ? ' · <b>+1 подсказка 💡</b>' : ''}</p>
+        <p class="win-tip">${stars < 3 ? (reshuffles ? 'Чтобы получить больше звёзд — не допускай, чтобы карточки перемешались.' : `Для трёх звёзд — не больше ${Math.ceil(n / 2)} промахов за раунд.`) : 'Отлично! Попробуй уровень сложнее.'} Рекорд уровня: <b>${Math.max(best, points)}</b>.</p>
+        <button type="button" class="btn primary" data-memo-again>Играть ещё</button>`;
+      win.hidden = false;
+      win.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    function finishDuel() {
+      const [a, b] = duel.map((d) => d.pairs);
+      const res = a === b ? 'Ничья! 🤝' : `Победа: ${name(a > b ? 0 : 1)}!`;
+      award('duel');
+      addXp(150);
+      win.innerHTML = `<div class="win-stars"><span class="on">🏆</span></div><h2>${res}</h2>
+        <p class="win-points">${name(0)} — <b>${a}</b> · ${name(1)} — <b>${b}</b></p>
+        <p class="win-tip">Найденные карточки — в коллекции ниже: там можно прочитать их истории.</p>
+        <button type="button" class="btn primary" data-memo-again>Реванш</button>`;
+      win.hidden = false;
+      win.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // ---------- подсказка: на секунду открыть все закрытые карточки ----------
+    $('mpHint').addEventListener('click', () => {
+      if (!P.hints || lock || mode !== 'solo') return;
+      const closed = [...board.querySelectorAll('.mcard:not(.open):not(.done)')];
+      if (!closed.length) return;
+      P.hints--; saveProfile(P); award('hint'); renderProfile();
+      lock = true;
+      closed.forEach((x) => x.classList.add('peek'));
+      setTimeout(() => { closed.forEach((x) => x.classList.remove('peek')); lock = false; }, 1300);
+    });
+
+    // ---------- призы ----------
+    $('mpPrizes').addEventListener('click', () => {
+      const dlg = $('memoPrizes'), r = rankOf(P.xp);
+      dlg.querySelector('.prizes-body').innerHTML = `<h2 id="memoPrizesTitle">Призы и достижения</h2>
+        <h3>Звания</h3><ol class="pz-ranks">${RANKS.map((x, i) => `<li class="${i <= r ? 'got' : ''}${i === r ? ' now' : ''}"><span>${x[2]}</span><b>${esc(x[1])}</b><small>${x[0]} опыта</small></li>`).join('')}</ol>
+        <h3>Рубашки карточек</h3><p class="pz-sub">Открываются вместе со званиями. Нажми, чтобы выбрать.</p>
+        <div class="pz-backs">${BACKS.map((b) => { const open = r >= b[2]; return `<button type="button" data-back="${b[0]}" ${open ? '' : 'disabled'} class="${P.back === b[0] ? 'sel' : ''}"><img src="/assets/memo/back-s.webp" alt="" style="filter:${b[3] || 'none'}">${esc(b[1])}${open ? '' : `<small>🔒 ${esc(RANKS[b[2]][1])}</small>`}</button>`; }).join('')}</div>
+        <h3>Достижения: ${P.ach.length} из ${ACH.length}</h3><div class="pz-ach">${ACH.map((a) => `<div class="${P.ach.includes(a[0]) ? 'got' : ''}"><span>${a[1]}</span><b>${esc(a[2])}</b><small>${esc(a[3])}</small></div>`).join('')}</div>
+        <h3>Рекорды</h3><p>6 пар: <b>${P.best.easy || '—'}</b> · 10 пар: <b>${P.best.mid || '—'}</b> · 15 пар: <b>${P.best.hard || '—'}</b> · сыграно раундов: <b>${P.games}</b></p>`;
+      dlg.querySelectorAll('[data-back]').forEach((b) => b.addEventListener('click', () => {
+        P.back = b.dataset.back; saveProfile(P); applyBack();
+        dlg.querySelectorAll('[data-back]').forEach((x) => x.classList.toggle('sel', x === b));
+      }));
+      dlg.showModal();
+    });
+
+    // ---------- переключатели ----------
+    document.querySelectorAll('[data-level]').forEach((b) => b.addEventListener('click', () => {
       level = b.dataset.level; try { localStorage.setItem('memoLevel', level); } catch (e) {} deal();
     }));
-    document.querySelectorAll('[data-memo-again]').forEach((b) => b.addEventListener('click', () => deal()));
+    document.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => {
+      mode = b.dataset.mode; try { localStorage.setItem('memoMode', mode); } catch (e) {}
+      deal();
+      note.innerHTML = mode === 'duel' ? `Ход: <b>${name(0)}</b>. Нашёл пару — ходи ещё раз, промахнулся — ход другу.` : '';
+    }));
+    document.addEventListener('click', (e) => { if (e.target.closest('[data-memo-again]')) deal(); });
+    document.querySelectorAll('#memoDuel input').forEach((i) => i.addEventListener('input', () => { if (mode === 'duel' && !lock) note.innerHTML = `Ход: <b>${name(turn)}</b>`; }));
+
+    dailyCheck();
     deal();
+    if (mode === 'duel') note.innerHTML = `Ход: <b>${name(0)}</b>. Нашёл пару — ходи ещё раз, промахнулся — ход другу.`;
     videos(); // заранее, чтобы окно истории открылось сразу с видео
   }
 

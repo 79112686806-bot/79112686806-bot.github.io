@@ -25,3 +25,6 @@ video/out/
 video/public/voice/
 video/whisper/
 video/whisper-models/
+
+# Модель тележки для 3D-печати (продажа наборов) — не публикуется
+model/
