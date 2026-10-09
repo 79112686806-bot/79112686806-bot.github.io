@@ -4,7 +4,49 @@
 (function (root) {
   const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const img = (slug, small) => `/assets/memo/${slug}${small ? '-s' : ''}.webp`;
-  const ICONS = { short: '✦', history: '📜', how: '⚙', then: '⏳', fact: '❗', try: '🔧', think: '💭' };
+
+  // ---------- Значки в стиле сайта: линия «чернилами» (stroke = currentColor), 24×24 ----------
+  const IC = {
+    nut: '<path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"/><circle cx="12" cy="12" r="3.2"/>',
+    wrench: '<path d="M14.7 6.3a4 4 0 0 0-5.2 5.2L4 17l3 3 5.5-5.5a4 4 0 0 0 5.2-5.2l-2.6 2.6-2.4-.6-.6-2.4z"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+    bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>',
+    compass: '<circle cx="12" cy="4.5" r="1.6"/><path d="M11.2 6L6 20M12.8 6L18 20M8 15h8"/>',
+    helmet: '<path d="M3 17.5h18M4.5 17.5a7.5 7.5 0 0 1 15 0M10 10.2V6.5h4v3.7M12 6.5V5"/>',
+    laurel: '<path d="M8 20c-3-2-5-5-5-9M16 20c3-2 5-5 5-9M4 9.5c1.5.3 2.5 1.2 2.8 2.7M3.6 13.5c1.6 0 2.8.8 3.4 2.2M20 9.5c-1.5.3-2.5 1.2-2.8 2.7M20.4 13.5c-1.6 0-2.8.8-3.4 2.2"/><path d="M12 6l1.2 2.4 2.6.4-1.9 1.8.5 2.6L12 12l-2.4 1.2.5-2.6-1.9-1.8 2.6-.4z"/>',
+    star: '<path d="M12 3.2l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 17l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z"/>',
+    heart: '<path d="M12 20s-7.5-4.6-7.5-10.1A4.2 4.2 0 0 1 12 7.4a4.2 4.2 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z"/>',
+    miss: '<path d="M12 20s-7.5-4.6-7.5-10.1A4.2 4.2 0 0 1 12 7.4a4.2 4.2 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z"/><path d="M12 7.4l-1.6 3.6 2.6 2-1.6 3.6"/>',
+    trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M10 17h4v3h-4zM8.5 20.5h7"/>',
+    flame: '<path d="M12 21a6 6 0 0 0 6-6c0-4-3-5.5-3.5-9-2 1.5-3 3.5-3 5.5-1-1-1.5-2-1.5-3C7.5 10.5 6 12.6 6 15a6 6 0 0 0 6 6z"/>',
+    bolt: '<path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z"/>',
+    shuffle: '<path d="M3 7h3.5c4 0 6.5 10 11 10H21M3 17h3.5c1.5 0 2.7-1.4 3.7-3.2M13.8 10.2C14.8 8.4 16 7 17.5 7H21M18.5 4.5L21 7l-2.5 2.5M18.5 14.5L21 17l-2.5 2.5"/>',
+    cards: '<rect x="3.5" y="5" width="9" height="13" rx="1.5" transform="rotate(-8 8 11.5)"/><rect x="11.5" y="5" width="9" height="13" rx="1.5" transform="rotate(8 16 11.5)"/>',
+    medal: '<circle cx="12" cy="15" r="5"/><path d="M8.5 11.4L6 3h4l2 5 2-5h4l-2.5 8.4"/>',
+    gift: '<rect x="4" y="9.5" width="16" height="10.5" rx="1"/><path d="M3 9.5h18M12 9.5V20M12 9.5C10 5.5 6 5.5 6 8s4 1.5 6 1.5zM12 9.5c2-4 6-4 6-1.5s-4 1.5-6 1.5z"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5V5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/>',
+    lock: '<rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3M12 14.5V17"/>',
+    target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
+    books: '<path d="M4 19.5V6a1.5 1.5 0 0 1 1.5-1.5H9v15M9 4.5h4.5v15H9M14.5 6.5l3.5-.9 3 13.9-3.5.9zM3 19.5h11"/>',
+    cal: '<rect x="3.5" y="5" width="17" height="15.5" rx="1.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4M8 14h.01M12 14h.01M16 14h.01"/>',
+    calcheck: '<rect x="3.5" y="5" width="17" height="15.5" rx="1.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4M9 14.5l2 2 4-4"/>',
+    duo: '<circle cx="8.5" cy="8" r="2.8"/><circle cx="16" cy="8.5" r="2.4"/><path d="M3.5 19c.5-3.4 2.6-5.2 5-5.2s4.5 1.8 5 5.2M13.8 14.2c.7-.4 1.4-.6 2.2-.6 2.1 0 3.9 1.6 4.4 4.6"/>',
+    refresh: '<path d="M20 11a8 8 0 0 0-14.3-4.3M4 13a8 8 0 0 0 14.3 4.3M5.5 3v4h4M18.5 21v-4h-4"/>',
+    play: '<path d="M7 4.5v15l12-7.5z"/>',
+    up: '<path d="M12 20V5M6 11l6-6 6 6"/>',
+    arrow: '<path d="M4 12h15M13 6l6 6-6 6"/>',
+    sparkle: '<path d="M12 3.5c.8 4.4 4.1 7.7 8.5 8.5-4.4.8-7.7 4.1-8.5 8.5-.8-4.4-4.1-7.7-8.5-8.5 4.4-.8 7.7-4.1 8.5-8.5z"/>',
+    scroll: '<path d="M7 4h11a2 2 0 0 1 0 4h-1v10a2.5 2.5 0 0 1-2.5 2.5H6a2.5 2.5 0 0 1 0-5h9M7 4a2 2 0 0 0-2 2v9.5M10 9h4M10 12.5h4"/>',
+    hourglass: '<path d="M6.5 3h11M6.5 21h11M7.5 3c0 5 4.5 6 4.5 9s-4.5 4-4.5 9M16.5 3c0 5-4.5 6-4.5 9s4.5 4 4.5 9"/>',
+    exclaim: '<circle cx="12" cy="12" r="9"/><path d="M12 7v6.5M12 16.8v.1"/>',
+    think: '<path d="M6 15.5a5 5 0 0 1 1.2-9.8A5.5 5.5 0 0 1 17.5 7a4.3 4.3 0 0 1-.8 8.5H8"/><circle cx="7" cy="19" r="1.2"/><circle cx="4.5" cy="21.2" r=".6"/>',
+    chain: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+    book: '<path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5zM12 6.5v13"/>',
+    film: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9v6l5-3z"/>',
+  };
+  // cls: «fill» — залитый значок (сердце, звезда)
+  const ico = (name, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${IC[name] || IC.sparkle}</svg>`;
+  const ICONS = { short: 'sparkle', history: 'scroll', how: 'gear', then: 'hourglass', fact: 'exclaim', try: 'wrench', think: 'think' };
 
   // Время чтения: дети читают примерно 120 слов в минуту
   function readMinutes(card) {
@@ -19,16 +61,16 @@
     const by = Object.fromEntries((cards || []).map((c) => [c.slug, c]));
     const paras = (t) => t.split('\n').filter(Boolean).map((p) => `<p>${esc(p)}</p>`).join('');
     const sections = card.sections.map((s) =>
-      `<section class="story-part story-${s.key}"><${heading}><span class="story-ico" aria-hidden="true">${ICONS[s.key] || '•'}</span>${esc(s.title)}` +
-      `${s.note ? ` <span class="story-adult" title="Делайте вместе со взрослым">👨‍👧 ${esc(s.note)}</span>` : ''}</${heading}>` +
+      `<section class="story-part story-${s.key}"><${heading}><span class="story-ico">${ico(ICONS[s.key] || 'sparkle')}</span>${esc(s.title)}` +
+      `${s.note ? ` <span class="story-adult" title="Делайте вместе со взрослым">${ico('duo')} ${esc(s.note)}</span>` : ''}</${heading}>` +
       paras(s.text) + (s.list.length ? `<ul>${s.list.map((li) => `<li>${esc(li)}</li>`).join('')}</ul>` : '') + '</section>').join('');
     const links = card.links.length
-      ? `<section class="story-part story-links"><${heading}><span class="story-ico" aria-hidden="true">🔗</span>Ищи связь</${heading}><p>Эта карточка связана с другими:</p><ul class="story-chips">${card.links.map((s) => by[s] ? `<li><a href="/igra/${s}/"><img src="${img(s, true)}" alt="" loading="lazy" width="40" height="60">${esc(by[s].title)}</a></li>` : '').join('')}</ul></section>`
-      : card.linksText ? `<section class="story-part story-links"><${heading}><span class="story-ico" aria-hidden="true">🔗</span>Ищи связь</${heading}><p>${esc(card.linksText)}</p></section>` : '';
+      ? `<section class="story-part story-links"><${heading}><span class="story-ico">${ico('chain')}</span>Ищи связь</${heading}><p>Эта карточка связана с другими:</p><ul class="story-chips">${card.links.map((s) => by[s] ? `<li><a href="/igra/${s}/"><img src="${img(s, true)}" alt="" loading="lazy" width="40" height="60">${esc(by[s].title)}</a></li>` : '').join('')}</ul></section>`
+      : card.linksText ? `<section class="story-part story-links"><${heading}><span class="story-ico">${ico('chain')}</span>Ищи связь</${heading}><p>${esc(card.linksText)}</p></section>` : '';
     const v = video && root.HomeBlocks && root.HomeBlocks.embedUrl(video);
     const videoBlock = v ? `<div class="story-video"><div class="video-frame"><button type="button" data-embed="${esc(v)}" onclick="Memo.playVideo(this)" aria-label="Смотреть видео: ${esc(card.title)}"><img src="${img(card.slug)}" alt="" loading="lazy"><span class="video-play" aria-hidden="true">▶</span><span class="video-label">Смотреть видео-историю</span></button></div></div>` : '';
     const min = readMinutes(card);
-    return `<p class="story-meta"><span>📖 читать ${min} ${minutesWord(min)}</span>${v ? '<span>🎬 есть видео</span>' : ''}${card.years ? `<span>${esc(card.years)}</span>` : ''}</p>` +
+    return `<p class="story-meta"><span>${ico('book')} читать ${min} ${minutesWord(min)}</span>${v ? `<span>${ico('film')} есть видео</span>` : ''}${card.years ? `<span>${esc(card.years)}</span>` : ''}</p>` +
       `<p class="story-hook">${esc(card.hook)}</p>${videoBlock}${sections}${links}`;
   }
 
@@ -55,11 +97,22 @@
   const KEY = 'memoFound';
   const found = () => { try { return new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); } catch (e) { return new Set(); } };
   function addFound(slug) { const s = found(); s.add(slug); try { localStorage.setItem(KEY, JSON.stringify([...s])); } catch (e) {} return s; }
-  function markCollection() {
+  // Коллекция: найденные карточки открыты, остальные — рубашкой с замком (без картинки, названия и ссылки).
+  // В HTML страницы список полный — для поисковиков; закрывает его скрипт. fresh — только что добавленная карточка.
+  function markCollection(fresh) {
     const s = found();
-    document.querySelectorAll('[data-memo-card]').forEach((a) => a.classList.toggle('got', s.has(a.dataset.memoCard)));
+    document.querySelectorAll('[data-memo-card]').forEach((a) => {
+      const got = s.has(a.dataset.memoCard), im = a.querySelector('img');
+      if (!a.dataset.href) { a.dataset.href = a.getAttribute('href'); im.dataset.src = im.getAttribute('src'); im.dataset.alt = im.alt; }
+      a.classList.toggle('locked', !got);
+      if (got) { a.setAttribute('href', a.dataset.href); im.src = im.dataset.src; im.alt = im.dataset.alt; a.removeAttribute('tabindex'); a.removeAttribute('aria-hidden'); }
+      else { a.removeAttribute('href'); im.src = '/assets/memo/back-s.webp'; im.alt = ''; a.setAttribute('tabindex', '-1'); a.setAttribute('aria-hidden', 'true'); }
+      if (got && a.dataset.memoCard === fresh) { a.classList.remove('fresh'); void a.offsetWidth; a.classList.add('fresh'); }
+    });
     const n = document.getElementById('memoCount');
     if (n) n.textContent = s.size;
+    const hint = document.getElementById('memoCollHint');
+    if (hint) hint.innerHTML = s.size ? `${ico('book')} Нажми на карточку — откроется её история.` : 'Найди пару — карточка и её история появятся здесь.';
   }
 
   // ---------- Игра на пары ----------
@@ -70,8 +123,8 @@
 
   // ---------- Профиль игрока: опыт, звания, подсказки, достижения, призы (в этом браузере) ----------
   const RANKS = [
-    [0, 'Новичок', '🔩'], [2000, 'Юный механик', '🔧'], [6000, 'Подмастерье', '⚙'], [12000, 'Изобретатель', '💡'],
-    [20000, 'Конструктор', '📐'], [32000, 'Главный инженер', '🏗'], [50000, 'Легенда инженерии', '🏆'],
+    [0, 'Новичок', 'nut'], [2000, 'Юный механик', 'wrench'], [6000, 'Подмастерье', 'gear'], [12000, 'Изобретатель', 'bulb'],
+    [20000, 'Конструктор', 'compass'], [32000, 'Главный инженер', 'helmet'], [50000, 'Легенда инженерии', 'laurel'],
   ];
   // Рубашки карточек — призы за звания (номер звания, с которого открывается)
   const BACKS = [
@@ -81,19 +134,19 @@
     ['legend', 'Пурпур легенды', 6, 'hue-rotate(290deg) saturate(2.4)'],
   ];
   const ACH = [
-    ['first_pair', '🔩', 'Первая пара', 'Найди первую пару'],
-    ['combo3', '🔥', 'Комбо ×3', 'Три пары подряд без промаха'],
-    ['combo5', '⚡', 'Комбо ×5', 'Пять пар подряд без промаха'],
-    ['perfect', '🎯', 'Без промахов', 'Пройди раунд, не промахнувшись ни разу'],
-    ['stars3', '⭐', 'Три звезды', 'Получи три звезды за раунд'],
-    ['win_mid', '🥈', '10 пар', 'Пройди уровень «10 пар»'],
-    ['win_hard', '🥇', '15 пар', 'Пройди уровень «15 пар»'],
-    ['collect10', '📚', 'Коллекционер', 'Собери 10 карточек'],
-    ['collect25', '🏆', 'Вся коллекция', 'Собери все 25 карточек'],
-    ['streak3', '📅', 'Три дня подряд', 'Играй три дня подряд'],
-    ['streak7', '🗓', 'Неделя подряд', 'Играй семь дней подряд'],
-    ['hint', '💡', 'Хитрость', 'Используй подсказку'],
-    ['duel', '🤝', 'Дуэль', 'Сыграй вдвоём до конца'],
+    ['first_pair', 'cards', 'Первая пара', 'Найди первую пару'],
+    ['combo3', 'flame', 'Комбо ×3', 'Три пары подряд без промаха'],
+    ['combo5', 'bolt', 'Комбо ×5', 'Пять пар подряд без промаха'],
+    ['perfect', 'target', 'Без промахов', 'Пройди раунд, не промахнувшись ни разу'],
+    ['stars3', 'star', 'Три звезды', 'Получи три звезды за раунд'],
+    ['win_mid', 'medal', '10 пар', 'Пройди уровень «10 пар»'],
+    ['win_hard', 'medal', '15 пар', 'Пройди уровень «15 пар»'],
+    ['collect10', 'books', 'Коллекционер', 'Собери 10 карточек'],
+    ['collect25', 'trophy', 'Вся коллекция', 'Собери все 25 карточек'],
+    ['streak3', 'cal', 'Три дня подряд', 'Играй три дня подряд'],
+    ['streak7', 'calcheck', 'Неделя подряд', 'Играй семь дней подряд'],
+    ['hint', 'bulb', 'Хитрость', 'Используй подсказку'],
+    ['duel', 'duo', 'Дуэль', 'Сыграй вдвоём до конца'],
   ];
   const PKEY = 'memoProfile';
   const today = () => new Date().toISOString().slice(0, 10);
@@ -128,6 +181,12 @@
       setTimeout(() => t.classList.add('out'), 2600);
       setTimeout(() => t.remove(), 3100);
     }
+    // крупная надпись по центру поля на секунду — вместо текстовых сообщений
+    function burst(text, kind = '') {
+      const b = $('memoBurst'); if (!b) return;
+      b.className = 'memo-burst'; void b.offsetWidth;
+      b.innerHTML = text; b.className = 'memo-burst show ' + kind;   // text — уже экранированный HTML
+    }
     function floatText(el, text) {
       const r = el.getBoundingClientRect(), f = document.createElement('div');
       f.className = 'memo-float'; f.textContent = text;
@@ -140,7 +199,7 @@
       if (P.ach.includes(id)) return;
       const a = ACH.find((x) => x[0] === id); if (!a) return;
       P.ach.push(id); addXp(200, false);
-      toast(`<b>${a[1]} Достижение: ${esc(a[2])}</b><small>${esc(a[3])} · +200 опыта</small>`, 'ach');
+      toast(`${ico(a[1])} ${esc(a[2])} <i>+200</i>`, 'ach');
     }
     function addXp(n, show = true) {
       const before = rankOf(P.xp);
@@ -148,7 +207,8 @@
       const after = rankOf(P.xp);
       if (after > before) {
         const back = BACKS.find((b) => b[2] === after);
-        toast(`<b>${RANKS[after][2]} Новое звание: ${esc(RANKS[after][1])}!</b>${back ? `<small>Приз — рубашка «${esc(back[1])}». Выбери её в «Призах».</small>` : ''}`, 'rank');
+        toast(`${ico(RANKS[after][2])} ${esc(RANKS[after][1])}!${back ? ` ${ico('gift')} новая рубашка` : ''}`, 'rank');
+        burst(`${ico(RANKS[after][2])} ${esc(RANKS[after][1])}!`, 'rank');
       }
       if (show) renderProfile();
     }
@@ -156,13 +216,14 @@
       const box = $('memoProfile'); if (!box) return;
       box.hidden = false;
       const r = rankOf(P.xp), next = RANKS[r + 1];
-      $('mpIco').textContent = RANKS[r][2];
+      $('mpIco').innerHTML = ico(RANKS[r][2]);
       $('mpRank').textContent = RANKS[r][1];
       $('mpXpBar').style.width = next ? `${Math.round(((P.xp - RANKS[r][0]) / (next[0] - RANKS[r][0])) * 100)}%` : '100%';
-      $('mpXpText').textContent = next ? `${P.xp} / ${next[0]} опыта до звания «${next[1]}»` : `${P.xp} опыта — высшее звание!`;
+      $('mpXpText').textContent = next ? `${P.xp}/${next[0]}` : `${P.xp}`;
+      $('mpXpBar').parentElement.title = next ? `До звания «${next[1]}»` : 'Высшее звание';
       $('mpHints').textContent = P.hints;
       $('mpHint').disabled = !P.hints || mode !== 'solo';
-      $('mpStreak').textContent = P.streak > 1 ? `🔥 ${P.streak} ${plural(P.streak, 'день', 'дня', 'дней')} подряд` : '';
+      $('mpStreak').innerHTML = P.streak > 1 ? `${ico('flame')}${P.streak}` : '';
       applyBack();
     }
     function applyBack() {
@@ -177,7 +238,7 @@
       const y = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
       P.streak = P.lastDay === y ? P.streak + 1 : 1;
       P.lastDay = d; P.hints += 1; saveProfile(P);
-      toast(`<b>☀ Ежедневный бонус: +1 подсказка 💡</b>${P.streak > 1 ? `<small>Ты играешь ${P.streak} ${plural(P.streak, 'день', 'дня', 'дней')} подряд!</small>` : '<small>Заходи завтра — бонус будет снова.</small>'}`);
+      toast(`${ico('sun')} Бонус дня +1 ${ico('bulb')}${P.streak > 1 ? ` · ${ico('flame')} ${P.streak}` : ''}`);
       if (P.streak >= 3) award('streak3');
       if (P.streak >= 7) award('streak7');
     }
@@ -209,10 +270,11 @@
     function renderScore() {
       $('memoPoints').textContent = points;
       $('memoCombo').textContent = '×' + Math.max(1, Math.min(combo, 5));
+      $('memoComboWrap').classList.toggle('hot', combo >= 2);
       $('memoMoves').textContent = moves;
       $('memoPairs').textContent = pairs; $('memoTotal').textContent = cfg().pairs;
-      $('memoMiss').innerHTML = Array.from({ length: cfg().misses }, (_, i) => `<i class="${i < misses ? 'on' : ''}"></i>`).join('');
-      $('memoMissWrap').title = `${cfg().misses} промахов подряд — карточки перемешаются`;
+      $('memoMiss').innerHTML = Array.from({ length: cfg().misses }, (_, i) => `<i class="${i < cfg().misses - misses ? '' : 'lost'}">${ico('heart', 'fill')}</i>`).join('');
+      $('memoMiss').title = `Промахов подряд до перемешивания: ${cfg().misses}`;
       document.querySelectorAll('#memoDuel .pl').forEach((el, i) => {
         el.classList.toggle('turn', i === turn);
         el.querySelector('[data-pairs]').textContent = duel[i].pairs;
@@ -233,17 +295,29 @@
       renderScore();
     });
 
+    // Новая карточка: история → после неё карточка попадает в коллекцию.
+    // Карточка, которая уже в коллекции, историю повторно не показывает — игра просто продолжается.
+    function reveal(card, isNew, done) {
+      if (!isNew) { done(); return; }
+      openStory(card, () => {
+        addFound(card.slug); markCollection(card.slug);
+        const n = found().size;
+        if (n >= 10) award('collect10');
+        if (n >= cards.length) award('collect25');
+        done();
+      });
+    }
+
     function onPair(pair, card, el) {
       pairs++;
       const isNew = !found().has(card.slug);
-      addFound(card.slug); markCollection();
       if (mode === 'duel') {
         duel[turn].pairs++;
         setTimeout(() => {
           pair.forEach((x) => x.classList.add('done', `p${turn}`));
-          toast(`<b>${name(turn)}: пара «${esc(card.title)}»!</b><small>Ходи ещё раз. История — в коллекции ниже.</small>`);
-          lock = false; renderScore();
-          if (pairs === cfg().pairs) finishDuel();
+          const pl = document.querySelectorAll('#memoDuel .pl')[turn]; pl.classList.remove('scored'); void pl.offsetWidth; pl.classList.add('scored');
+          renderScore();
+          reveal(card, isNew, () => { lock = false; if (pairs === cfg().pairs) finishDuel(); });
         }, 600);
         return;
       }
@@ -252,14 +326,12 @@
       points += gain;
       floatText(el, `+${gain}${mult > 1 ? ` ×${mult}!` : ''}`);
       award('first_pair');
-      if (combo === 3) { award('combo3'); P.hints++; saveProfile(P); toast('<b>🔥 Комбо ×3! +1 подсказка 💡</b>'); }
+      if (combo >= 2) burst(`${ico('flame')} ×${mult}!${combo === 3 ? ` +${ico('bulb')}` : ''}`, 'combo');
+      if (combo === 3) { award('combo3'); P.hints++; saveProfile(P); }
       if (combo === 5) award('combo5');
-      const n = found().size;
-      if (n >= 10) award('collect10');
-      if (n >= cards.length) award('collect25');
       setTimeout(() => {
         pair.forEach((x) => x.classList.add('done'));
-        openStory(card, () => { lock = false; if (pairs === cfg().pairs) finishSolo(); });
+        reveal(card, isNew, () => { lock = false; if (pairs === cfg().pairs) finishSolo(); });
       }, 650);
     }
 
@@ -268,7 +340,7 @@
         setTimeout(() => {
           pair.forEach((x) => { x.classList.remove('open'); x.setAttribute('aria-label', 'Карточка закрыта'); });
           turn = 1 - turn; lock = false; renderScore();
-          note.innerHTML = `Ход: <b>${name(turn)}</b>`;
+          burst(`${ico('arrow')} ${name(turn)}`, `p${turn}`);
         }, 1000);
         return;
       }
@@ -278,7 +350,7 @@
         if (misses < cfg().misses) { lock = false; return; }
         // лимит промахов подряд: все карточки (и найденные) закрываются, разлетаются и сдаются новые
         reshuffles++;
-        note.textContent = `${cfg().misses} ${plural(cfg().misses, 'промах', 'промаха', 'промахов')} подряд — карточки перемешались! Найденные пары тоже вернулись в игру.`;
+        burst(`${ico('shuffle')} Перемешка!`, 'shuffle');
         board.querySelectorAll('.mcard').forEach((x) => x.classList.remove('done', 'open'));
         setTimeout(() => { board.classList.add('shuffling'); setTimeout(() => { board.classList.remove('shuffling'); deal(true); }, 650); }, 500);
       }, 1000);
@@ -299,26 +371,29 @@
       if (level === 'mid') award('win_mid');
       if (level === 'hard') award('win_hard');
       renderProfile(); renderScore();
-      win.innerHTML = `<div class="win-stars">${[1, 2, 3].map((k) => `<span class="${k <= stars ? 'on' : ''}" style="--k:${k}">★</span>`).join('')}</div>
-        <h2>Все пары найдены!${record ? ' <span class="win-record">Новый рекорд!</span>' : ''}</h2>
-        <p class="win-points"><b>${points}</b> ${plural(points, 'очко', 'очка', 'очков')}</p>
-        <p>Ходов: <b>${moves}</b> · промахов: <b>${missesTotal}</b> · бонус за звёзды: <b>+${bonus}</b>${stars === 3 ? ' · <b>+1 подсказка 💡</b>' : ''}</p>
-        <p class="win-tip">${stars < 3 ? (reshuffles ? 'Чтобы получить больше звёзд — не допускай, чтобы карточки перемешались.' : `Для трёх звёзд — не больше ${Math.ceil(n / 2)} промахов за раунд.`) : 'Отлично! Попробуй уровень сложнее.'} Рекорд уровня: <b>${Math.max(best, points)}</b>.</p>
-        <button type="button" class="btn primary" data-memo-again>Играть ещё</button>`;
+      const next = { easy: 'mid', mid: 'hard' }[level];
+      // итог — значками, без пояснений (подробности — в подсказках при наведении)
+      win.innerHTML = `<div class="win-card"><div class="win-stars">${[1, 2, 3].map((k) => `<span class="${k <= stars ? 'on' : ''}" style="--k:${k}">${ico('star', 'fill')}</span>`).join('')}</div>
+        ${record ? `<div class="win-record">${ico('medal')} Рекорд!</div>` : ''}
+        <p class="win-points"><b>${points}</b></p>
+        <p class="win-row"><span title="Ходов">${ico('cards')} ${moves}</span><span title="Промахов">${ico('miss')} ${missesTotal}</span><span title="Бонус за звёзды">${ico('star')} +${bonus}</span>${stars === 3 ? `<span title="Подсказка">+1 ${ico('bulb')}</span>` : ''}<span title="Рекорд уровня">${ico('medal')} ${Math.max(best, points)}</span></p>
+        <div class="win-btns"><button type="button" class="btn primary" data-memo-again>${ico('play')} Ещё</button>${next ? `<button type="button" class="btn" data-next="${next}">${ico('up')} ${LEVELS[next].pairs} пар</button>` : ''}</div></div>`;
+      win.querySelector('[data-next]')?.addEventListener('click', (e) => { level = e.target.dataset.next; try { localStorage.setItem('memoLevel', level); } catch (x) {} deal(); });
+      $('memoBurst').className = 'memo-burst';   // вспышка не должна лечь поверх итога
       win.hidden = false;
-      win.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      board.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     function finishDuel() {
       const [a, b] = duel.map((d) => d.pairs);
-      const res = a === b ? 'Ничья! 🤝' : `Победа: ${name(a > b ? 0 : 1)}!`;
+      const res = a === b ? 'Ничья!' : `${name(a > b ? 0 : 1)}!`;
       award('duel');
       addXp(150);
-      win.innerHTML = `<div class="win-stars"><span class="on">🏆</span></div><h2>${res}</h2>
-        <p class="win-points">${name(0)} — <b>${a}</b> · ${name(1)} — <b>${b}</b></p>
-        <p class="win-tip">Найденные карточки — в коллекции ниже: там можно прочитать их истории.</p>
-        <button type="button" class="btn primary" data-memo-again>Реванш</button>`;
+      win.innerHTML = `<div class="win-card"><div class="win-stars"><span class="on">${ico(a === b ? 'duo' : 'trophy')}</span></div><h2>${res}</h2>
+        <p class="win-points"><b class="c0">${a}</b> : <b class="c1">${b}</b></p>
+        <div class="win-btns"><button type="button" class="btn primary" data-memo-again>${ico('refresh')} Реванш</button></div></div>`;
+      $('memoBurst').className = 'memo-burst';   // вспышка не должна лечь поверх итога
       win.hidden = false;
-      win.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      board.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     // ---------- подсказка: на секунду открыть все закрытые карточки ----------
@@ -336,10 +411,10 @@
     $('mpPrizes').addEventListener('click', () => {
       const dlg = $('memoPrizes'), r = rankOf(P.xp);
       dlg.querySelector('.prizes-body').innerHTML = `<h2 id="memoPrizesTitle">Призы и достижения</h2>
-        <h3>Звания</h3><ol class="pz-ranks">${RANKS.map((x, i) => `<li class="${i <= r ? 'got' : ''}${i === r ? ' now' : ''}"><span>${x[2]}</span><b>${esc(x[1])}</b><small>${x[0]} опыта</small></li>`).join('')}</ol>
-        <h3>Рубашки карточек</h3><p class="pz-sub">Открываются вместе со званиями. Нажми, чтобы выбрать.</p>
-        <div class="pz-backs">${BACKS.map((b) => { const open = r >= b[2]; return `<button type="button" data-back="${b[0]}" ${open ? '' : 'disabled'} class="${P.back === b[0] ? 'sel' : ''}"><img src="/assets/memo/back-s.webp" alt="" style="filter:${b[3] || 'none'}">${esc(b[1])}${open ? '' : `<small>🔒 ${esc(RANKS[b[2]][1])}</small>`}</button>`; }).join('')}</div>
-        <h3>Достижения: ${P.ach.length} из ${ACH.length}</h3><div class="pz-ach">${ACH.map((a) => `<div class="${P.ach.includes(a[0]) ? 'got' : ''}"><span>${a[1]}</span><b>${esc(a[2])}</b><small>${esc(a[3])}</small></div>`).join('')}</div>
+        <h3>Звания</h3><ol class="pz-ranks">${RANKS.map((x, i) => `<li class="${i <= r ? 'got' : ''}${i === r ? ' now' : ''}"><span>${ico(x[2])}</span><b>${esc(x[1])}</b><small>${x[0]} опыта</small></li>`).join('')}</ol>
+        <h3>Рубашки карточек</h3>
+        <div class="pz-backs">${BACKS.map((b) => { const open = r >= b[2]; return `<button type="button" data-back="${b[0]}" ${open ? '' : 'disabled'} class="${P.back === b[0] ? 'sel' : ''}"><img src="/assets/memo/back-s.webp" alt="" style="filter:${b[3] || 'none'}">${esc(b[1])}${open ? '' : `<small>${ico('lock')} ${esc(RANKS[b[2]][1])}</small>`}</button>`; }).join('')}</div>
+        <h3>Достижения: ${P.ach.length} из ${ACH.length}</h3><div class="pz-ach">${ACH.map((a) => `<div class="${P.ach.includes(a[0]) ? 'got' : ''}"><span>${ico(a[1])}</span><b>${esc(a[2])}</b><small>${esc(a[3])}</small></div>`).join('')}</div>
         <h3>Рекорды</h3><p>6 пар: <b>${P.best.easy || '—'}</b> · 10 пар: <b>${P.best.mid || '—'}</b> · 15 пар: <b>${P.best.hard || '—'}</b> · сыграно раундов: <b>${P.games}</b></p>`;
       dlg.querySelectorAll('[data-back]').forEach((b) => b.addEventListener('click', () => {
         P.back = b.dataset.back; saveProfile(P); applyBack();
@@ -355,14 +430,14 @@
     document.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => {
       mode = b.dataset.mode; try { localStorage.setItem('memoMode', mode); } catch (e) {}
       deal();
-      note.innerHTML = mode === 'duel' ? `Ход: <b>${name(0)}</b>. Нашёл пару — ходи ещё раз, промахнулся — ход другу.` : '';
+      if (mode === 'duel') burst(`${ico('arrow')} ${name(0)}`, 'p0');
     }));
     document.addEventListener('click', (e) => { if (e.target.closest('[data-memo-again]')) deal(); });
-    document.querySelectorAll('#memoDuel input').forEach((i) => i.addEventListener('input', () => { if (mode === 'duel' && !lock) note.innerHTML = `Ход: <b>${name(turn)}</b>`; }));
+
 
     dailyCheck();
     deal();
-    if (mode === 'duel') note.innerHTML = `Ход: <b>${name(0)}</b>. Нашёл пару — ходи ещё раз, промахнулся — ход другу.`;
+    if (mode === 'duel') setTimeout(() => burst(`${ico('arrow')} ${name(0)}`, 'p0'), 700);
     videos(); // заранее, чтобы окно истории открылось сразу с видео
   }
 
@@ -386,7 +461,6 @@
   async function initStoryPage() {
     const page = document.querySelector('[data-memo-page]');
     if (!page) return;
-    addFound(page.dataset.memoPage);
     if (page.querySelector('.story-video')) return;
     const v = (await videos())[page.dataset.memoPage];
     const e = v && root.HomeBlocks && root.HomeBlocks.embedUrl(v);
@@ -424,7 +498,7 @@
     });
   }
 
-  root.Memo = { storyHtml, readMinutes, minutesWord, playVideo, img };
+  root.Memo = { storyHtml, readMinutes, minutesWord, playVideo, img, ico };
   if (typeof document !== 'undefined') {
     const start = () => { initGame(); initStoryPage(); initIdeaForm(); markCollection(); };
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
