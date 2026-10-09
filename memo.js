@@ -46,7 +46,8 @@
   };
   // cls: «fill» — залитый значок (сердце, звезда)
   const ico = (name, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${IC[name] || IC.sparkle}</svg>`;
-  const ICONS = { short: 'sparkle', history: 'scroll', how: 'gear', then: 'hourglass', fact: 'exclaim', try: 'wrench', think: 'think' };
+  // значки рубрик в историях — цветные, чтобы рубрики не сливались при чтении
+  const ICONS = { short: '✦', history: '📜', how: '⚙', then: '⏳', fact: '❗', try: '🔧', think: '💭' };
 
   // Время чтения: дети читают примерно 120 слов в минуту
   function readMinutes(card) {
@@ -61,16 +62,16 @@
     const by = Object.fromEntries((cards || []).map((c) => [c.slug, c]));
     const paras = (t) => t.split('\n').filter(Boolean).map((p) => `<p>${esc(p)}</p>`).join('');
     const sections = card.sections.map((s) =>
-      `<section class="story-part story-${s.key}"><${heading}><span class="story-ico">${ico(ICONS[s.key] || 'sparkle')}</span>${esc(s.title)}` +
-      `${s.note ? ` <span class="story-adult" title="Делайте вместе со взрослым">${ico('duo')} ${esc(s.note)}</span>` : ''}</${heading}>` +
+      `<section class="story-part story-${s.key}"><${heading}><span class="story-ico" aria-hidden="true">${ICONS[s.key] || '•'}</span>${esc(s.title)}` +
+      `${s.note ? ` <span class="story-adult" title="Делайте вместе со взрослым">👨‍👧 ${esc(s.note)}</span>` : ''}</${heading}>` +
       paras(s.text) + (s.list.length ? `<ul>${s.list.map((li) => `<li>${esc(li)}</li>`).join('')}</ul>` : '') + '</section>').join('');
     const links = card.links.length
-      ? `<section class="story-part story-links"><${heading}><span class="story-ico">${ico('chain')}</span>Ищи связь</${heading}><p>Эта карточка связана с другими:</p><ul class="story-chips">${card.links.map((s) => by[s] ? `<li><a href="/igra/${s}/"><img src="${img(s, true)}" alt="" loading="lazy" width="40" height="60">${esc(by[s].title)}</a></li>` : '').join('')}</ul></section>`
-      : card.linksText ? `<section class="story-part story-links"><${heading}><span class="story-ico">${ico('chain')}</span>Ищи связь</${heading}><p>${esc(card.linksText)}</p></section>` : '';
+      ? `<section class="story-part story-links"><${heading}><span class="story-ico" aria-hidden="true">🔗</span>Ищи связь</${heading}><p>Эта карточка связана с другими:</p><ul class="story-chips">${card.links.map((s) => by[s] ? `<li><a href="/igra/${s}/"><img src="${img(s, true)}" alt="" loading="lazy" width="40" height="60">${esc(by[s].title)}</a></li>` : '').join('')}</ul></section>`
+      : card.linksText ? `<section class="story-part story-links"><${heading}><span class="story-ico" aria-hidden="true">🔗</span>Ищи связь</${heading}><p>${esc(card.linksText)}</p></section>` : '';
     const v = video && root.HomeBlocks && root.HomeBlocks.embedUrl(video);
     const videoBlock = v ? `<div class="story-video"><div class="video-frame"><button type="button" data-embed="${esc(v)}" onclick="Memo.playVideo(this)" aria-label="Смотреть видео: ${esc(card.title)}"><img src="${img(card.slug)}" alt="" loading="lazy"><span class="video-play" aria-hidden="true">▶</span><span class="video-label">Смотреть видео-историю</span></button></div></div>` : '';
     const min = readMinutes(card);
-    return `<p class="story-meta"><span>${ico('book')} читать ${min} ${minutesWord(min)}</span>${v ? `<span>${ico('film')} есть видео</span>` : ''}${card.years ? `<span>${esc(card.years)}</span>` : ''}</p>` +
+    return `<p class="story-meta"><span>📖 читать ${min} ${minutesWord(min)}</span>${v ? '<span>🎬 есть видео</span>' : ''}${card.years ? `<span>${esc(card.years)}</span>` : ''}</p>` +
       `<p class="story-hook">${esc(card.hook)}</p>${videoBlock}${sections}${links}`;
   }
 
