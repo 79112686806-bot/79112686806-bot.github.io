@@ -32,7 +32,7 @@
 <div class="features how-steps">
   <div class="feature"><strong>Формат</strong><p>Онлайн, через личный кабинет: самостоятельные видеоуроки и задания, встречи с преподавателем на ключевых этапах и чат по каждому модулю.</p></div>
   <div class="feature"><strong>Программа</strong><p>${program}</p></div>
-  <div class="feature"><strong>Стоимость</strong><p>Пробное занятие — ${rub(c.price_trial, 1500)} вместо ${rub(c.price_trial_base, 3000)}. Модуль — ${rub(c.price_lesson, 3000)}, блок — по цене его модулей. Весь курс + набор для исследований — ${rub(c.price, 29750)}, уже оплаченное вычитается.</p></div>
+  <div class="feature"><strong>Стоимость</strong><p>Пробное занятие — ${rub(c.price_trial, 1500)} вместо ${rub(c.price_trial_base, 3000)}. Модуль — ${rub(c.price_lesson, 4500)}, блок — по цене его модулей. Весь курс + набор для исследований — ${rub(c.price, 29750)}, уже оплаченное вычитается.</p></div>
 </div>
 ${available
     ? `<div class="bottom"><button class="btn primary" onclick="selectedCourse=${idx};goSignup()">Записаться на курс</button></div>`
