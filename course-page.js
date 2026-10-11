@@ -22,7 +22,7 @@
     const rub = (n, d) => Number(n || d).toLocaleString('ru-RU') + ' ₽';
     const available = c.status === 'available';
     const program = modules.length
-      ? `${modules.length} ${plural(modules.length, 'модуль', 'модуля', 'модулей')}, ${lessons} ${plural(lessons, 'тема', 'темы', 'тем')}` +
+      ? `${modules.length} ${plural(modules.length, 'блок', 'блока', 'блоков')}, ${lessons} ${plural(lessons, 'модуль', 'модуля', 'модулей')}` +
         (research ? `, ${research} ${plural(research, 'исследование', 'исследования', 'исследований')}` : '') + '.'
       : 'Подробная программа курса сейчас готовится.';
     return `<nav class="crumbs" aria-label="Навигация"><a href="/" onclick="return go(event,'home')">Главная</a> › <a href="/programmy/" onclick="return go(event,'courses')">Программы</a> › <span>${esc(c.title)}</span></nav>
@@ -30,9 +30,9 @@
 <h1 class="course-title">Курс «${esc(c.title)}» — ${esc(lower(c.subtitle))}</h1>
 <p class="section-intro">${esc(c.description)} Онлайн-курс для школьников 9–14 лет: самостоятельные видеоуроки и исследования, встречи с преподавателем и собственный инженерный проект.</p>
 <div class="features how-steps">
-  <div class="feature"><strong>Формат</strong><p>Онлайн, через личный кабинет: самостоятельные видеоуроки и задания, встречи с преподавателем на ключевых этапах и чат по каждой теме.</p></div>
+  <div class="feature"><strong>Формат</strong><p>Онлайн, через личный кабинет: самостоятельные видеоуроки и задания, встречи с преподавателем на ключевых этапах и чат по каждому модулю.</p></div>
   <div class="feature"><strong>Программа</strong><p>${program}</p></div>
-  <div class="feature"><strong>Стоимость</strong><p>Пробное занятие — ${rub(c.price_trial, 1250)} вместо ${rub(c.price_trial_base, 2500)}. Блок курса — ${rub(c.price_block, 10000)}, отдельная тема — ${rub(c.price_lesson, 3500)}. Весь курс — ${rub(c.price, 37500)}.</p></div>
+  <div class="feature"><strong>Стоимость</strong><p>Пробное занятие — ${rub(c.price_trial, 1500)} вместо ${rub(c.price_trial_base, 3000)}. Модуль — ${rub(c.price_lesson, 3000)}, блок — по цене его модулей. Весь курс + набор для исследований — ${rub(c.price, 29750)}, уже оплаченное вычитается.</p></div>
 </div>
 ${available
     ? `<div class="bottom"><button class="btn primary" onclick="selectedCourse=${idx};goSignup()">Записаться на курс</button></div>`

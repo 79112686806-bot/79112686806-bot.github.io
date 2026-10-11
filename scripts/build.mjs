@@ -230,13 +230,13 @@ async function main() {
     const thin = !st.lessons;
     const path = `/kursy/${c.slug}/`;
     const title = `Курс «${c.title}» для детей 9–14 лет онлайн — ${SITE_NAME}`;
-    const description = cut(`${c.description} Онлайн-курс для школьников 9–14 лет${st.lessons ? `: ${st.lessons} тем, исследования и собственный проект` : ''}. Пробное занятие — ${Number(c.price_trial || 1250).toLocaleString('ru-RU')} ₽, весь курс — ${Number(c.price || 37500).toLocaleString('ru-RU')} ₽.`, 200);
+    const description = cut(`${c.description} Онлайн-курс для школьников 9–14 лет${st.lessons ? `: ${st.lessons} модулей, исследования и собственный проект` : ''}. Пробное занятие — ${Number(c.price_trial || 1500).toLocaleString('ru-RU')} ₽, весь курс с набором для исследований — ${Number(c.price || 29750).toLocaleString('ru-RU')} ₽.`, 200);
     const course = {
       '@context': 'https://schema.org', '@type': 'Course', name: `Курс «${c.title}»`, description: `${c.subtitle}. ${c.description}`,
       inLanguage: 'ru', provider: { '@type': 'Organization', name: SITE_NAME, ...(SITE_URL ? { sameAs: SITE_URL + '/' } : {}) },
       audience: { '@type': 'EducationalAudience', educationalRole: 'student', audienceType: 'Школьники 9–14 лет' },
       hasCourseInstance: { '@type': 'CourseInstance', courseMode: 'online' },
-      offers: { '@type': 'AggregateOffer', category: 'Paid', lowPrice: c.price_trial || 1250, highPrice: c.price || 37500, offerCount: 3, priceCurrency: 'RUB', availability: c.status === 'available' ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder', ...(abs(path) ? { url: abs(path) } : {}) },
+      offers: { '@type': 'AggregateOffer', category: 'Paid', lowPrice: c.price_trial || 1500, highPrice: c.price || 29750, offerCount: 3, priceCurrency: 'RUB', availability: c.status === 'available' ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder', ...(abs(path) ? { url: abs(path) } : {}) },
     };
     seoPages['course:' + c.slug] = { title, description };
     write(path, pageHtml(template, {

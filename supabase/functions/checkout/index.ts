@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const what = kind === 'trial' ? 'пробное занятие' : kind === 'custom' ? `выбранные темы (${(q.lesson_ids ?? []).length})` : 'весь курс';
+    const what = kind === 'trial' ? 'пробное занятие' : kind === 'custom' ? `выбранные модули (${(q.lesson_ids ?? []).length})` : 'весь курс и набор для исследований';
     await sendWelcomeEmail(email, course.title, what);
   } catch (e) {
     console.error('email', e); // курс уже открыт — ошибку письма покупателю не показываем
