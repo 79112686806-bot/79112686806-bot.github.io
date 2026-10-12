@@ -448,7 +448,7 @@ async function showVideos(){app.innerHTML='<p class="muted">Загрузка в�
   const vrow=v=>`<div class="lesson" id="vid-${v.id}"><div class="grid">
       <label class="small muted">Название<input data-f="title" value="${esc(v.title)}" maxlength="150"></label>
       <label class="small muted">Ссылка на видео<input data-f="url" value="${esc(v.url)}"></label>
-      <label class="small muted">Картинка-превью (необязательно)<input data-f="thumbnail_url" value="${esc(v.thumbnail_url)}" placeholder="https://…"></label>
+      <label class="small muted">Картинка-превью (необязательно; для Rutube обложка берётся сама)<input data-f="thumbnail_url" value="${esc(v.thumbnail_url)}" placeholder="https://…"></label>
       <label class="small muted">Порядок<input data-f="sort" type="number" value="${v.sort}"></label></div>
     <label class="small muted" style="display:block;margin-top:8px">Описание<textarea data-f="description" rows="2" maxlength="1000" style="width:100%;margin-top:4px">${esc(v.description)}</textarea></label>
     <div class="row" style="margin-top:8px"><label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-f="published" ${v.published?'checked':''}> показывать на главной</label>

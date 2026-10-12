@@ -188,9 +188,9 @@ async function main() {
   if (videosHtml) template = template.replace('<section class="home-block" id="homeVideos" hidden>', '<section class="home-block" id="homeVideos">').replace('<div class="video-grid" id="homeVideoList"></div>', `<div class="video-grid" id="homeVideoList">${videosHtml}</div>`);
   if (reviewsHtml) template = template.replace('<section class="home-block" id="homeReviews" hidden>', '<section class="home-block" id="homeReviews">').replace('<div class="reviews" id="homeReviewList"></div>', `<div class="reviews" id="homeReviewList">${reviewsHtml}</div>`);
   // видео с превью → разметка VideoObject
-  const videoLd = videos.filter((v) => v.thumbnail_url && HomeBlocks.embedUrl(v.url)).map((v) => ({
+  const videoLd = videos.filter((v) => HomeBlocks.thumbUrl(v) && HomeBlocks.embedUrl(v.url)).map((v) => ({
     '@context': 'https://schema.org', '@type': 'VideoObject', name: v.title, description: v.description || v.title,
-    thumbnailUrl: v.thumbnail_url, uploadDate: v.created_at, embedUrl: HomeBlocks.embedUrl(v.url),
+    thumbnailUrl: HomeBlocks.thumbUrl(v), uploadDate: v.created_at, embedUrl: HomeBlocks.embedUrl(v.url),
   }));
 
   const pages = {

@@ -24,13 +24,21 @@
     return null;
   }
 
+  // Обложка ролика: своя картинка из админки, иначе — обложка с Rutube (у VK Видео без ключа API её не получить)
+  function thumbUrl(v) {
+    if (v.thumbnail_url) return v.thumbnail_url;
+    const m = (embedUrl(v.url) || '').match(/^https:\/\/rutube\.ru\/play\/embed\/([0-9a-f]{32})$/);
+    return m ? 'https://rutube.ru/api/video/' + m[1] + '/thumbnail/?redirect=1' : null;
+  }
+
   // Заставка с кнопкой ▶ — плеер загружается только по нажатию (не тормозит страницу)
   function videosHtml(list) {
     return (list || []).map((v) => {
       const e = embedUrl(v.url);
       if (!e) return '';
+      const t = thumbUrl(v);
       return `<figure class="video-card"><div class="video-frame"><button type="button" data-embed="${esc(e)}" onclick="playVideo(this)" aria-label="Смотреть видео: ${esc(v.title)}">` +
-        `${v.thumbnail_url ? `<img src="${esc(v.thumbnail_url)}" alt="" loading="lazy" decoding="async">` : ''}<span class="video-play" aria-hidden="true">▶</span></button></div>` +
+        `${t ? `<img src="${esc(t)}" alt="" loading="lazy" decoding="async">` : ''}<span class="video-play" aria-hidden="true">▶</span></button></div>` +
         `<figcaption><h3>${esc(v.title)}</h3>${v.description ? `<p>${esc(v.description)}</p>` : ''}</figcaption></figure>`;
     }).join('');
   }
@@ -43,5 +51,5 @@
     }).join('');
   }
 
-  root.HomeBlocks = { embedUrl, videosHtml, reviewsHtml };
+  root.HomeBlocks = { embedUrl, thumbUrl, videosHtml, reviewsHtml };
 })(typeof window !== 'undefined' ? window : globalThis);
