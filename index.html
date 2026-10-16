@@ -298,6 +298,32 @@ a.course{display:flex;text-decoration:none}
 #coursePage h3{font-family:"Cormorant Garamond",Georgia,serif;font-size:24px;font-weight:700;color:var(--ink);margin:24px 0 8px}
 .course-lessons{margin:0;padding-left:22px;line-height:1.7}
 .course-lessons small{display:block;color:var(--ink-soft);font-size:13.5px;line-height:1.45;margin:2px 0 6px}
+/* страница курса: три карточки «Формат / Программа / Стоимость» */
+.course-facts{align-items:stretch}
+.fact-stats b,.fact-prices b{font-variant-numeric:lining-nums}
+.course-facts .feature{display:flex;flex-direction:column;padding:26px 24px 22px;color:var(--ink);font-family:"PT Serif",Georgia,serif;border-top:3px solid var(--sanguine)}
+.course-facts .feature>strong{font-size:26px;line-height:1.1;margin:0 0 12px;padding-bottom:10px;border-bottom:1px dashed var(--line)}
+.course-facts .feature p{margin:0 0 10px}
+.fact-icon{display:grid;place-items:center;width:52px;height:52px;margin-bottom:14px;border-radius:50%;border:1.5px solid var(--sanguine);color:var(--sanguine);background:var(--paper-light);box-shadow:0 0 0 4px rgba(242,228,196,.5)}
+.fact-lead{font-weight:700}
+.fact-list,.fact-prices,.fact-stats{list-style:none;margin:0;padding:0}
+.fact-list li{position:relative;padding:0 0 8px 22px;font-size:15px;line-height:1.55}
+.fact-list li::before{content:"";position:absolute;left:2px;top:.55em;width:9px;height:9px;border:1.5px solid var(--sanguine);transform:rotate(45deg)}
+.fact-stats{display:flex;flex-wrap:wrap;gap:8px 18px;margin-bottom:14px}
+.fact-stats li{display:flex;flex-direction:column;font-size:14px;color:var(--ink-soft);line-height:1.2}
+.fact-stats b{font-family:"Cormorant Garamond",Georgia,serif;font-size:40px;line-height:1;color:var(--sanguine)}
+.fact-note{padding:10px 12px;border-left:3px solid var(--sanguine);background:rgba(154,58,27,.06);font-size:15px;line-height:1.55}
+.fact-note b{color:var(--sanguine)}
+.fact-small{font-size:14px!important;line-height:1.55!important;color:var(--ink-soft)}
+.fact-prices li{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.fact-prices li:last-child{border-bottom:0}
+.fact-prices span{flex:1 1 100%;font-size:14.5px}
+.fact-prices b{font-family:"Cormorant Garamond",Georgia,serif;font-size:28px;line-height:1;color:var(--sanguine)}
+.fact-prices s{color:var(--ink-soft);font-size:15px}
+.fact-prices small{color:var(--ink-soft);font-size:13.5px}
+.fact-prices .fact-best{margin-top:6px;padding:12px 14px;border:1.5px solid var(--sanguine);border-radius:3px;background:rgba(154,58,27,.06)}
+.fact-prices .fact-best span{font-weight:700}
+@media(max-width:860px){.course-facts{grid-template-columns:1fr}}
 .course-lessons .lesson-summary{margin:2px 0 6px;color:var(--ink-soft);font-size:14.5px;line-height:1.55}
 .course-lessons ul.lesson-summary{padding-left:18px;list-style:"— "}
 #coursePage .section-intro{margin-bottom:24px}

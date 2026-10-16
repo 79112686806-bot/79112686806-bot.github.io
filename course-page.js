@@ -30,18 +30,32 @@
     const research = modules.reduce((n, m) => n + m.lessons.filter((l) => l.research_task).length, 0);
     const rub = (n, d) => Number(n || d).toLocaleString('ru-RU') + ' ₽';
     const available = c.status === 'available';
+    const stat = (n, one, few, many) => `<li><b>${n}</b>${plural(n, one, few, many)}</li>`;
     const program = modules.length
-      ? `${modules.length} ${plural(modules.length, 'блок', 'блока', 'блоков')}, ${lessons} ${plural(lessons, 'модуль', 'модуля', 'модулей')}` +
-        (research ? `, ${research} ${plural(research, 'исследование', 'исследования', 'исследований')}` : '') + '.'
-      : 'Подробная программа курса сейчас готовится.';
+      ? '<ul class="fact-stats">' + stat(modules.length, 'блок', 'блока', 'блоков') + stat(lessons, 'модуль', 'модуля', 'модулей') +
+        (research ? stat(research, 'исследование', 'исследования', 'исследований') : '') + '</ul>'
+      : '<p>Подробная программа курса сейчас готовится.</p>';
+    // значки карточек — линии красным мелом, как на чертеже
+    const icon = (d) => `<span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${d}</svg></span>`;
+    const ICON_FORMAT = '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/><path d="M10 8.5l4 1.5-4 1.5z"/>';
+    const ICON_PROGRAM = '<path d="M4 5.5C6.5 4 9.5 4 12 6c2.5-2 5.5-2 8-.5V19c-2.5-1.5-5.5-1.5-8 .5-2.5-2-5.5-2-8-.5z"/><path d="M12 6v13.5"/>';
+    const ICON_PRICE = '<path d="M3 12.5V4h8.5L20 12.5 12.5 20z"/><circle cx="7.5" cy="8.5" r="1.3"/>';
     return `<nav class="crumbs" aria-label="Навигация"><a href="/" onclick="return go(event,'home')">Главная</a> › <a href="/programmy/" onclick="return go(event,'courses')">Программы</a> › <span>${esc(c.title)}</span></nav>
 <div class="eyebrow">Программа ${idx + 1}</div>
 <h1 class="course-title">Курс «${esc(c.title)}» — ${esc(lower(c.subtitle))}</h1>
 <p class="section-intro">${esc(c.description)} Онлайн-курс для школьников 9–14 лет: самостоятельные видеоуроки и исследования, встречи с преподавателем и собственный инженерный проект.</p>
-<div class="features how-steps">
-  <div class="feature"><strong>Формат</strong><p>Онлайн, через личный кабинет: самостоятельные видеоуроки и задания, встречи с преподавателем на ключевых этапах и чат по каждому модулю.</p></div>
-  <div class="feature"><strong>Программа</strong><p>${program}</p><p>Каждое занятие — одна онлайн-встреча с преподавателем продолжительностью 1 час.</p><p>Хотите больше встреч? Напишите нам — согласуем дополнительные занятия под вашего ребёнка.</p></div>
-  <div class="feature"><strong>Стоимость</strong><p>Пробное занятие — ${rub(c.price_trial, 1500)} вместо ${rub(c.price_trial_base, 3000)}. Модуль — ${rub(c.price_lesson, 4500)}, блок — по цене его модулей. Весь курс + набор для исследований — ${rub(c.price, 29750)}, уже оплаченное вычитается.</p></div>
+<div class="features how-steps course-facts">
+  <div class="feature">${icon(ICON_FORMAT)}<strong>Формат</strong><p class="fact-lead">Онлайн, через личный кабинет:</p>
+    <ul class="fact-list"><li>самостоятельные видеоуроки и задания</li><li>встречи с преподавателем на ключевых этапах</li><li>чат по каждому модулю</li></ul></div>
+  <div class="feature">${icon(ICON_PROGRAM)}<strong>Программа</strong>${program}
+    <p class="fact-note">Каждое занятие — одна онлайн-встреча с преподавателем продолжительностью <b>1 час</b>.</p>
+    <p class="fact-small">Хотите больше встреч? Напишите нам — согласуем дополнительные занятия под вашего ребёнка.</p></div>
+  <div class="feature">${icon(ICON_PRICE)}<strong>Стоимость</strong>
+    <ul class="fact-prices">
+      <li><span>Пробное занятие</span><b>${rub(c.price_trial, 1500)}</b><s>${rub(c.price_trial_base, 3000)}</s></li>
+      <li><span>Модуль</span><b>${rub(c.price_lesson, 4500)}</b><small>блок — по цене его модулей</small></li>
+      <li class="fact-best"><span>Весь курс + набор для исследований</span><b>${rub(c.price, 29750)}</b><small>уже оплаченное вычитается</small></li>
+    </ul></div>
 </div>
 ${available
     ? `<div class="bottom"><button class="btn primary" onclick="selectedCourse=${idx};goSignup()">Записаться на курс</button></div>`
