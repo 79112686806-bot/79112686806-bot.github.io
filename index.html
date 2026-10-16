@@ -223,6 +223,7 @@ body{background:var(--desk) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 /* честное сообщение */
 .honest .mark{font-family:"Cormorant Garamond",Georgia,serif;font-size:64px;color:rgba(154,58,27,.45);top:6px}
 .honest p{font-size:15px;line-height:1.75}
+.honest p.honest-sign{margin-top:12px;text-align:right;font-family:"Cormorant Garamond",Georgia,serif;font-style:italic;font-size:19px;color:var(--ink)}
 
 /* основатели */
 .founders{display:flex;gap:22px;justify-content:center;margin:38px auto 0;max-width:900px;flex-wrap:wrap}
@@ -297,6 +298,8 @@ a.course{display:flex;text-decoration:none}
 #coursePage h3{font-family:"Cormorant Garamond",Georgia,serif;font-size:24px;font-weight:700;color:var(--ink);margin:24px 0 8px}
 .course-lessons{margin:0;padding-left:22px;line-height:1.7}
 .course-lessons small{display:block;color:var(--ink-soft);font-size:13.5px;line-height:1.45;margin:2px 0 6px}
+.course-lessons .lesson-summary{margin:2px 0 6px;color:var(--ink-soft);font-size:14.5px;line-height:1.55}
+.course-lessons ul.lesson-summary{padding-left:18px;list-style:"— "}
 #coursePage .section-intro{margin-bottom:24px}
 .footer-links{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-family:"PT Serif",Georgia,serif;font-size:14px}
 .footer-links a{color:var(--sanguine)}
@@ -336,6 +339,12 @@ a.course{display:flex;text-decoration:none}
 .faq-item[open] summary::after{transform:rotate(45deg)}
 .faq-a{padding:0 0 18px;color:var(--ink-soft);line-height:1.75}
 .faq-a a,.review a{color:var(--sanguine)}
+.faq-a p{margin:0 0 10px}
+.faq-prices{display:grid;gap:10px;margin:0 0 12px;padding:0;list-style:none}
+.faq-prices li{display:flex;justify-content:space-between;align-items:baseline;gap:6px 16px;flex-wrap:wrap;padding:12px 16px;border:1px solid var(--line);border-radius:3px;background:rgba(255,247,226,.35)}
+.faq-prices b{color:var(--ink)}
+.faq-prices .price{font-family:"Cormorant Garamond",Georgia,serif;font-size:22px;font-weight:700;color:var(--sanguine);white-space:nowrap}
+.faq-prices small{flex-basis:100%;font-size:14px;line-height:1.5}
 .video-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
 .video-card{margin:0}
 .video-card p{margin:0;color:var(--ink-soft);line-height:1.6;font-size:15px}
@@ -474,11 +483,11 @@ mark.todo{background:rgba(154,58,27,.15);color:var(--sanguine);padding:0 4px;bor
 <div class="founder-photo"><img src="/assets/founder-1.webp" alt="Основатель Инженерного клуба рассказывает об эскизах автомобиля" width="540" height="660" loading="lazy" decoding="async"></div>
 <div class="founder-photo"><img src="/assets/founder-2.webp" alt="Модель, напечатанная на 3D-принтере" width="540" height="660" loading="lazy" decoding="async"></div>
 </div>
-<p class="founders-caption">Здесь идеи превращаются в проекты</p><div class="honest"><span class="mark">"</span><p>Мы только начинаем и хотим, чтобы идея принесла пользу как можно большему числу детей. <strong>Ваша активность, отзывы и советы друзьям — то, что нам сейчас важнее всего</strong>, и мы благодарим за это скидками и бонусами на занятия. Растём вместе с теми, кто в нас поверил.</p></div></header>
+<p class="founders-caption">Здесь идеи превращаются в проекты</p><div class="honest"><span class="mark">"</span><p>Мы только начинаем проект и хотим, чтобы идея принесла пользу как можно большему числу детей. <strong>Ваша активность, отзывы и советы друзьям — то, что нам сейчас важнее всего</strong>, и мы благодарим за это скидками и бонусами на занятия. Растём вместе с теми, кто в нас поверил.</p><p class="honest-sign">С уважением, команда Инженерного клуба</p></div></header>
 <section class="home-block" id="homeVideos" hidden><h2>Видео о проекте</h2><p class="lead">О проекте, о нашей методике и о том, как ученики создают собственные проекты.</p><div class="video-grid" id="homeVideoList"></div></section>
-<section class="home-block"><h2>Чем занятия полезны ребёнку</h2><p class="lead">Мы не просто рассказываем, как устроены вещи, — учим думать как инженер: замечать задачи, задавать вопросы и превращать идеи в проекты.</p>
+<section class="home-block"><h2>Чем занятия полезны ребёнку</h2><p class="lead">Мы не просто рассказываем, как устроены устройства, приборы и механизмы, — мы учим школьника думать как инженер: задавать вопросы, ставить задачи и превращать идеи в проекты.</p>
 <div class="benefits">
-<div class="feature"><h3>Инженерное мышление</h3><p>Ребёнок учится разбирать устройство на части, понимать, как оно работает, и придумывать, что можно улучшить.</p></div>
+<div class="feature"><h3>Инженерное мышление</h3><p>Школьник учится изучать устройства, понимать принцип их действия и придумывать, что можно улучшить.</p></div>
 <div class="feature"><h3>Навыки исследователя</h3><p>Выдвигает гипотезы, проводит опыты, измеряет и делает выводы — как настоящий учёный.</p></div>
 <div class="feature"><h3>Самостоятельность</h3><p>Учится сам искать ответы и доводить начатое до конца, а преподаватель мягко направляет.</p></div>
 <div class="feature"><h3>Умение рассуждать и объяснять</h3><p>На встречах с преподавателем рассказывает, что узнал, отвечает на вопросы и отстаивает свои идеи.</p></div>
@@ -491,7 +500,7 @@ mark.todo{background:rgba(154,58,27,.15);color:var(--sanguine);padding:0 4px;bor
 <details class="faq-item"><summary>Нужны ли знания физики или математики?</summary><div class="faq-a">Нет. Всё необходимое ребёнок узнаёт по ходу курса: из видеоуроков, материалов и обсуждений с преподавателем.</div></details>
 <details class="faq-item"><summary>Как проходят занятия?</summary><div class="faq-a">Часть тем школьник проходит самостоятельно — видеоуроки, материалы и задания в личном кабинете, а на ключевых этапах встречается с преподавателем онлайн: обсуждает изученное и работает над своим проектом. В чате можно задать вопрос в любой момент. Подробнее — на странице <a href="/kak-prohodyat-zanyatiya/" onclick="return go(event,'how')">«Как проходят занятия»</a>.</div></details>
 <details class="faq-item"><summary>Что понадобится для занятий?</summary><div class="faq-a">Компьютер, планшет или смартфон с интернетом, а для онлайн-встреч — камера и микрофон. Для опытов и исследований хватает подручных материалов.</div></details>
-<details class="faq-item"><summary>Сколько стоит курс?</summary><div class="faq-a">Есть три варианта: пробное занятие — 1 500 ₽ вместо 3 000 ₽ (скидка 50%); отдельные модули — по 4 500 ₽ или блоки целиком (блок стоит как все его модули); весь курс вместе с набором для исследований — 29 750 ₽. Если сначала купить пробное занятие, модули или блоки, при покупке всего курса их стоимость вычитается из 29 750 ₽.</div></details>
+<details class="faq-item"><summary>Сколько стоит курс?</summary><div class="faq-a"><p>Есть два варианта:</p> <ul class="faq-prices"><li><b>Весь курс целиком</b> <span class="price">29 750 ₽</span> <small>вместе с набором для исследований</small></li> <li><b>Отдельные модули на выбор</b> <span class="price">4 500 ₽ за модуль</span> <small>можно пройти один или несколько модулей, а потом — весь курс: уже оплаченные модули засчитаются в его стоимость</small></li></ul> <p>Чтобы было легче определиться с выбором, предлагаем пройти <strong>первое занятие со скидкой 50%</strong> — за 1 500 ₽ вместо 3 000 ₽.</p></div></details>
 <details class="faq-item"><summary>Как быстро открывается доступ после оплаты?</summary><div class="faq-a">Сразу: курс и первая тема открываются в личном кабинете, а на почту приходит письмо с логином для входа.</div></details>
 <details class="faq-item"><summary>Можно ли вернуть деньги?</summary><div class="faq-a">Да. Отказаться от курса можно в любой момент — мы вернём деньги за вычетом стоимости уже открытых тем. Подробнее — на странице <a href="/dokumenty/oplata-i-vozvrat/">«Оплата, получение услуги и возврат»</a>.</div></details>
 <details class="faq-item"><summary>Как задать вопрос до покупки?</summary><div class="faq-a">Выберите <a href="/programmy/" onclick="return go(event,'courses')">программу</a> и оставьте заявку на консультацию — мы свяжемся с вами, ответим на вопросы и поможем выбрать курс.</div></details>
@@ -512,7 +521,7 @@ mark.todo{background:rgba(154,58,27,.15);color:var(--sanguine);padding:0 4px;bor
 <h2 class="route-title">Самостоятельно и вместе с преподавателем</h2>
 <div class="features how-formats">
 <div class="feature"><h3>Самостоятельная часть</h3><p>Видеоуроки, материалы и задания в личном кабинете. Школьник занимается в удобное время, учится сам искать ответы и проводить исследования, а в чате всегда может задать вопрос и получить обратную связь.</p></div>
-<div class="feature"><h3>Встречи с преподавателем</h3><p>Онлайн-встречи на ключевых этапах: обсуждение изученного, дополнительные вопросы, требующие размышлений, и работа над собственным проектом — от идеи до рисунка, чертежа, расчёта или модели.</p></div>
+<div class="feature"><h3>Встречи с преподавателем</h3><p>Онлайн-встречи по ходу курса: обсуждение изученного, дополнительные вопросы, требующие размышлений, и работа над собственным проектом — от идеи до рисунка, чертежа, расчёта или модели.</p></div>
 </div>
 <div class="bottom"><a class="btn primary" href="/programmy/" onclick="return go(event,'courses')">Посмотреть программы</a> <a class="btn" href="/" onclick="return go(event,'home')">Вернуться на главную</a></div></section>
 <section class="section page" id="coursesPage" style="display:none"><h1 class="course-title">10 программ для школьников 9–14 лет</h1><p class="section-intro">Выберите тему, которая больше всего заинтересует ребёнка.</p><div class="courses" id="courseGrid"></div><div class="bottom"><a class="btn primary" href="/" onclick="return go(event,'home')">Вернуться на главную</a></div></section>
@@ -538,7 +547,7 @@ const AUTH_LINK=Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
 const sb=supabase.createClient(window.APP_CONFIG.supabaseUrl,window.APP_CONFIG.supabaseKey);
 </script>
 <script>
-const courses=[['⚙','Колесо','Первый технологический прорыв','Трение и качение. Путь от первого в истории колеса до современных технологий.'],['☎','Телефон','Как передается голос','Изучаем принцип передачи голоса. Изучаем устройство телефона и придумываем новые функции.'],['⛵','Лодки и корабли','Как держатся на воде','Изучаем плавучесть, форму корпуса и проектирование.'],['🔭','Оптические приборы','Как мы видим далекое','Изучаем свет, оптические свойства, линзы, оптические приборы.'],['🚗','Двигатель и автомобиль','Как машина едет','Энергия. Мотор. Движение. Автомобиль будущего.'],['✈','Самолёт','Как летает железная птица','Подъемная сила. Форма крыла. Летающие аппараты.'],['⌘','Интернет','Как связаны компьютеры','Сети, передача данных и идеи цифровых устройств.'],['🤖','Роботы','Машины, которые помогают','Датчики, механизмы и робот-помощник или друг.'],['🧬','Биоинженерия','Техника и живые организмы','Как инженерные идеи применяются к живым организмам.'],['🧠','Мозг человека','Самое сложное устройство','Узнаем информацию о мозге и пытаемся придумать необычные технологии.']];let selectedCourse=0;
+const courses=[['⚙','Колесо','Первый технологический прорыв в истории человечества','Путь от изобретения колеса до современных автомобилей.'],['☎','Телефон','Как передается голос','Изучаем принцип передачи голоса. Изучаем устройство телефона и придумываем новые функции.'],['⛵','Лодки и корабли','Как держатся на воде','Изучаем плавучесть, форму корпуса и проектирование.'],['🔭','Оптические приборы','Как мы видим далекое','Изучаем свет, оптические свойства, линзы, оптические приборы.'],['🚗','Двигатель и автомобиль','Как машина едет','Энергия. Мотор. Движение. Автомобиль будущего.'],['✈','Самолёт','Как летает железная птица','Подъемная сила. Форма крыла. Летающие аппараты.'],['⌘','Интернет','Как связаны компьютеры','Сети, передача данных и идеи цифровых устройств.'],['🤖','Роботы','Машины, которые помогают','Датчики, механизмы и робот-помощник или друг.'],['🧬','Биоинженерия','Техника и живые организмы','Как инженерные идеи применяются к живым организмам.'],['🧠','Мозг человека','Самое сложное устройство','Узнаем информацию о мозге и пытаемся придумать необычные технологии.']];let selectedCourse=0;
 // Адреса страниц курсов (/kursy/<slug>/) — в том же порядке, что и courses
 const COURSE_SLUGS=['wheel','phone','boats','optics','car','airplane','internet','robots','bioengineering','brain'];
 // Статусы курсов из базы: купить можно только курс со статусом available
@@ -658,7 +667,8 @@ function go(e,page,arg){if(e&&(e.ctrlKey||e.metaKey||e.shiftKey||e.button===1))r
 async function showCoursePage(slug,push=true){const i=COURSE_SLUGS.indexOf(slug);if(i<0)return showPage('courses',push);
   const body=document.getElementById('coursePageBody');
   if(body.dataset.slug!==slug){body.innerHTML='<p class="note">Загружаем программу…</p>';
-    const{data}=await sb.from('courses').select('slug,title,subtitle,description,price,status,modules(sort,title,lessons(sort,title,research_task))').eq('slug',slug).maybeSingle();
+    const q=s=>sb.from('courses').select(`slug,title,subtitle,description,price,price_trial,price_trial_base,price_lesson,status,modules(sort,title,lessons(sort,title,${s}research_task))`).eq('slug',slug).maybeSingle();
+    let{data,error}=await q('summary,');if(error)({data}=await q(''));
     body.innerHTML=coursePageHtml(data||{slug,title:courses[i][1],subtitle:courses[i][2],description:courses[i][3],status:'draft',modules:[]},i);body.dataset.slug=slug;observeReveal(body)}
   showPage('course',false);const path='/kursy/'+slug+'/';if(push&&location.pathname!==path)history.pushState({},'',path);setMeta('course:'+slug)}
 function routePath(path){const db=document.getElementById('docBody');if(db&&db.dataset.path===path)return showPage('doc',false);

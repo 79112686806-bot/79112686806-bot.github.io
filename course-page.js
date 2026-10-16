@@ -13,7 +13,16 @@
       .map((m) => ({ ...m, lessons: (m.lessons || []).slice().sort((a, b) => a.sort - b.sort) }));
   }
 
-  // c: {slug, title, subtitle, description, price, status, modules:[{sort,title,lessons:[{sort,title,research_task}]}]}
+  // Краткое содержание модуля: несколько строк — списком, одна — абзацем
+  function summaryHtml(t) {
+    const lines = String(t || '').split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+    if (!lines.length) return '';
+    return lines.length > 1
+      ? `<ul class="lesson-summary">${lines.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>`
+      : `<p class="lesson-summary">${esc(lines[0])}</p>`;
+  }
+
+  // c: {slug, title, subtitle, description, price, status, modules:[{sort,title,lessons:[{sort,title,summary,research_task}]}]}
   // idx: номер курса в каталоге (0…9)
   function coursePageHtml(c, idx) {
     const modules = sortedModules(c);
@@ -31,7 +40,7 @@
 <p class="section-intro">${esc(c.description)} Онлайн-курс для школьников 9–14 лет: самостоятельные видеоуроки и исследования, встречи с преподавателем и собственный инженерный проект.</p>
 <div class="features how-steps">
   <div class="feature"><strong>Формат</strong><p>Онлайн, через личный кабинет: самостоятельные видеоуроки и задания, встречи с преподавателем на ключевых этапах и чат по каждому модулю.</p></div>
-  <div class="feature"><strong>Программа</strong><p>${program}</p></div>
+  <div class="feature"><strong>Программа</strong><p>${program}</p><p>Каждое занятие — одна онлайн-встреча с преподавателем продолжительностью 1 час.</p><p>Хотите больше встреч? Напишите нам — согласуем дополнительные занятия под вашего ребёнка.</p></div>
   <div class="feature"><strong>Стоимость</strong><p>Пробное занятие — ${rub(c.price_trial, 1500)} вместо ${rub(c.price_trial_base, 3000)}. Модуль — ${rub(c.price_lesson, 4500)}, блок — по цене его модулей. Весь курс + набор для исследований — ${rub(c.price, 29750)}, уже оплаченное вычитается.</p></div>
 </div>
 ${available
@@ -39,7 +48,7 @@ ${available
     : '<p class="note">Курс в разработке — запись откроется позже.</p>'}
 <h2>Программа курса «${esc(c.title)}»</h2>
 ${modules.length
-    ? modules.map((m) => `<h3>${esc(m.title)}</h3><ul class="course-lessons">${m.lessons.map((l) => `<li>${esc(l.title)}${l.research_task ? `<small>🔬 Исследование: ${esc(l.research_task)}</small>` : ''}</li>`).join('')}</ul>`).join('\n')
+    ? modules.map((m) => `<h3>${esc(m.title)}</h3><ul class="course-lessons">${m.lessons.map((l) => `<li>${esc(l.title)}${summaryHtml(l.summary)}${l.research_task ? `<small>🔬 Исследование: ${esc(l.research_task)}</small>` : ''}</li>`).join('')}</ul>`).join('\n')
     : '<p>Подробная программа появится здесь в ближайшее время.</p>'}
 <h2>Как проходят занятия</h2>
 <p>Курс устроен как маршрут: часть тем школьник проходит самостоятельно — видеоуроки, материалы и задания открываются модуль за модулем, а на ключевых этапах встречается с преподавателем онлайн, чтобы обсудить изученное и поработать над собственным проектом. На протяжении всего курса мы на связи в чате. <a href="/kak-prohodyat-zanyatiya/" onclick="return go(event,'how')">Подробнее о формате занятий</a></p>`;

@@ -74,15 +74,16 @@ const cut = (t, n) => (t.length <= n ? t : t.slice(0, n - 1).replace(/\s+\S*$/, 
 
 // ---------- Курсы из базы (публичные данные каталога) ----------
 async function loadCourses() {
-  const program = 'modules(sort,title,lessons(sort,title,research_task))';
-  // с вариантами цен; если миграция с ценами ещё не выполнена — без них (цены возьмутся по умолчанию)
-  for (const fields of ['slug,title,subtitle,description,price,price_trial,price_trial_base,price_block,price_lesson,status,sort', 'slug,title,subtitle,description,price,status,sort']) {
+  const program = (s) => `modules(sort,title,lessons(sort,title,${s ? 'summary,' : ''}research_task))`;
+  const prices = 'slug,title,subtitle,description,price,price_trial,price_trial_base,price_block,price_lesson,status,sort';
+  // с вариантами цен и кратким содержанием модулей; если миграции ещё не выполнены — без них (цены возьмутся по умолчанию)
+  for (const [fields, s] of [[prices, 1], [prices, 0], ['slug,title,subtitle,description,price,status,sort', 0]]) {
     try {
-      const res = await fetch(`${url}/rest/v1/courses?select=${fields},${program}&order=sort`, { headers: { apikey: key } });
+      const res = await fetch(`${url}/rest/v1/courses?select=${fields},${program(s)}&order=sort`, { headers: { apikey: key } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (e) {
-      console.warn('⚠ Не удалось получить курсы из Supabase' + (fields.includes('price_trial') ? ' с вариантами цен — пробую без них' : ' — страницы курсов не созданы') + ':', e.message);
+      console.warn('⚠ Не удалось получить курсы из Supabase' + (s ? ' с кратким содержанием модулей — пробую без него' : fields.includes('price_trial') ? ' с вариантами цен — пробую без них' : ' — страницы курсов не созданы') + ':', e.message);
     }
   }
   return [];
