@@ -298,6 +298,21 @@ a.course{display:flex;text-decoration:none}
 #coursePage h3{font-family:"Cormorant Garamond",Georgia,serif;font-size:24px;font-weight:700;color:var(--ink);margin:24px 0 8px}
 .course-lessons{margin:0;padding-left:22px;line-height:1.7}
 .course-lessons small{display:block;color:var(--ink-soft);font-size:13.5px;line-height:1.45;margin:2px 0 6px}
+/* материалы модуля: блок ссылок и просмотрщик файлов без скачивания */
+.mat-more{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
+.mat-more h4{margin:0 0 4px;font-family:"Cormorant Garamond",Georgia,serif;font-size:19px;color:var(--ink)}
+.mat-more a{margin:8px 0}
+body.doc-open{overflow:hidden}
+#docViewer{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;background:rgba(36,22,12,.94);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+#docViewer .dv-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--paper-light);border-bottom:2px solid var(--sanguine);color:var(--ink)}
+#docViewer .dv-bar b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:"Cormorant Garamond",Georgia,serif;font-size:21px}
+#docViewer .dv-bar .btn{padding:8px 14px;flex:none}
+#docViewer .dv-body{flex:1;overflow:auto;padding:16px 12px 40px}
+#docViewer .dv-body .note{color:var(--paper-light);text-align:center;margin-top:40px}
+.dv-page{position:relative;width:fit-content;max-width:100%;margin:0 auto 16px;box-shadow:0 6px 24px rgba(0,0,0,.45);background:#fff}
+.dv-page canvas,.dv-page img{display:block;max-width:100%;height:auto;pointer-events:none}
+.dv-mark{position:absolute;inset:0;opacity:.09;background-repeat:repeat;pointer-events:none}
+@media print{body.doc-open>*{display:none!important}}
 /* страница курса: три карточки «Формат / Программа / Стоимость» */
 .course-facts{align-items:stretch}
 .fact-stats b,.fact-prices b{font-variant-numeric:lining-nums}
@@ -849,7 +864,7 @@ async function openCourseDashboard(i){const session=await requireLogin();if(!ses
     const m=p.new;if(m.author_id===uid||(dash.current&&dash.current.id===m.lesson_id&&!document.hidden))return;
     dash.unread[m.lesson_id]=(dash.unread[m.lesson_id]||0)+1;updateBadge(m.lesson_id)}).subscribe();
   // Материалы курса: общие и личные этого ученика (база отдаёт только открытые темы)
-  const{data:mats}=await sb.from('materials').select('id,lesson_id,user_id,title,kind,url,sort').in('lesson_id',dash.lessons.map(l=>l.id));
+  const{data:mats}=await sb.from('materials').select('id,lesson_id,user_id,title,kind,url,storage_path,sort').in('lesson_id',dash.lessons.map(l=>l.id));
   dash.materials=(mats||[]).filter(m=>!m.user_id||m.user_id===uid).sort((a,b)=>a.sort-b.sort||a.id-b.id);
   buildAccordion();
   const next=dash.lessons.find(l=>isUnlocked(l)&&lessonStatus(l)!=='approved')||dash.lessons.find(isOwned)||dash.lessons[0];
@@ -897,15 +912,47 @@ function callHtml(l){const c=dash.calls[l.id],st=callState(c);
 // Раз в минуту проверяем, не закончилось ли занятие по времени
 setInterval(()=>{const el=document.getElementById('callBox');if(!el||!dash.current)return;
   const st=callState(dash.calls[dash.current.id])||'none';if(el.dataset.state!==st)el.outerHTML=callHtml(dash.current)},60000);
-// Материалы: ссылка открывается как есть, файл — по временной ссылке из закрытого хранилища
-function materialLinks(list){return list.map(m=>m.kind==='link'
+// Материалы: ссылка открывается как есть, файл — по временной ссылке из закрытого хранилища.
+// Общие ссылки модуля (не личные записи занятий) — отдельным блоком «Узнать больше».
+function materialLinks(list){const a=m=>m.kind==='link'
   ?`<a href="${escapeHtml(safeUrl(m.url))}" target="_blank" rel="noopener">${escapeHtml(m.title)}</a>`
-  :`<a href="#" onclick="openMaterialFile(${m.id});return false">${escapeHtml(m.title)}</a>`).join('')}
-async function openMaterialFile(id){const w=window.open('','_blank');
-  const{data:m}=await sb.from('materials').select('storage_path').eq('id',id).maybeSingle();
-  const{data,error}=m?await sb.storage.from('materials').createSignedUrl(m.storage_path,300):{error:true};
+  :`<a href="#" onclick="openMaterialFile(${m.id});return false">${escapeHtml(m.title)}</a>`;
+  const more=m=>m.kind==='link'&&!m.user_id,main=list.filter(m=>!more(m)),links=list.filter(more);
+  return main.map(a).join('')+(links.length?`<div class="mat-more"><h4>🔗 Узнать больше</h4>${links.map(a).join('')}</div>`:'')}
+// PDF и картинки открываются в просмотрщике на странице: без кнопок «скачать» и «печать»,
+// с почтой ученика поверх страниц. Остальные файлы — как раньше, по временной ссылке.
+const VIEW_EXT=/\.(pdf|png|jpe?g|webp|gif)$/i;
+async function openMaterialFile(id){const item=dash.materials.find(x=>x.id===id),view=!!item&&VIEW_EXT.test(item.storage_path||'');
+  const w=view?null:window.open('','_blank');
+  const{data:m}=await sb.from('materials').select('title,storage_path').eq('id',id).maybeSingle();
+  const{data,error}=m?await sb.storage.from('materials').createSignedUrl(m.storage_path,60):{error:true};
   if(error||!data){if(w)w.close();alert('Не удалось открыть файл. Попробуйте ещё раз.');return}
+  if(view)return viewDoc(m.title,data.signedUrl,/\.pdf$/i.test(m.storage_path));
   if(w)w.location=data.signedUrl;else location.href=data.signedUrl}
+const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';let pdfjsReady=null,docViewer=null,docUrls=[];
+function loadPdfJs(){return pdfjsReady||(pdfjsReady=new Promise((ok,no)=>{const s=document.createElement('script');s.src=PDFJS+'pdf.min.js';
+  s.onload=()=>{pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS+'pdf.worker.min.js';ok(pdfjsLib)};s.onerror=()=>{pdfjsReady=null;s.remove();no(new Error('pdf.js'))};document.head.append(s)}))}
+async function viewDoc(title,url,isPdf){closeDoc();
+  const el=document.createElement('div');el.id='docViewer';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-label',title);
+  el.innerHTML=`<div class="dv-bar"><b>${escapeHtml(title)}</b><button class="btn" type="button" onclick="closeDoc()">Закрыть ✕</button></div><div class="dv-body"><p class="note">Загружаем…</p></div>`;
+  el.addEventListener('contextmenu',e=>e.preventDefault());el.addEventListener('dragstart',e=>e.preventDefault());
+  document.body.append(el);document.body.classList.add('doc-open');docViewer=el;
+  const body=el.querySelector('.dv-body'),{data:{session}}=await sb.auth.getSession(),who=escapeHtml((session&&session.user.email)||'Инженерный клуб');
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="340" height="200"><text x="170" y="105" text-anchor="middle" transform="rotate(-24 170 100)" font-family="Arial" font-size="15" fill="#3a2313">${who}</text></svg>`;
+  const mark=`url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  const page=node=>{const p=document.createElement('div');p.className='dv-page';const i=document.createElement('i');i.className='dv-mark';i.style.backgroundImage=mark;p.append(node,i);return p};
+  try{const res=await fetch(url);if(!res.ok)throw new Error(res.status);
+    if(!isPdf){const u=URL.createObjectURL(await res.blob());docUrls.push(u);const img=new Image();img.src=u;img.alt='';
+      if(docViewer!==el)return;body.replaceChildren(page(img));return}
+    const[lib,buf]=await Promise.all([loadPdfJs(),res.arrayBuffer()]);const pdf=await lib.getDocument({data:buf}).promise;
+    if(docViewer!==el)return;body.replaceChildren();const W=Math.min(body.clientWidth-24,900),dpr=Math.min(window.devicePixelRatio||1,2);
+    for(let n=1;n<=pdf.numPages;n++){const pg=await pdf.getPage(n);if(docViewer!==el)return;
+      const vp=pg.getViewport({scale:W/pg.getViewport({scale:1}).width*dpr}),c=document.createElement('canvas');
+      c.width=vp.width;c.height=vp.height;c.style.width=W+'px';body.append(page(c));await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise}
+  }catch(e){console.error(e);if(docViewer===el)body.innerHTML='<p class="note">Не удалось открыть файл. Закройте окно и попробуйте ещё раз.</p>'}}
+function closeDoc(){if(!docViewer)return;docViewer.remove();docViewer=null;document.body.classList.remove('doc-open');docUrls.forEach(u=>URL.revokeObjectURL(u));docUrls=[]}
+document.addEventListener('keydown',e=>{if(!docViewer)return;if(e.key==='Escape')closeDoc();
+  else if((e.ctrlKey||e.metaKey)&&(e.code==='KeyS'||e.code==='KeyP'))e.preventDefault()});
 // Вкладка «Материалы»: всё из открытых тем, по заголовкам тем
 function openMaterials(){flushSave();closeChat();dash.current=null;++openToken;
   document.querySelectorAll('.side-item,.side-pin').forEach(x=>x.classList.toggle('active',x.dataset.id==='materials'));
