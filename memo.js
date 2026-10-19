@@ -43,6 +43,10 @@
     chain: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
     book: '<path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5zM12 6.5v13"/>',
     film: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9v6l5-3z"/>',
+    chest: '<path d="M4 10h16v9.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM4 10a4 4 0 0 1 4-4.5h8a4 4 0 0 1 4 4.5M4 13.5h16M10.5 12h3v3.5h-3z"/>',
+    sound: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
+    mute: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM16 9.5l5 5M21 9.5l-5 5"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   };
   // cls: «fill» — залитый значок (сердце, звезда)
   const ico = (name, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${IC[name] || IC.sparkle}</svg>`;
@@ -149,12 +153,31 @@
     ['hint', 'bulb', 'Хитрость', 'Используй подсказку'],
     ['duel', 'duo', 'Дуэль', 'Сыграй вдвоём до конца'],
   ];
+  // Задания дня: каждый день три новых из этого списка (одинаковые весь день). [id, значок, текст, сколько, событие]
+  const QUESTS = [
+    ['pairs', 'cards', 'Найди 12 пар', 12, 'pair'],
+    ['combo', 'flame', 'Сделай комбо ×3', 1, 'combo3'],
+    ['rounds', 'play', 'Сыграй 3 раунда', 3, 'round'],
+    ['stars', 'star', 'Получи 3 звезды', 1, 'stars3'],
+    ['new', 'book', 'Открой новую карточку', 1, 'new'],
+    ['big', 'medal', 'Пройди 10 или 15 пар', 1, 'big'],
+    ['clean', 'target', 'Раунд без перемешки', 1, 'clean'],
+    ['fast', 'hourglass', '6 пар быстрее минуты', 1, 'fast'],
+    ['duel', 'duo', 'Сыграй вдвоём', 1, 'duel'],
+  ];
+  const QUEST_XP = 250;
+  // Сундук: награда случайная — так интереснее открывать
+  function rollReward() {
+    const r = Math.random();
+    return r < 0.4 ? { xp: 150 } : r < 0.65 ? { xp: 300 } : r < 0.8 ? { hint: 1 } : r < 0.92 ? { x2: true } : { xp: 800, jackpot: true };
+  }
+  const fmtTime = (ms) => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
   const PKEY = 'memoProfile';
   const today = () => new Date().toISOString().slice(0, 10);
   function loadProfile() {
     let p = {};
     try { p = JSON.parse(localStorage.getItem(PKEY) || '{}'); } catch (e) {}
-    return { xp: 0, hints: 1, ach: [], best: {}, back: 'classic', streak: 0, lastDay: '', games: 0, ...p };
+    return { xp: 0, hints: 1, ach: [], best: {}, bestTime: {}, back: 'classic', streak: 0, lastDay: '', games: 0, sound: true, x2: false, quests: null, ...p };
   }
   const saveProfile = (p) => { try { localStorage.setItem(PKEY, JSON.stringify(p)); } catch (e) {} };
   const rankOf = (xp) => { let i = 0; RANKS.forEach((r, k) => { if (xp >= r[0]) i = k; }); return i; };
@@ -172,6 +195,50 @@
     // состояние раунда
     let first = null, lock = false, moves = 0, pairs = 0, misses = 0, missesTotal = 0, reshuffles = 0, combo = 0, points = 0;
     let turn = 0, duel = [{ pairs: 0 }, { pairs: 0 }];
+    let t0 = 0, elapsed = 0, timerId = 0;
+    const ZOOM = matchMedia('(max-width:760px)');
+
+    // ---------- звук и вибрация (короткие сигналы, без файлов) ----------
+    let actx = null;
+    const NOTES = {
+      flip: [[520, 0.04]], pair: [[660, 0.08], [880, 0.13]], miss: [[240, 0.1], [190, 0.14]],
+      combo: [[660, 0.06], [880, 0.06], [1100, 0.11]], win: [[523, 0.1], [659, 0.1], [784, 0.1], [1047, 0.3]],
+      chest: [[880, 0.05], [1175, 0.05], [1568, 0.18]], quest: [[784, 0.08], [1047, 0.15]],
+    };
+    function sfx(kind) {
+      if (!P.sound) return;
+      try {
+        actx ||= new (root.AudioContext || root.webkitAudioContext)();
+        let t = actx.currentTime;
+        NOTES[kind].forEach(([f, d]) => {
+          const o = actx.createOscillator(), g = actx.createGain();
+          o.type = 'triangle'; o.frequency.value = f;
+          g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.1, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+          o.connect(g).connect(actx.destination); o.start(t); o.stop(t + d + 0.02); t += d * 0.9;
+        });
+      } catch (e) {}
+    }
+    const buzz = (p) => { if (P.sound && navigator.vibrate) try { navigator.vibrate(p); } catch (e) {} };
+
+    // ---------- конфетти при победе ----------
+    function confetti() {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const box = document.createElement('div');
+      box.className = 'memo-confetti';
+      const colors = ['#9a3a1b', '#c9a227', '#2f5d8a', '#4f6b2e', '#f2e4c4'];
+      box.innerHTML = Array.from({ length: 46 }, (_, i) => `<i style="--x:${(Math.random() * 2 - 1).toFixed(2)};--y:${(Math.random() * 0.7 + 0.3).toFixed(2)};--r:${Math.round(Math.random() * 900 - 450)}deg;--d:${(Math.random() * 0.25).toFixed(2)}s;--c:${colors[i % 5]}"></i>`).join('');
+      board.parentElement.appendChild(box);
+      setTimeout(() => box.remove(), 2400);
+    }
+
+    // ---------- время раунда ----------
+    const renderTime = () => { const el = $('memoTime'); if (el) el.textContent = fmtTime(elapsed); };
+    function startTimer() {
+      if (timerId || mode !== 'solo') return;
+      t0 = Date.now() - elapsed;
+      timerId = setInterval(() => { elapsed = Date.now() - t0; renderTime(); }, 500);
+    }
+    function stopTimer() { if (timerId) { clearInterval(timerId); timerId = 0; elapsed = Date.now() - t0; } renderTime(); }
 
     // ---------- уведомления ----------
     function toast(html, kind = '') {
@@ -225,7 +292,77 @@
       $('mpHints').textContent = P.hints;
       $('mpHint').disabled = !P.hints || mode !== 'solo';
       $('mpStreak').innerHTML = P.streak > 1 ? `${ico('flame')}${P.streak}` : '';
+      const snd = $('mpSound');
+      if (snd) { snd.innerHTML = ico(P.sound ? 'sound' : 'mute'); snd.setAttribute('aria-pressed', P.sound); snd.title = P.sound ? 'Звук включён' : 'Звук выключен'; }
       applyBack();
+      renderQuests();
+    }
+
+    // ---------- задания дня ----------
+    function questsToday() {
+      const d = today();
+      if (!P.quests || P.quests.day !== d) {
+        const pool = QUESTS.filter((q) => q[0] !== 'new' || found().size < cards.length);
+        let h = 7; for (const ch of d) h = (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0;
+        const ids = [];
+        while (ids.length < 3) { h = (Math.imul(h, 1103515245) + 12345) >>> 0; const id = pool[(h >>> 16) % pool.length][0]; if (!ids.includes(id)) ids.push(id); }
+        P.quests = { day: d, ids, prog: {}, chest: false }; saveProfile(P);
+      }
+      return P.quests;
+    }
+    function quest(ev, n = 1) {
+      const Q = questsToday();
+      let changed = false;
+      Q.ids.forEach((id) => {
+        const q = QUESTS.find((x) => x[0] === id);
+        const was = Q.prog[id] || 0;
+        if (q[4] !== ev || was >= q[3]) return;
+        Q.prog[id] = Math.min(q[3], was + n); changed = true;
+        if (Q.prog[id] >= q[3]) {
+          toast(`${ico('check')} ${esc(q[2])} <i>+${QUEST_XP}</i>`, 'ach'); sfx('quest');
+          addXp(QUEST_XP, false);
+        }
+      });
+      if (changed) { saveProfile(P); renderProfile(); }
+    }
+    const questsDone = (Q = questsToday()) => Q.ids.filter((id) => (Q.prog[id] || 0) >= QUESTS.find((x) => x[0] === id)[3]).length;
+    function renderQuests() {
+      const box = $('memoQuests'); if (!box || box.dataset.hold) return;
+      const Q = questsToday(), done = questsDone(Q);
+      box.hidden = false;
+      box.innerHTML = `<div class="mq-head">${ico('scroll')}<b>Задания дня</b><span class="mq-count">${done}/3</span></div><ul>${Q.ids.map((id) => {
+        const q = QUESTS.find((x) => x[0] === id), v = Q.prog[id] || 0, ok = v >= q[3];
+        return `<li class="${ok ? 'ok' : ''}"><span class="mq-ico">${ico(ok ? 'check' : q[1])}</span><span class="mq-t">${esc(q[2])}</span>${q[3] > 1 && !ok ? `<span class="mq-n">${v}/${q[3]}</span>` : ''}<i class="mq-bar" style="--p:${v / q[3]}"></i></li>`;
+      }).join('')}</ul>${done === 3 ? (Q.chest ? `<p class="mq-end">${ico('calcheck')} Всё выполнено! Новые задания — завтра.</p>` : `<button type="button" class="memo-chest gold" data-chest="day">${ico('chest')}<span>Сундук за задания дня</span></button>`) : ''}`;
+    }
+
+    // ---------- сундук ----------
+    function openChest(btn) {
+      if (btn.classList.contains('opening')) return;
+      const day = btn.dataset.chest === 'day';
+      if (day) {
+        const Q = questsToday(); if (Q.chest) return;
+        Q.chest = true; saveProfile(P);
+        const box = $('memoQuests'); box.dataset.hold = '1';   // приз видно несколько секунд, потом — итог заданий
+        setTimeout(() => { delete box.dataset.hold; renderQuests(); }, 4500);
+      }
+      const rolls = day || btn.classList.contains('gold') ? 2 : 1;
+      btn.classList.add('opening'); sfx('flip'); buzz(30);
+      setTimeout(() => {
+        const got = Array.from({ length: rolls }, rollReward);
+        let xp = 0;
+        const html = got.map((r) => {
+          if (r.xp) { xp += r.xp; return `<span class="${r.jackpot ? 'jackpot' : ''}">${ico(r.jackpot ? 'sparkle' : 'star', 'fill')} ${r.jackpot ? 'Джекпот! ' : ''}+${r.xp}</span>`; }
+          if (r.hint) { P.hints += r.hint; return `<span>+1 ${ico('bulb')} подсказка</span>`; }
+          P.x2 = true; return `<span>${ico('bolt')} ×2 опыта в следующем раунде</span>`;
+        }).join('');
+        saveProfile(P);
+        const out = document.createElement('div');
+        out.className = 'chest-prize'; out.innerHTML = html;
+        btn.replaceWith(out);
+        sfx('chest'); buzz([20, 40, 20]);
+        if (xp) addXp(xp); else renderProfile();
+      }, 700);
     }
     function applyBack() {
       const b = BACKS.find((x) => x[0] === P.back) || BACKS[0];
@@ -253,7 +390,7 @@
       const pick = reshuffle === true ? shuffle([...cards]).slice(0, n)
         : [...shuffle(cards.filter((c) => !have.has(c.slug))), ...shuffle(cards.filter((c) => have.has(c.slug)))].slice(0, n);
       const deck = shuffle([...pick, ...pick]);
-      if (reshuffle !== true) { moves = 0; points = 0; missesTotal = 0; reshuffles = 0; note.textContent = ''; turn = 0; duel = [{ pairs: 0 }, { pairs: 0 }]; }
+      if (reshuffle !== true) { moves = 0; points = 0; missesTotal = 0; reshuffles = 0; note.textContent = ''; turn = 0; duel = [{ pairs: 0 }, { pairs: 0 }]; clearInterval(timerId); timerId = 0; elapsed = 0; renderTime(); }
       first = null; lock = false; pairs = 0; misses = 0; combo = 0;
       board.dataset.size = n;
       board.innerHTML = deck.map((c, i) =>
@@ -264,7 +401,7 @@
       document.querySelectorAll('[data-mode]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === mode));
       $('memoSolo').hidden = mode !== 'solo';
       $('memoDuel').hidden = mode !== 'duel';
-      win.hidden = true;
+      win.hidden = true; board.parentElement.style.minHeight = '';
       board.classList.remove('dealt'); void board.offsetWidth; board.classList.add('dealt');
       renderScore(); renderProfile();
     }
@@ -273,9 +410,12 @@
       $('memoCombo').textContent = '×' + Math.max(1, Math.min(combo, 5));
       $('memoComboWrap').classList.toggle('hot', combo >= 2);
       $('memoMoves').textContent = moves;
+      const bt = P.bestTime[level];
+      $('memoTimeWrap').title = bt ? `Время · рекорд ${fmtTime(bt)}` : 'Время';
       $('memoPairs').textContent = pairs; $('memoTotal').textContent = cfg().pairs;
       $('memoMiss').innerHTML = Array.from({ length: cfg().misses }, (_, i) => `<i class="${i < cfg().misses - misses ? '' : 'lost'}">${ico('heart', 'fill')}</i>`).join('');
       $('memoMiss').title = `Промахов подряд до перемешивания: ${cfg().misses}`;
+      $('memoMiss').dataset.left = cfg().misses - misses;
       document.querySelectorAll('#memoDuel .pl').forEach((el, i) => {
         el.classList.toggle('turn', i === turn);
         el.querySelector('[data-pairs]').textContent = duel[i].pairs;
@@ -289,6 +429,14 @@
       if (!b || lock || b.classList.contains('open') || b.classList.contains('done')) return;
       const card = cards.find((c) => c.slug === b.dataset.slug);
       b.classList.add('open'); b.setAttribute('aria-label', card.title);
+      startTimer(); sfx('flip');
+      // на телефоне открытая карточка на секунду увеличивается — рисунок видно целиком
+      if (ZOOM.matches) {
+        const cols = getComputedStyle(board).gridTemplateColumns.split(' ').length, i = [...board.children].indexOf(b);
+        const col = i % cols, row = Math.floor(i / cols), rows = Math.ceil(board.children.length / cols);
+        b.style.setProperty('--o', `${col === 0 ? '0%' : col === cols - 1 ? '100%' : '50%'} ${row === 0 ? '0%' : row === rows - 1 ? '100%' : '50%'}`);
+        b.classList.add('zoom'); clearTimeout(b._z); b._z = setTimeout(() => b.classList.remove('zoom'), first ? 1000 : 1100);
+      }
       if (!first) { first = b; return; }
       moves++;
       const pair = [first, b]; first = null; lock = true;
@@ -301,7 +449,7 @@
     function reveal(card, isNew, done) {
       if (!isNew) { done(); return; }
       openStory(card, () => {
-        addFound(card.slug); markCollection(card.slug);
+        addFound(card.slug); markCollection(card.slug); quest('new');
         const n = found().size;
         if (n >= 10) award('collect10');
         if (n >= cards.length) award('collect25');
@@ -312,6 +460,7 @@
     function onPair(pair, card, el) {
       pairs++;
       const isNew = !found().has(card.slug);
+      quest('pair'); sfx('pair'); buzz(25);
       if (mode === 'duel') {
         duel[turn].pairs++;
         setTimeout(() => {
@@ -327,8 +476,8 @@
       points += gain;
       floatText(el, `+${gain}${mult > 1 ? ` ×${mult}!` : ''}`);
       award('first_pair');
-      if (combo >= 2) burst(`${ico('flame')} ×${mult}!${combo === 3 ? ` +${ico('bulb')}` : ''}`, 'combo');
-      if (combo === 3) { award('combo3'); P.hints++; saveProfile(P); }
+      if (combo >= 2) { burst(`${ico('flame')} ×${mult}!${combo === 3 ? ` +${ico('bulb')}` : ''}`, 'combo'); sfx('combo'); }
+      if (combo === 3) { award('combo3'); P.hints++; saveProfile(P); quest('combo3'); }
       if (combo === 5) award('combo5');
       setTimeout(() => {
         pair.forEach((x) => x.classList.add('done'));
@@ -346,6 +495,7 @@
         return;
       }
       combo = 0; misses++; missesTotal++;
+      sfx('miss'); buzz(60);
       setTimeout(() => {
         pair.forEach((x) => { x.classList.remove('open'); x.setAttribute('aria-label', 'Карточка закрыта'); });
         if (misses < cfg().misses) { lock = false; return; }
@@ -363,25 +513,40 @@
       const stars = reshuffles ? 1 : missesTotal <= Math.ceil(n / 2) ? 3 : 2;
       const bonus = stars * 100 + (missesTotal === 0 ? 300 : 0);
       points += bonus;
+      stopTimer();
       const best = P.best[level] || 0, record = points > best;
       if (record) P.best[level] = points;
+      const bestT = P.bestTime[level], timeRecord = !bestT || elapsed < bestT;
+      if (timeRecord) P.bestTime[level] = elapsed;
+      const x2 = P.x2; P.x2 = false;
       P.games++; saveProfile(P);
-      addXp(points);
+      addXp(points * (x2 ? 2 : 1));
+      quest('round');
+      if (stars === 3) quest('stars3');
+      if (!reshuffles) quest('clean');
+      if (level !== 'easy') quest('big');
+      if (level === 'easy' && elapsed < 60000) quest('fast');
+      sfx('win'); buzz([30, 50, 30, 50, 80]); confetti();
       if (missesTotal === 0) award('perfect');
       if (stars === 3) { award('stars3'); P.hints++; saveProfile(P); }
       if (level === 'mid') award('win_mid');
       if (level === 'hard') award('win_hard');
       renderProfile(); renderScore();
       const next = { easy: 'mid', mid: 'hard' }[level];
+      // что ждёт дальше: до звания, задания дня, новые карточки — повод сыграть ещё раунд
+      const r = rankOf(P.xp), nr = RANKS[r + 1], left = cards.length - found().size, qd = questsDone();
+      const goals = [nr ? `${ico(nr[2])} до «${esc(nr[1])}» — ${nr[0] - P.xp}` : '', qd < 3 ? `${ico('scroll')} задания ${qd}/3` : '', left ? `${ico('book')} новых карточек: ${left}` : ''].filter(Boolean);
       // итог — значками, без пояснений (подробности — в подсказках при наведении)
       win.innerHTML = `<div class="win-card"><div class="win-stars">${[1, 2, 3].map((k) => `<span class="${k <= stars ? 'on' : ''}" style="--k:${k}">${ico('star', 'fill')}</span>`).join('')}</div>
         ${record ? `<div class="win-record">${ico('medal')} Рекорд!</div>` : ''}
         <p class="win-points"><b>${points}</b></p>
-        <p class="win-row"><span title="Ходов">${ico('cards')} ${moves}</span><span title="Промахов">${ico('miss')} ${missesTotal}</span><span title="Бонус за звёзды">${ico('star')} +${bonus}</span>${stars === 3 ? `<span title="Подсказка">+1 ${ico('bulb')}</span>` : ''}<span title="Рекорд уровня">${ico('medal')} ${Math.max(best, points)}</span></p>
+        <p class="win-row"><span title="Ходов">${ico('cards')} ${moves}</span><span title="Промахов">${ico('miss')} ${missesTotal}</span><span title="Бонус за звёзды">${ico('star')} +${bonus}</span>${stars === 3 ? `<span title="Подсказка">+1 ${ico('bulb')}</span>` : ''}<span title="Рекорд уровня">${ico('medal')} ${Math.max(best, points)}</span><span title="Время${timeRecord ? ' — рекорд!' : ''}" class="${timeRecord ? 'rec' : ''}">${ico('hourglass')} ${fmtTime(elapsed)}</span>${x2 ? `<span title="Опыт удвоен">${ico('bolt')} ×2</span>` : ''}</p>
+        <button type="button" class="memo-chest${stars === 3 ? ' gold' : ''}" data-chest="1">${ico('chest')}<span>${stars === 3 ? 'Золотой сундук' : 'Открой сундук'}</span></button>
+        ${goals.length ? `<p class="win-next">${goals.map((g) => `<span>${g}</span>`).join('')}</p>` : ''}
         <div class="win-btns"><button type="button" class="btn primary" data-memo-again>${ico('play')} Ещё</button>${next ? `<button type="button" class="btn" data-next="${next}">${ico('up')} ${LEVELS[next].pairs} пар</button>` : ''}</div></div>`;
       win.querySelector('[data-next]')?.addEventListener('click', (e) => { level = e.target.dataset.next; try { localStorage.setItem('memoLevel', level); } catch (x) {} deal(); });
       $('memoBurst').className = 'memo-burst';   // вспышка не должна лечь поверх итога
-      win.hidden = false;
+      showWin();
       board.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     function finishDuel() {
@@ -389,12 +554,21 @@
       const res = a === b ? 'Ничья!' : `${name(a > b ? 0 : 1)}!`;
       award('duel');
       addXp(150);
+      quest('round'); quest('duel');
+      sfx('win'); confetti();
       win.innerHTML = `<div class="win-card"><div class="win-stars"><span class="on">${ico(a === b ? 'duo' : 'trophy')}</span></div><h2>${res}</h2>
         <p class="win-points"><b class="c0">${a}</b> : <b class="c1">${b}</b></p>
         <div class="win-btns"><button type="button" class="btn primary" data-memo-again>${ico('refresh')} Реванш</button></div></div>`;
       $('memoBurst').className = 'memo-burst';   // вспышка не должна лечь поверх итога
-      win.hidden = false;
+      showWin();
       board.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // итог поверх поля; если поле ниже окна итога (6 пар на телефоне) — растягиваем место под ним
+    function showWin() {
+      win.hidden = false;
+      const need = win.firstElementChild.offsetHeight + 24, st = board.parentElement;
+      st.style.minHeight = need > st.offsetHeight ? need + 'px' : '';
     }
 
     // ---------- подсказка: на секунду открыть все закрытые карточки ----------
@@ -433,7 +607,11 @@
       deal();
       if (mode === 'duel') burst(`${ico('arrow')} ${name(0)}`, 'p0');
     }));
-    document.addEventListener('click', (e) => { if (e.target.closest('[data-memo-again]')) deal(); });
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('[data-memo-again]')) deal();
+      const ch = e.target.closest('[data-chest]'); if (ch) openChest(ch);
+    });
+    $('mpSound')?.addEventListener('click', () => { P.sound = !P.sound; saveProfile(P); renderProfile(); sfx('flip'); });
 
 
     dailyCheck();

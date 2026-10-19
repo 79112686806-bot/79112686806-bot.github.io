@@ -172,12 +172,69 @@ dialog.memo-prizes::backdrop{background:rgba(20,10,3,.75)}
 .pz-ach div span{grid-row:span 2;font-size:26px;color:rgba(74,44,20,.5);display:inline-flex}.pz-ach div small{color:var(--ink-soft);font-size:12px}
 .pz-ach div.got{opacity:1;background:rgba(255,248,230,.6)}.pz-ach div.got span{color:#9a6a12}
 
+/* ---------- Задания дня ---------- */
+.memo-quests{margin:0 0 12px;padding:8px 12px 10px;border:1.5px dashed rgba(154,58,27,.45);border-radius:14px;background:rgba(255,248,230,.45)}
+.mq-head{display:flex;align-items:center;gap:6px;font-size:16px}.mq-head .ic{color:var(--sanguine);font-size:19px}
+.mq-head b{font-family:"Cormorant Garamond",Georgia,serif;font-size:21px}
+.mq-count{margin-left:auto;font-weight:700;color:var(--sanguine)}
+.memo-quests ul{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.memo-quests li{position:relative;display:flex;align-items:center;gap:6px;padding:6px 8px 9px;border-radius:10px;background:rgba(255,248,230,.7);border:1px solid var(--line);font-size:14.5px;line-height:1.25;overflow:hidden}
+.mq-ico{display:inline-flex;color:var(--sanguine);font-size:18px}.mq-t{flex:1}.mq-n{font-weight:700;color:var(--ink-soft);font-size:13px}
+.mq-bar{position:absolute;left:0;bottom:0;height:3px;width:calc(var(--p) * 100%);background:linear-gradient(90deg,#c9a227,var(--sanguine));transition:width .6s ease}
+.memo-quests li.ok{background:#eef0df;border-color:rgba(70,90,40,.35)}.memo-quests li.ok .mq-ico{color:#4f6b2e}.memo-quests li.ok .mq-t{text-decoration:line-through;text-decoration-color:rgba(70,90,40,.5)}
+.memo-quests li.ok .mq-bar{background:#4f6b2e}
+.mq-end{margin:8px 0 0;font-size:15px;color:#3f5a22;display:flex;align-items:center;gap:6px}
+
+/* ---------- Сундук ---------- */
+.memo-chest{display:inline-flex;align-items:center;gap:8px;margin:2px auto 10px;padding:8px 18px 8px 12px;border-radius:30px;border:2px solid #b8892b;background:linear-gradient(#f6e3b0,#ecd08a);color:#6b4108;font:700 17px "PT Serif",Georgia,serif;cursor:pointer;animation:chestWiggle 2.4s ease-in-out infinite;box-shadow:0 4px 12px rgba(120,80,10,.3)}
+.memo-chest .ic{font-size:28px}
+.memo-chest.gold{border-color:#9a6a12;background:linear-gradient(#ffe9a3,#e0b83a);box-shadow:0 0 0 3px rgba(224,184,58,.35),0 4px 14px rgba(160,110,0,.45)}
+.memo-quests .memo-chest{margin:8px 0 0}
+.memo-chest.opening{animation:chestOpen .7s ease}
+@keyframes chestWiggle{0%,70%,100%{transform:none}75%{transform:rotate(-6deg) scale(1.05)}80%{transform:rotate(6deg) scale(1.05)}85%{transform:rotate(-4deg)}90%{transform:rotate(3deg)}}
+@keyframes chestOpen{20%{transform:scale(.9)}40%{transform:rotate(-10deg) scale(1.1)}60%{transform:rotate(10deg) scale(1.15)}100%{transform:scale(1.3);opacity:0}}
+.chest-prize{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:2px 0 10px}
+.chest-prize span{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:30px;background:#fff3cf;border:2px solid #c9a227;color:#6b4108;font-weight:700;font-size:17px;animation:pop .5s cubic-bezier(.2,.9,.3,1.5) backwards}
+.chest-prize span:nth-child(2){animation-delay:.2s}.chest-prize .ic{color:#c9a227;stroke:#6b4108}
+.chest-prize .jackpot{background:var(--sanguine);color:var(--paper-light);border-color:#7d2c12}
+.win-next{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;margin:0 0 12px;font-size:14.5px;color:var(--ink-soft)}
+.win-next span{display:inline-flex;align-items:center;gap:4px}.win-next .ic{color:var(--sanguine)}
+.win-row span.rec{background:#fff3cf;border-color:#c9a227}
+
+/* ---------- Конфетти ---------- */
+.memo-confetti{position:absolute;left:50%;top:38%;z-index:16;pointer-events:none}
+.memo-confetti i{position:absolute;width:8px;height:13px;border-radius:2px;background:var(--c);opacity:0;animation:conf 2s cubic-bezier(.2,.7,.4,1) var(--d) forwards}
+@keyframes conf{0%{opacity:1;transform:translate(0,0) rotate(0)}30%{opacity:1;transform:translate(calc(var(--x) * 170px),calc(var(--y) * -190px)) rotate(calc(var(--r) / 3))}100%{opacity:0;transform:translate(calc(var(--x) * 260px),260px) rotate(var(--r))}}
+
+.ms-time b{font-variant-numeric:tabular-nums}
+.mp-sound{padding:7px 10px}
+
 @media (max-width:760px){
-  .memo-board{grid-template-columns:repeat(4,1fr)}
-  .memo-board[data-size="10"]{grid-template-columns:repeat(5,1fr)}
-  .memo-board[data-size="15"]{grid-template-columns:repeat(6,1fr)}
+  .wrap{width:calc(100% - 12px);margin:8px auto 20px;padding:4px 12px 4px}
+  nav{padding:12px 0 6px;gap:8px}.brand{font-size:16px;gap:8px}.logo{width:28px;height:28px}.nav-links{gap:6px}.nav-links .btn{padding:7px 10px;font-size:13px}
+  h1{font-size:36px}.lead{font-size:17px;margin-bottom:12px}
+  .memo-profile{gap:6px;padding:6px 8px;margin-top:8px}.mp-ico{font-size:26px}.mp-btn{padding:6px 9px;font-size:15px}
+  .memo-quests{padding:7px 8px 8px}.memo-quests ul{grid-template-columns:1fr;gap:4px}.memo-quests li{padding:5px 8px 7px}
+  .memo-bar{gap:6px;margin:10px 0 8px}.memo-levels{gap:4px}.memo-levels button{padding:6px 11px;font-size:14px}.memo-bar>.btn{padding:6px 12px;font-size:14px}
+  /* счёт прилипает к верху экрана, пока идёт игра */
+  .memo-score,.memo-duel{position:sticky;top:0;z-index:12;margin:0 -12px 8px;padding:6px 12px;background:var(--paper);box-shadow:0 6px 10px -8px rgba(40,20,5,.5)}
+  .memo-score{gap:5px;flex-wrap:nowrap}.memo-score>span{padding:3px 9px;font-size:15px}.memo-score b{font-size:17px}
+  /* сердца — одним значком с числом, чтобы счёт помещался в одну строку */
+  .ms-lives i{display:none;font-size:16px}.ms-lives i:first-child{display:inline-flex}
+  .ms-lives::after{content:attr(data-left);font-weight:700;font-size:17px;color:var(--sanguine);margin-left:3px}
+  .memo-stage{scroll-margin-top:56px}
+  .memo-board{gap:6px;grid-template-columns:repeat(4,1fr)}
+  .memo-board[data-size="10"]{grid-template-columns:repeat(4,1fr)}
+  .memo-board[data-size="15"]{grid-template-columns:repeat(5,1fr)}
+  /* открытая карточка ненадолго увеличивается, чтобы рисунок было видно */
+  .mcard{transition:transform .25s ease}
+  .mcard.zoom:not(.done){transform:scale(1.9);transform-origin:var(--o,50% 50%);z-index:8}
+  .mcard.zoom:not(.done) .mcard-face{box-shadow:0 0 0 2px var(--paper-light),0 12px 28px rgba(40,20,5,.6)}
+  .win-card{padding:18px 14px 18px}.win-points b{font-size:44px}
 }
-@media (prefers-reduced-motion:reduce){.mcard-in{transition-duration:.01s}.dealt .mcard,.mcard.done .mcard-face{animation:none}}
+@media (prefers-reduced-motion:reduce){.mcard-in{transition-duration:.01s}.dealt .mcard,.mcard.done .mcard-face,.memo-chest{animation:none}}
+
+.how-play{margin:0 0 10px;padding-left:22px;max-width:820px;font-size:17px}.how-play li{margin-bottom:6px}.how-play li::marker{color:var(--sanguine)}
 
 /* ---------- Коллекция / список историй ---------- */
 .memo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:14px;padding:0;list-style:none}

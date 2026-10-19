@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Marck+Script&display=swap" rel="stylesheet">
 <style>
-:root{--navy:#141e30;--navy2:#1b2a41;--amber:#e8a33d;--cream:#f4f1ea;--muted:#b9c0cb;--line:rgba(244,241,234,.14)}*{box-sizing:border-box}body{margin:0;background:var(--navy);color:var(--cream);font-family:Manrope,Arial,sans-serif}.grid{position:fixed;inset:0;pointer-events:none;opacity:.6;background-image:linear-gradient(rgba(244,241,234,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(244,241,234,.045) 1px,transparent 1px);background-size:42px 42px}.wrap{width:min(1160px,calc(100% - 40px));margin:auto;position:relative}nav{display:flex;align-items:center;padding:26px 0}.brand{display:flex;gap:12px;align-items:center;font-family:Unbounded;font-size:16px}.logo{width:34px;height:34px;border:2px solid var(--amber);border-radius:50%;display:grid;place-items:center;position:relative}.logo:before,.logo:after{content:"";position:absolute;background:var(--amber)}.logo:before{width:2px;height:24px}.logo:after{height:2px;width:24px}.logo i{width:8px;height:8px;background:var(--amber);border-radius:50%;z-index:1}.hero,.section{padding:50px 0 70px}.hero{text-align:center}.eyebrow{color:var(--amber);text-transform:uppercase;letter-spacing:.16em;font-size:12px;font-weight:800;margin-bottom:22px}.hero h1,.section h2{font-family:Unbounded}.hero h1{font-size:clamp(30px,5vw,64px);line-height:1.18;max-width:850px;margin:0 auto 24px}.hero p,.section-intro{max-width:680px;margin:0 auto 32px;color:var(--muted);font-size:18px;line-height:1.65}.hero-actions{display:flex;justify-content:center;gap:14px;flex-wrap:wrap}.btn{border:1px solid var(--amber);color:var(--amber);background:transparent;border-radius:30px;padding:12px 20px;text-decoration:none;font-weight:700;cursor:pointer;transition:.2s}.btn:hover{background:var(--amber);color:var(--navy);transform:translateY(-2px)}.primary{background:var(--amber);color:var(--navy)}.schematic{max-width:820px;margin:45px auto 0;display:flex;justify-content:space-between;align-items:center;gap:16px}.node{width:100px;height:100px;border:1px solid rgba(232,163,61,.55);border-radius:50%;display:grid;place-items:center;font-size:42px;animation:float 4s ease-in-out infinite}.node:nth-child(2){animation-delay:.5s}.node:nth-child(3){animation-delay:1s}.node:nth-child(4){animation-delay:1.5s}.connector{height:1px;background:rgba(232,163,61,.5);flex:1}.features,.courses,.options{display:grid;gap:16px}.features{grid-template-columns:repeat(3,1fr)}.courses{grid-template-columns:repeat(5,1fr);gap:14px}.feature,.course,.option,.dashboard-card{background:rgba(244,241,234,.045);border:1px solid var(--line);border-radius:18px;padding:24px}.feature strong{display:block;margin-bottom:8px}.feature p,.option p,.dashboard-card p{color:var(--muted);line-height:1.55;margin:0;font-size:14px}.course{position:relative;text-align:left;min-height:190px;color:var(--cream);cursor:pointer;transition:.25s;overflow:hidden}.course:hover{transform:translateY(-5px);border-color:var(--amber);background:rgba(232,163,61,.1)}.course .icon{font-size:36px;display:block;margin-bottom:22px}.course .num{position:absolute;right:15px;top:15px;color:var(--amber);font-size:12px}.course h3{font-size:15px;line-height:1.35;margin:0}.course small{display:block;color:var(--muted);margin-top:8px}.bottom{margin-top:34px}.options{grid-template-columns:1fr 1fr}.option{cursor:pointer;text-align:left;background:rgba(244,241,234,.045);color:var(--cream)}.option:hover,.option.selected{border-color:var(--amber)}.option h3{margin:0 0 8px}.option b{display:block;font-size:25px;margin-top:18px;color:var(--amber)}.form{max-width:700px;margin-top:24px}.form input,.form textarea{width:100%;padding:13px;border:1px solid #d6d9df;border-radius:10px;margin:6px 0 12px;font:inherit}.form label{font-size:13px;font-weight:700}.note{font-size:12px;color:#77808e}.payment{max-width:650px;background:var(--cream);color:var(--navy);padding:32px;border-radius:24px}.payment h3{font-family:Unbounded}.payment p{color:#536071;line-height:1.6}.payment input{width:100%;padding:13px;margin:6px 0 12px;border:1px solid #d6d9df;border-radius:10px}.dashboard{display:grid;grid-template-columns:260px 1fr;gap:22px;padding:30px 0 70px}.sidebar,.lesson,.materials{background:rgba(244,241,234,.045);border:1px solid var(--line);border-radius:20px;padding:24px}
+:root{--navy:#141e30;--navy2:#1b2a41;--amber:#e8a33d;--cream:#f4f1ea;--muted:#b9c0cb;--line:rgba(244,241,234,.14)}*{box-sizing:border-box}body{margin:0;background:var(--navy);color:var(--cream);font-family:Manrope,Arial,sans-serif}.grid{position:fixed;inset:0;pointer-events:none;opacity:.6;background-image:linear-gradient(rgba(244,241,234,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(244,241,234,.045) 1px,transparent 1px);background-size:42px 42px}.wrap{width:min(1160px,calc(100% - 40px));margin:auto;position:relative}nav{display:flex;align-items:center;padding:26px 0}.brand{display:flex;gap:12px;align-items:center;font-family:Unbounded;font-size:16px}.logo{width:34px;height:34px;border:2px solid var(--amber);border-radius:50%;display:grid;place-items:center;position:relative}.logo:before,.logo:after{content:"";position:absolute;background:var(--amber)}.logo:before{width:2px;height:24px}.logo:after{height:2px;width:24px}.logo i{width:8px;height:8px;background:var(--amber);border-radius:50%;z-index:1}.hero,.section{padding:50px 0 70px}.hero{text-align:center}.eyebrow{color:var(--amber);text-transform:uppercase;letter-spacing:.16em;font-size:12px;font-weight:800;margin-bottom:22px}.hero :is(h1,h2),.section h2{font-family:Unbounded}.hero :is(h1,h2){font-size:clamp(30px,5vw,64px);line-height:1.18;max-width:850px;margin:0 auto 24px}.hero p,.section-intro{max-width:680px;margin:0 auto 32px;color:var(--muted);font-size:18px;line-height:1.65}.hero-actions{display:flex;justify-content:center;gap:14px;flex-wrap:wrap}.btn{border:1px solid var(--amber);color:var(--amber);background:transparent;border-radius:30px;padding:12px 20px;text-decoration:none;font-weight:700;cursor:pointer;transition:.2s}.btn:hover{background:var(--amber);color:var(--navy);transform:translateY(-2px)}.primary{background:var(--amber);color:var(--navy)}.schematic{max-width:820px;margin:45px auto 0;display:flex;justify-content:space-between;align-items:center;gap:16px}.node{width:100px;height:100px;border:1px solid rgba(232,163,61,.55);border-radius:50%;display:grid;place-items:center;font-size:42px;animation:float 4s ease-in-out infinite}.node:nth-child(2){animation-delay:.5s}.node:nth-child(3){animation-delay:1s}.node:nth-child(4){animation-delay:1.5s}.connector{height:1px;background:rgba(232,163,61,.5);flex:1}.features,.courses,.options{display:grid;gap:16px}.features{grid-template-columns:repeat(3,1fr)}.courses{grid-template-columns:repeat(5,1fr);gap:14px}.feature,.course,.option,.dashboard-card{background:rgba(244,241,234,.045);border:1px solid var(--line);border-radius:18px;padding:24px}.feature strong{display:block;margin-bottom:8px}.feature p,.option p,.dashboard-card p{color:var(--muted);line-height:1.55;margin:0;font-size:14px}.course{position:relative;text-align:left;min-height:190px;color:var(--cream);cursor:pointer;transition:.25s;overflow:hidden}.course:hover{transform:translateY(-5px);border-color:var(--amber);background:rgba(232,163,61,.1)}.course .icon{font-size:36px;display:block;margin-bottom:22px}.course .num{position:absolute;right:15px;top:15px;color:var(--amber);font-size:12px}.course h3{font-size:15px;line-height:1.35;margin:0}.course small{display:block;color:var(--muted);margin-top:8px}.bottom{margin-top:34px}.options{grid-template-columns:1fr 1fr}.option{cursor:pointer;text-align:left;background:rgba(244,241,234,.045);color:var(--cream)}.option:hover,.option.selected{border-color:var(--amber)}.option h3{margin:0 0 8px}.option b{display:block;font-size:25px;margin-top:18px;color:var(--amber)}.form{max-width:700px;margin-top:24px}.form input,.form textarea{width:100%;padding:13px;border:1px solid #d6d9df;border-radius:10px;margin:6px 0 12px;font:inherit}.form label{font-size:13px;font-weight:700}.note{font-size:12px;color:#77808e}.payment{max-width:650px;background:var(--cream);color:var(--navy);padding:32px;border-radius:24px}.payment h3{font-family:Unbounded}.payment p{color:#536071;line-height:1.6}.payment input{width:100%;padding:13px;margin:6px 0 12px;border:1px solid #d6d9df;border-radius:10px}.dashboard{display:grid;grid-template-columns:260px 1fr;gap:22px;padding:30px 0 70px}.sidebar,.lesson,.materials{background:rgba(244,241,234,.045);border:1px solid var(--line);border-radius:20px;padding:24px}
 .research-card{margin:22px 0;padding:22px;border:1px solid rgba(232,163,61,.4);border-radius:16px;background:rgba(232,163,61,.06)}
 .research-card h4{font-family:Unbounded;font-size:15px;margin-bottom:8px;color:var(--amber)}
 .research-q{font-style:italic;margin-bottom:16px;line-height:1.5}
@@ -156,8 +156,8 @@ body{background:var(--desk) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 
 /* типографика */
 .brand{font-family:"Cormorant Garamond",Georgia,serif;font-size:22px;font-weight:700;letter-spacing:.02em;color:var(--ink)}
-.hero h1,.section h2,.payment h3,.modal-card h2,.sidebar h3,.lesson h2,.materials h3{font-family:"Cormorant Garamond",Georgia,serif;font-weight:700;color:var(--ink);letter-spacing:-.005em}
-.hero h1{font-size:clamp(40px,6.4vw,82px);line-height:1.02}
+.hero :is(h1,h2),.section h2,.payment h3,.modal-card h2,.sidebar h3,.lesson h2,.materials h3{font-family:"Cormorant Garamond",Georgia,serif;font-weight:700;color:var(--ink);letter-spacing:-.005em}
+.hero :is(h1,h2){font-size:clamp(40px,6.4vw,82px);line-height:1.02}
 .section h2{font-size:clamp(34px,4.4vw,52px);line-height:1.05;margin-bottom:14px}
 .sidebar h3{font-size:24px}.lesson h2{font-size:32px}.materials h3{font-size:24px}
 .eyebrow{font-family:"Marck Script",cursive;text-transform:none;letter-spacing:0;font-size:24px;font-weight:400;color:var(--sanguine);margin-bottom:10px}
@@ -289,7 +289,7 @@ footer{color:var(--ink-soft);font-family:"Marck Script",cursive;font-size:19px}
 .course h3{min-height:2.7em}
 .side-item.locked{opacity:.55}
 a.btn{display:inline-block;font-size:13.333px;line-height:normal;text-decoration:none}
-.hero h1 .eyebrow{display:block;line-height:1.4;margin:0 0 10px}
+.hero :is(h1,h2) .eyebrow{display:block;line-height:1.4;margin:0 0 10px}
 a.course{display:flex;text-decoration:none}
 .crumbs{display:block;font-size:14px;color:var(--ink-soft);margin-bottom:18px}
 .crumbs a{color:var(--sanguine)}
@@ -660,7 +660,7 @@ a,button,summary,.course{touch-action:manipulation}
   .brand{font-size:15.5px;gap:8px;white-space:nowrap;letter-spacing:.01em}
   .brand .logo{flex:none}
   nav .btn{padding:8px 12px;font-size:13px;white-space:nowrap}
-  .hero h1{font-size:40px}
+  .hero :is(h1,h2){font-size:40px}
   .hero-actions{flex-direction:column;align-items:stretch;gap:10px}
   .hero-actions .btn{width:100%;text-align:center}
   .section h2,.course-title{font-size:30px}
@@ -683,6 +683,67 @@ a,button,summary,.course{touch-action:manipulation}
   .bottom .btn{width:100%;text-align:center;margin:0}
   .feature{padding:20px 18px}
 }
+
+/* ---------- Личный кабинет: анимации и телефон ---------- */
+.side-toggle{display:none}
+.lesson.swap{animation:lessonIn .45s cubic-bezier(.2,.8,.2,1)}
+.lesson.swap>*{animation:lessonIn .5s cubic-bezier(.2,.8,.2,1) backwards}
+.lesson.swap>*:nth-child(2){animation-delay:.06s}.lesson.swap>*:nth-child(3){animation-delay:.12s}.lesson.swap>*:nth-child(4){animation-delay:.18s}.lesson.swap>*:nth-child(n+5){animation-delay:.24s}
+@keyframes lessonIn{from{opacity:0;transform:translateY(14px)}}
+.side-group.open .side-item{animation:itemIn .35s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--k,0) * 45ms)}
+@keyframes itemIn{from{opacity:0;transform:translateX(-8px)}}
+.side-item{transition:color .2s,border-color .2s,padding-left .2s}
+.side-item:not(.locked):hover{padding-left:18px}
+.progress span{background:linear-gradient(90deg,#c9a227,var(--sanguine))}
+#myCourseGrid .course{transition:transform .25s,box-shadow .25s}
+#myCourseGrid .course:hover{transform:translateY(-4px);box-shadow:0 12px 24px rgba(60,30,10,.18)}
+.my-prog{display:block;height:6px;border-radius:6px;background:rgba(74,44,20,.15);overflow:hidden;margin-top:12px}
+.my-prog i{display:block;height:100%;width:var(--p);background:linear-gradient(90deg,#c9a227,var(--sanguine));border-radius:6px;animation:growW 1.2s cubic-bezier(.2,.8,.2,1) .2s backwards}
+@keyframes growW{from{width:0}}
+.my-go{display:block;margin-top:8px;font-weight:700;font-size:14px;color:var(--sanguine)}
+#myHello{font-weight:700;color:var(--ink)}
+.dash-cheer{position:relative;display:flex;flex-direction:column;gap:4px;margin:0 0 18px;padding:14px 48px 14px 18px;border:1.5px solid #b8892b;border-radius:6px;background:linear-gradient(135deg,#fff3cf,#f4dc9a);color:var(--ink);box-shadow:0 8px 22px rgba(120,80,10,.22);animation:cheerIn .6s cubic-bezier(.2,.9,.3,1.3)}
+.dash-cheer b{font-family:"Cormorant Garamond",Georgia,serif;font-size:21px;line-height:1.2}
+.dash-cheer span{font-size:15.5px}
+.dash-cheer button{position:absolute;top:8px;right:8px;width:32px;height:32px;border:0;border-radius:50%;background:rgba(255,255,255,.5);color:var(--sanguine);font-size:16px;cursor:pointer}
+.cheer-bits{position:absolute;left:50%;top:50%;pointer-events:none}
+.cheer-bits i{position:absolute;width:7px;height:11px;border-radius:2px;background:var(--sanguine);opacity:0;animation:cheerBit 1.6s cubic-bezier(.2,.7,.4,1) var(--d) forwards}
+.cheer-bits i:nth-child(3n){background:#c9a227}.cheer-bits i:nth-child(3n+1){background:#2f5d8a}
+@keyframes cheerIn{from{opacity:0;transform:translateY(-10px) scale(.96)}}
+@keyframes cheerBit{0%{opacity:1;transform:translate(0,0)}35%{opacity:1;transform:translate(calc(var(--x) * 180px),-70px) rotate(calc(var(--r) / 2))}100%{opacity:0;transform:translate(calc(var(--x) * 240px),60px) rotate(var(--r))}}
+@media(max-width:900px){
+  #dashboardPage>.btn,#myCoursesPage>.btn{margin-bottom:12px!important;padding:9px 14px}
+  #dashboardPage .section-intro{font-size:15.5px;margin-bottom:12px}
+  .dashboard{gap:14px;padding:4px 0 40px}
+  /* программа — компактная панель, прилипает к верху экрана */
+  .sidebar{position:sticky;top:6px;z-index:30;padding:8px 10px!important;background:var(--paper-light)!important;box-shadow:0 8px 20px rgba(60,30,10,.22)}
+  .sidebar>h3,.sidebar>.side-prog-label,.sidebar>.progress,.sidebar>#dashProgressText{display:none}
+  .side-toggle{display:flex;align-items:center;gap:10px;width:100%;padding:6px 4px;border:0;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+  .st-ico{font-size:22px}.st-text{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
+  .st-text b{font-family:"Cormorant Garamond",Georgia,serif;font-size:19px}
+  .st-text small{color:var(--ink-soft);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .st-pct{font-weight:700;font-size:14px;color:var(--sanguine);background:rgba(154,58,27,.1);border-radius:20px;padding:2px 9px}
+  .side-toggle .chev{font-style:normal;color:var(--sanguine);transition:transform .25s}
+  .sidebar.open .side-toggle .chev{transform:rotate(180deg)}
+  .side-body{display:none;max-height:62vh;overflow:auto;overscroll-behavior:contain;padding:0 4px}
+  .sidebar.open .side-body{display:block;animation:lessonIn .3s ease}
+  .side-pins{display:flex;gap:8px;margin-top:6px}
+  .side-pins .side-pin{flex:1;text-align:center;border:1px solid var(--line);border-radius:30px;padding:8px 6px;font-size:14px;background:rgba(255,248,230,.6)}
+  .side-pins .side-pin.active{border-color:var(--sanguine);color:var(--sanguine)}
+  .side-item{padding:10px 0 10px 14px;font-size:15px}
+  .side-group-head{padding:13px 0;font-size:15px}
+  .lesson{padding:16px 14px!important}
+  .lesson h2{font-size:26px}
+  .lesson .materials,.lesson .research-card{padding:14px 12px!important;margin:14px 0}
+  #callBox{min-height:0!important;padding:18px 12px!important;font-size:20px;margin:12px 0}
+  #callBox .btn{width:100%;padding:13px}
+  .lesson .materials a{padding:6px 0}
+  .timeline{gap:4px}.timeline small{font-size:12px}
+  #myCourseGrid{grid-template-columns:1fr}
+  #myCourseGrid .course{min-height:0;padding:16px}
+  .dash-cheer{padding:12px 44px 12px 14px}.dash-cheer b{font-size:19px}
+}
+@media(prefers-reduced-motion:reduce){.lesson.swap,.lesson.swap>*,.side-group.open .side-item,.my-prog i,.dash-cheer,.cheer-bits{animation:none}}
 </style></head>
 <body><svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
 <filter id="torn" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="5" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="26" xChannelSelector="R" yChannelSelector="G"/></filter>
@@ -784,8 +845,8 @@ a,button,summary,.course{touch-action:manipulation}
 <section class="section page" id="signupPage" style="display:none"><h2>Заявка на курс</h2><p class="section-intro">Онлайн-формат: часть тем школьник проходит самостоятельно — видеоуроки, материалы и задания в личном кабинете, а на ключевых этапах занимается с преподавателем. На протяжении всего курса мы на связи в чате.</p><div class="option" style="max-width:460px;cursor:default"><h3 id="signupCourseName"></h3><p>Онлайн-формат: самостоятельные видеоуроки и задания в личном кабинете, встречи с преподавателем на ключевых этапах и чат поддержки.</p><b id="signupPrice">Пробное занятие — 1 500 ₽</b><b id="signupFull">Весь курс + набор для исследований — 29 750 ₽</b></div><div id="chosenForm"></div><div class="bottom"><a class="btn" href="/programmy/" onclick="return go(event,'courses')">Назад к программам</a></div></section>
 <section class="section page" id="requestSentPage" style="display:none"><h2>Заявка отправлена</h2><div class="payment"><p>Спасибо! Мы получили вашу заявку на курс «<span id="reqCourseName"></span>» и свяжемся с вами по указанному контакту в ближайшее время, чтобы ответить на вопросы и подобрать удобное время занятий.</p><a class="btn primary" href="/" onclick="return go(event,'home')">На главную</a></div></section>
 <section class="section page" id="paymentPage" style="display:none"><h2>Оплата курса</h2><div class="payment" id="paymentForm"><h3 id="paymentTitle"></h3><p id="paymentText"></p><div id="planBox"></div><div id="accountFields"></div><label>Номер карты</label><input placeholder="0000 0000 0000 0000"><label>Срок действия</label><input placeholder="ММ/ГГ"><label>Код</label><input placeholder="CVC"><label class="consent"><input type="checkbox" id="payConsent"><span>Я принимаю условия <a href="/dokumenty/oferta/" target="_blank">публичной оферты</a> и даю <a href="/dokumenty/soglasie-na-obrabotku/" target="_blank">согласие на обработку персональных данных</a> — своих и ребёнка</span></label><p class="note" id="payMsg"></p><button class="btn primary" id="payBtn" onclick="completePayment()">Оплатить (демо)</button><p class="note">Это демонстрационная страница. Реальная оплата пока не подключена.</p></div><div class="payment" id="paymentSuccess" style="display:none"><h3>Оплата прошла успешно</h3><p>Доступ открыт в личном кабинете. Письмо с логином для входа отправлено вам на почту.</p><p class="note" style="margin-bottom:14px">Если письмо не пришло в течение нескольких минут — проверьте папку «Спам» или напишите нам.</p><button class="btn primary" onclick="enterDashboard()">Войти в личный кабинет</button></div></section>
-<section class="section page" id="myCoursesPage" style="display:none"><button class="btn" onclick="showPage('home')" style="margin-bottom:18px">← Вернуться на сайт</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button> <button class="btn primary" id="adminLink" onclick="location.href='/admin.html'" style="margin-bottom:18px;display:none">⚙ Панель администратора</button><h2>Личный кабинет</h2><p class="section-intro">Ваши курсы. Нажмите на курс, чтобы перейти к занятиям.</p><div class="courses" id="myCourseGrid"></div><div class="materials" id="myProfile" style="max-width:760px;margin-top:28px"></div><div class="materials" id="myReview" style="max-width:760px;margin-top:18px"></div></section>
-<section class="section page" id="dashboardPage" style="display:none"><button class="btn" onclick="enterCabinet()" style="margin-bottom:18px">← Мои курсы</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button><h2>Личный кабинет</h2><p class="section-intro" id="dashIntro"></p><div class="dashboard"><aside class="sidebar"><h3 id="dashCourse"></h3><p>Прогресс</p><div class="progress"><span id="dashProgressBar" style="width:0"></span></div><p class="note" id="dashProgressText">0% пройдено</p><hr style="border-color:var(--line)"><div id="sideAccordion"></div><span class="side-pin" data-id="materials" onclick="openMaterials()">📁 Материалы</span><span class="side-pin" data-id="chat" onclick="openChat()">💬 Чат с нами</span></aside><div><div class="lesson" id="lessonArea"></div><div class="timeline" id="dashTimeline"><div class="step"><div class="dot">1</div><small>Введение</small></div><div class="step"><div class="dot">2</div><small>Исследование</small></div><div class="step"><div class="dot">3</div><small>Модель</small></div><div class="step"><div class="dot">4</div><small>Проект</small></div></div></div></div></section>
+<section class="section page" id="myCoursesPage" style="display:none"><button class="btn" onclick="showPage('home')" style="margin-bottom:18px">← Вернуться на сайт</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button> <button class="btn primary" id="adminLink" onclick="location.href='/admin.html'" style="margin-bottom:18px;display:none">⚙ Панель администратора</button><h2>Личный кабинет</h2><p class="section-intro"><span id="myHello"></span>Ваши курсы. Нажмите на курс, чтобы перейти к занятиям.</p><div class="courses" id="myCourseGrid"></div><div class="materials" id="myProfile" style="max-width:760px;margin-top:28px"></div><div class="materials" id="myReview" style="max-width:760px;margin-top:18px"></div></section>
+<section class="section page" id="dashboardPage" style="display:none"><button class="btn" onclick="enterCabinet()" style="margin-bottom:18px">← Мои курсы</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button><h2>Личный кабинет</h2><p class="section-intro" id="dashIntro"></p><div id="dashCheer"></div><div class="dashboard"><aside class="sidebar" id="dashSide"><h3 id="dashCourse"></h3><p class="side-prog-label">Прогресс</p><div class="progress"><span id="dashProgressBar" style="width:0"></span></div><p class="note" id="dashProgressText">0% пройдено</p><button class="side-toggle" id="sideToggle" type="button" onclick="toggleProgram()" aria-expanded="false" aria-controls="sideBody"><span class="st-ico" aria-hidden="true">📚</span><span class="st-text"><b>Программа курса</b><small id="sideNow"></small></span><span class="st-pct" id="sidePct">0%</span><i class="chev" aria-hidden="true">▾</i></button><div class="side-body" id="sideBody"><hr style="border-color:var(--line)"><div id="sideAccordion"></div></div><div class="side-pins"><span class="side-pin" data-id="materials" onclick="openMaterials();phoneJump()">📁 Материалы</span><span class="side-pin" data-id="chat" onclick="openChat()">💬 Чат с нами</span></div></aside><div><div class="lesson" id="lessonArea"></div><div class="timeline" id="dashTimeline"><div class="step"><div class="dot">1</div><small>Введение</small></div><div class="step"><div class="dot">2</div><small>Исследование</small></div><div class="step"><div class="dot">3</div><small>Модель</small></div><div class="step"><div class="dot">4</div><small>Проект</small></div></div></div></div></section>
 <footer>Инженерный клуб — занятия и проекты для школьников. Учимся сейчас, готовимся к будущему.<nav class="footer-links" aria-label="Разделы сайта"><a href="/programmy/" onclick="return go(event,'courses')">Программы</a><a href="/kak-prohodyat-zanyatiya/" onclick="return go(event,'how')">Как проходят занятия</a><a href="/kursy/wheel/" onclick="return go(event,'course','wheel')">Курс «Колесо»</a><a href="/igra/">Игра «Мемо»</a><a href="/kontakty/">Контакты</a></nav><nav class="footer-docs" aria-label="Документы"><a href="/dokumenty/oferta/">Публичная оферта</a><a href="/dokumenty/polzovatelskoe-soglashenie/">Пользовательское соглашение</a><a href="/dokumenty/politika-konfidencialnosti/">Политика обработки персональных данных</a><a href="/dokumenty/oplata-i-vozvrat/">Оплата и возврат</a><a href="/kontakty/">Контакты и реквизиты</a></nav><p class="footer-legal">Самозанятый {{legalShort}} · ИНН {{inn}}</p></footer></div>
 <div class="modal" id="modal"><div class="modal-card"><button class="close" onclick="closeModal()">×</button><div id="modalContent"></div></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
@@ -1025,15 +1086,20 @@ async function completePayment(){
   btn.disabled=false;paymentForm.style.display='none';paymentSuccess.style.display='block'}
 async function enterDashboard(){return enterCabinet()}
 async function enterCabinet(){const session=await requireLogin();if(!session)return;
-  const{data,error}=await sb.from('enrollments').select('courses(id,slug,title,subtitle,sort)').eq('user_id',session.user.id).in('status',['active','finished']);
+  const[{data,error},{data:done}]=await Promise.all([
+    sb.from('enrollments').select('courses(id,slug,title,subtitle,sort,modules(lessons(id)))').eq('user_id',session.user.id).in('status',['active','finished']),
+    sb.from('lesson_progress').select('lesson_id').eq('user_id',session.user.id).eq('status','approved')]);
+  const doneSet=new Set((done||[]).map(d=>d.lesson_id));
   const list=(data||[]).map(e=>e.courses).filter(Boolean).sort((a,b)=>a.sort-b.sort);
   myCourseGrid.innerHTML='';
   if(error)myCourseGrid.innerHTML='<p class="note">Не удалось загрузить курсы. Обновите страницу.</p>';
   else if(!list.length)myCourseGrid.innerHTML=`<div><p>У вас пока нет открытых курсов.</p><button class="btn primary" onclick="showPage('courses')">Выбрать курс</button></div>`;
-  list.forEach(c=>{const i=c.sort-1;const el=document.createElement('button');el.className='course';el.innerHTML=`<span class="icon">${COURSE_ICONS[i]||''}</span><h3>${escapeHtml(c.title)}</h3><small>${escapeHtml(c.subtitle||'')}</small>`;el.onclick=()=>openCourseDashboard(i);myCourseGrid.appendChild(el)});
+  list.forEach(c=>{const i=c.sort-1;const el=document.createElement('button');el.className='course';const ids=(c.modules||[]).flatMap(m=>(m.lessons||[]).map(l=>l.id)),pct=ids.length?Math.round(ids.filter(x=>doneSet.has(x)).length*100/ids.length):0;
+    el.innerHTML=`<span class="icon">${COURSE_ICONS[i]||''}</span><h3>${escapeHtml(c.title)}</h3><small>${escapeHtml(c.subtitle||'')}</small><span class="my-prog" aria-hidden="true"><i style="--p:${pct}%"></i></span><span class="my-go">${pct?pct+'% пройдено · продолжить →':'Начать занятия →'}</span>`;el.onclick=()=>openCourseDashboard(i);myCourseGrid.appendChild(el)});
   showPage('myCourses');
   const[{data:isAdmin},{data:prof}]=await Promise.all([sb.rpc('is_admin'),sb.from('profiles').select('student_name,parent_name,contact').eq('id',session.user.id).single()]);
   adminLink.style.display=isAdmin?'inline-block':'none';
+  myHello.textContent=prof&&prof.student_name?`Привет, ${prof.student_name}! 👋 `:'';
   renderMyProfile(prof||{},session.user.email);renderMyReview(session.user.id,prof||{},list)}
 // «Мои данные»: ученик сам указывает имя и контакт — они сразу видны в админ-панели
 function renderMyProfile(p,email){myProfile.innerHTML=`<h3>Мои данные</h3><p class="note">Эти данные видит преподаватель — так ему проще с вами связаться.</p>
@@ -1055,7 +1121,7 @@ let openToken=0;
 async function openCourseDashboard(i){const session=await requireLogin();if(!session)return;
   selectedCourse=i;const slug=courseSlug[i];const uid=session.user.id;
   dash={modules:[],lessons:[],progress:{},materials:[],calls:{},unread:{},scope:'full',access:new Set(),userId:uid,slug,current:null};
-  dashCourse.textContent=courses[i][1];dashIntro.textContent='Слева — программа по блокам и модулям, материалы и исследования. Материалы открываются вместе с модулем.';
+  dashCourse.textContent=courses[i][1];dashIntro.textContent=(DASH_MQ.matches?'В «Программе курса» — блоки и модули, материалы и исследования.':'Слева — программа по блокам и модулям, материалы и исследования.')+' Материалы открываются вместе с модулем.';dashCheer.innerHTML='';toggleProgram(false);
   sideAccordion.innerHTML='<p class="note">Загружаем программу…</p>';lessonArea.innerHTML='';showPage('dashboard');
   const courseQ=f=>sb.from('courses').select(`modules(id,sort,title,lessons(id,sort,title,research_task${f}))`).eq('slug',slug).single();
   const[{data:course,error},{data:prog},{data:calls},{data:enr},{data:acc}]=await Promise.all([
@@ -1079,9 +1145,24 @@ async function openCourseDashboard(i){const session=await requireLogin();if(!ses
   // Материалы курса: общие и личные этого ученика (база отдаёт только открытые темы)
   const{data:mats}=await sb.from('materials').select('id,lesson_id,user_id,title,kind,url,storage_path,sort').in('lesson_id',dash.lessons.map(l=>l.id));
   dash.materials=(mats||[]).filter(m=>!m.user_id||m.user_id===uid).sort((a,b)=>a.sort-b.sort||a.id-b.id);
-  buildAccordion();
+  buildAccordion();celebrateApproved();
   const next=dash.lessons.find(l=>isUnlocked(l)&&lessonStatus(l)!=='approved')||dash.lessons.find(isOwned)||dash.lessons[0];
   if(next)openLesson(next.id)}
+// ---------- Телефон: программа курса сворачивается в кнопку над модулем ----------
+const DASH_MQ=matchMedia('(max-width:900px)');
+function toggleProgram(force){const open=dashSide.classList.toggle('open',force);sideToggle.setAttribute('aria-expanded',open)}
+// после выбора модуля на телефоне — свернуть программу и показать модуль
+function phoneJump(){if(!DASH_MQ.matches)return;toggleProgram(false);
+  requestAnimationFrame(()=>{const y=lessonArea.getBoundingClientRect().top+scrollY-dashSide.offsetHeight-14;scrollTo({top:Math.max(0,y),behavior:'smooth'})})}
+// плавное появление содержимого модуля
+function lessonIn(){lessonArea.classList.remove('swap');void lessonArea.offsetWidth;lessonArea.classList.add('swap')}
+// Преподаватель подтвердил модули с прошлого визита — поздравляем (что уже видели, помним в этом браузере)
+function celebrateApproved(){const key='seenApproved:'+dash.userId+':'+dash.slug,now=dash.lessons.filter(l=>lessonStatus(l)==='approved').map(l=>l.id);
+  let seen=null;try{seen=JSON.parse(localStorage.getItem(key))}catch(e){}try{localStorage.setItem(key,JSON.stringify(now))}catch(e){}
+  if(!Array.isArray(seen))return;const fresh=dash.lessons.filter(l=>now.includes(l.id)&&!seen.includes(l.id));if(!fresh.length)return;
+  const next=dash.lessons.find(l=>isUnlocked(l)&&lessonStatus(l)!=='approved');
+  const bits=Array.from({length:18},(_,k)=>`<i style="--x:${(Math.random()*2-1).toFixed(2)};--r:${Math.round(Math.random()*600-300)}deg;--d:${(k*0.03).toFixed(2)}s"></i>`).join('');
+  dashCheer.innerHTML=`<div class="dash-cheer" role="status"><span class="cheer-bits" aria-hidden="true">${bits}</span><b>🎉 Преподаватель подтвердил: ${fresh.map(l=>escapeHtml(l.title)).join(', ')}</b>${next?`<span>Открыт следующий модуль — «${escapeHtml(next.title)}». Вперёд!</span>`:''}<button type="button" aria-label="Закрыть" onclick="dashCheer.innerHTML=''">✕</button></div>`}
 function lessonStatus(l){const p=dash.progress[l.id];return p?p.status:null}
 // Тема открыта, когда подтверждены все предыдущие темы курса (то же правило проверяет база)
 // тема куплена (весь курс или отдельно)
@@ -1096,13 +1177,13 @@ function buildAccordion(){sideAccordion.innerHTML='';
     const items=document.createElement('div');items.className='side-items';
     m.lessons.forEach(l=>{const it=document.createElement('span');const locked=!isUnlocked(l);
       it.className='side-item'+(locked?' locked':'');it.dataset.id=l.id;
-      it.textContent=itemText(l);
-      it.onclick=()=>openLesson(l.id);items.appendChild(it)});
+      it.textContent=itemText(l);it.style.setProperty('--k',items.children.length);
+      it.onclick=()=>{openLesson(l.id);phoneJump()};items.appendChild(it)});
     grp.appendChild(head);grp.appendChild(items);sideAccordion.appendChild(grp)});
   updateProgress()}
 function splitStages(sorts){const out=[[],[],[],[]];sorts.forEach((s,i)=>out[Math.min(3,Math.floor(i*4/sorts.length))].push(s));return out}
 function updateProgress(){const mine=dash.lessons.filter(isOwned),total=mine.length,done=mine.filter(l=>lessonStatus(l)==='approved').length;
-  const pct=total?Math.round(done*100/total):0;dashProgressBar.style.width=pct+'%';dashProgressText.textContent=pct+'% пройдено';
+  const pct=total?Math.round(done*100/total):0;dashProgressBar.style.width=pct+'%';dashProgressText.textContent=pct+'% пройдено';sidePct.textContent=pct+'%';
   const stages=COURSE_STAGES[dash.slug]||splitStages(dash.modules.map(m=>m.sort));
   const steps=document.querySelectorAll('#dashTimeline .step');let activeSet=false;
   stages.forEach((sorts,k)=>{const st=steps[k];if(!st)return;
@@ -1168,17 +1249,17 @@ document.addEventListener('keydown',e=>{if(!docViewer)return;if(e.key==='Escape'
   else if((e.ctrlKey||e.metaKey)&&(e.code==='KeyS'||e.code==='KeyP'))e.preventDefault()});
 // Вкладка «Материалы»: всё из открытых тем, по заголовкам тем
 function openMaterials(){flushSave();closeChat();dash.current=null;++openToken;
-  document.querySelectorAll('.side-item,.side-pin').forEach(x=>x.classList.toggle('active',x.dataset.id==='materials'));
+  document.querySelectorAll('.side-item,.side-pin').forEach(x=>x.classList.toggle('active',x.dataset.id==='materials'));sideNow.textContent='Материалы';
   const groups=dash.lessons.filter(isUnlocked).map(l=>({l,list:dash.materials.filter(m=>m.lesson_id===l.id)})).filter(g=>g.list.length);
   lessonArea.innerHTML=`<h2>Материалы</h2><p>Материалы всех открытых модулей. Новые появляются здесь по мере прохождения курса.</p>`+
     (groups.length?groups.map(g=>`<div class="materials"><h3>${escapeHtml(g.l.title)}</h3>${materialLinks(g.list)}</div>`).join('')
-      :'<p class="note">Пока материалов нет — они появятся здесь, когда откроются модули.</p>')}
+      :'<p class="note">Пока материалов нет — они появятся здесь, когда откроются модули.</p>');lessonIn()}
 function statusHtml(l){const p=dash.progress[l.id],c=p&&p.teacher_comment?`<p class="note">Комментарий преподавателя: ${escapeHtml(p.teacher_comment)}</p>`:'';
   if(p&&p.status==='approved')return `<p>✓ Модуль подтверждён преподавателем.</p>${c}`;
   if(p&&p.status==='submitted')return `<p>⏳ Модуль отправлен на проверку. Преподаватель посмотрит его и откроет следующий модуль.</p>${c}`;
   return `<p class="note">Изучите модуль${l.research_task?' и заполните исследование':''}, затем отправьте его преподавателю на проверку.</p><button class="btn primary" onclick="submitLesson()">Отправить на проверку</button><p class="note" id="submitMsg"></p>`}
 async function openLesson(id){flushSave();closeChat();const l=dash.lessons.find(x=>x.id===id);if(!l)return;dash.current=l;const token=++openToken;
-  document.querySelectorAll('.side-item,.side-pin').forEach(x=>x.classList.toggle('active',x.dataset.id===String(id)));
+  document.querySelectorAll('.side-item,.side-pin').forEach(x=>x.classList.toggle('active',x.dataset.id===String(id)));sideNow.textContent=l.title;
   const item=document.querySelector(`.side-item[data-id="${id}"]`);if(item)item.closest('.side-group').classList.add('open');
   const title=escapeHtml(l.title),task=l.research_task?escapeHtml(l.research_task):'';
   if(!isOwned(l)){lessonArea.innerHTML=`<h2>${title}</h2><p>Этот модуль не входит в оплаченные. Можно докупить его отдельно, целым блоком или весь курс с набором для исследований — уже оплаченное вычитается из его стоимости.</p><button class="btn primary" onclick="goPayment()">Докупить модули или весь курс</button>`;return}
@@ -1201,7 +1282,7 @@ async function openLesson(id){flushSave();closeChat();const l=dash.lessons.find(
       :`<div class="research-fields">${f('hypothesis','Гипотеза')}${f('method','Как измеряем')}${f('result','Результат')}${f('conclusion','Вывод')}</div>`)+
       `<p class="note" id="researchSaved" style="margin-top:10px"></p></div>`}
   html+=`<div class="materials"><h3>Проверка модуля</h3>${statusHtml(l)}</div>`;
-  lessonArea.innerHTML=html;
+  lessonArea.innerHTML=html;lessonIn();
   lessonArea.querySelectorAll('.research-fields textarea').forEach(t=>t.addEventListener('input',()=>scheduleSave(l.id)));
   const tables=lessonArea.querySelector('.research-tables');if(tables&&plan)Research.bind(tables,plan,()=>scheduleSave(l.id));
   loadChat(l)}

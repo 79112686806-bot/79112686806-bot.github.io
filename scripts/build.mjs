@@ -145,6 +145,12 @@ function pageHtml(template, { head, show, courseBody, courseSlug, docBody, docPa
   }
   if (courseBody) h = h.replace('<div id="coursePageBody"></div>', `<div id="coursePageBody" data-slug="${esc(courseSlug)}">${courseBody}</div>`);
   if (docBody) h = h.replace('<div id="docBody" class="doc"></div>', `<div id="docBody" class="doc" data-path="${esc(docPath)}">${docBody}</div>`);
+  // один H1 на страницу: заголовки скрытых разделов становятся H2 (стили у них те же)
+  h = h.replace(/<h1([\s>][\s\S]*?)<\/h1>/g, (m, rest, off, all) => {
+    const before = all.slice(0, off);
+    const i = Math.max(before.lastIndexOf('<main id="homePage"'), before.lastIndexOf('<section class="section page"'));
+    return i >= 0 && /display:none/.test(all.slice(i, all.indexOf('>', i))) ? `<h2${rest}</h2>` : m;
+  });
   return h;
 }
 
@@ -307,14 +313,19 @@ function buildMemo(memoVideos) {
 <p class="eyebrow">Играй и узнавай</p>
 <h1>Мемо «Инженерия»</h1>
 <p class="lead">Найди пары — открой истории изобретений. Набирай очки, звания и призы, играй с другом.</p>
-<div class="memo-profile" id="memoProfile" hidden><span class="mp-ico" id="mpIco">${Memo.ico('nut')}</span><div class="mp-info"><b id="mpRank">Новичок</b><div class="mp-xp"><i id="mpXpBar"></i><span id="mpXpText"></span></div></div><span class="mp-streak" id="mpStreak" title="Дней подряд"></span><button type="button" class="mp-btn" id="mpHint" title="Подсказка: показать все карточки">${Memo.ico('bulb')} <b id="mpHints">0</b></button><button type="button" class="mp-btn" id="mpPrizes" title="Призы и достижения">${Memo.ico('trophy')}</button></div>
+<div class="memo-profile" id="memoProfile" hidden><span class="mp-ico" id="mpIco">${Memo.ico('nut')}</span><div class="mp-info"><b id="mpRank">Новичок</b><div class="mp-xp"><i id="mpXpBar"></i><span id="mpXpText"></span></div></div><span class="mp-streak" id="mpStreak" title="Дней подряд"></span><button type="button" class="mp-btn" id="mpHint" title="Подсказка: показать все карточки">${Memo.ico('bulb')} <b id="mpHints">0</b></button><button type="button" class="mp-btn" id="mpPrizes" title="Призы и достижения">${Memo.ico('trophy')}</button><button type="button" class="mp-btn mp-sound" id="mpSound" title="Звук">${Memo.ico('sound')}</button></div>
+<div class="memo-quests" id="memoQuests" hidden></div>
 <div class="memo-bar"><div class="memo-levels" role="group" aria-label="Режим"><button type="button" data-mode="solo">Один</button><button type="button" data-mode="duel">Вдвоём</button></div>
 <div class="memo-levels" role="group" aria-label="Сложность"><button type="button" data-level="easy">6 пар</button><button type="button" data-level="mid">10 пар</button><button type="button" data-level="hard">15 пар</button></div>
 <button type="button" class="btn" data-memo-again>${Memo.ico('refresh')} Заново</button></div>
-<div class="memo-score" id="memoSolo" aria-live="polite"><span class="ms-points" title="Очки">${Memo.ico('star', 'fill')} <b id="memoPoints">0</b></span><span class="ms-combo" id="memoComboWrap" title="Комбо"><b id="memoCombo">×1</b></span><span class="ms-pairs" title="Найдено пар">${Memo.ico('cards')} <b id="memoPairs">0</b>/<b id="memoTotal">6</b></span><span class="ms-lives" id="memoMiss" title="Промахи"></span><span hidden><b id="memoMoves">0</b><span id="memoMissWrap"></span></span></div>
+<div class="memo-score" id="memoSolo" aria-live="polite"><span class="ms-points" title="Очки">${Memo.ico('star', 'fill')} <b id="memoPoints">0</b></span><span class="ms-combo" id="memoComboWrap" title="Комбо"><b id="memoCombo">×1</b></span><span class="ms-pairs" title="Найдено пар">${Memo.ico('cards')} <b id="memoPairs">0</b>/<b id="memoTotal">6</b></span><span class="ms-lives" id="memoMiss" title="Промахи"></span><span class="ms-time" id="memoTimeWrap" title="Время">${Memo.ico('hourglass')} <b id="memoTime">0:00</b></span><span hidden><b id="memoMoves">0</b><span id="memoMissWrap"></span></span></div>
 <div class="memo-duel" id="memoDuel" hidden aria-live="polite"><div class="pl" data-p="0"><input value="Игрок 1" maxlength="16" aria-label="Имя первого игрока"><b data-pairs>0</b></div><span class="vs">VS</span><div class="pl" data-p="1"><input value="Игрок 2" maxlength="16" aria-label="Имя второго игрока"><b data-pairs>0</b></div></div>
 <p class="memo-note" id="memoNote" role="status"></p>
 <div class="memo-stage"><div class="memo-burst" id="memoBurst" aria-live="polite"></div><div class="memo-win" id="memoWin" hidden></div><div class="memo-board" id="memoBoard"><noscript>Для игры включите JavaScript. Истории карточек можно прочитать ниже.</noscript></div></div>
+<h2>Как играть</h2>
+<ul class="how-play"><li>Открывай по две карточки и ищи одинаковые. Каждая найденная пара открывает историю изобретения или изобретателя — с видео, фактами и опытами.</li>
+<li>Находи пары подряд без промаха — будет комбо и больше очков. За звёзды, задания дня и игру несколько дней подряд получай опыт, звания, сундуки с наградами и новые рубашки карточек.</li>
+<li>Играй один на время или вдвоём с другом и собери все ${cards.length} карточек в коллекцию.</li></ul>
 <h2>Твоя коллекция: <span id="memoCount">0</span> из ${cards.length}</h2>
 <p class="coll-hint" id="memoCollHint">Найди пару — карточка и её история появятся здесь.</p>
 ${grid}
