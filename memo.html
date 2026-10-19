@@ -226,10 +226,10 @@ dialog.memo-prizes::backdrop{background:rgba(20,10,3,.75)}
   .memo-board{gap:6px;grid-template-columns:repeat(4,1fr)}
   .memo-board[data-size="10"]{grid-template-columns:repeat(4,1fr)}
   .memo-board[data-size="15"]{grid-template-columns:repeat(5,1fr)}
-  /* открытая карточка ненадолго увеличивается, чтобы рисунок было видно */
-  .mcard{transition:transform .25s ease}
-  .mcard.zoom:not(.done){transform:scale(1.9);transform-origin:var(--o,50% 50%);z-index:8}
-  .mcard.zoom:not(.done) .mcard-face{box-shadow:0 0 0 2px var(--paper-light),0 12px 28px rgba(40,20,5,.6)}
+  /* открытая карточка чуть увеличивается — рисунок крупнее, но соседи и место в сетке видны */
+  .mcard{transition:transform .2s ease}
+  .mcard.zoom:not(.done){transform:scale(1.3);transform-origin:var(--o,50% 50%);z-index:8}
+  .mcard.zoom:not(.done) .mcard-face{box-shadow:0 0 0 2px var(--sanguine),0 6px 14px rgba(40,20,5,.45)}
   .win-card{padding:18px 14px 18px}.win-points b{font-size:44px}
 }
 @media (prefers-reduced-motion:reduce){.mcard-in{transition-duration:.01s}.dealt .mcard,.mcard.done .mcard-face,.memo-chest{animation:none}}

@@ -430,12 +430,12 @@
       const card = cards.find((c) => c.slug === b.dataset.slug);
       b.classList.add('open'); b.setAttribute('aria-label', card.title);
       startTimer(); sfx('flip');
-      // на телефоне открытая карточка на секунду увеличивается — рисунок видно целиком
+      // на телефоне открытая карточка ненадолго немного увеличивается, не закрывая соседей
       if (ZOOM.matches) {
         const cols = getComputedStyle(board).gridTemplateColumns.split(' ').length, i = [...board.children].indexOf(b);
         const col = i % cols, row = Math.floor(i / cols), rows = Math.ceil(board.children.length / cols);
         b.style.setProperty('--o', `${col === 0 ? '0%' : col === cols - 1 ? '100%' : '50%'} ${row === 0 ? '0%' : row === rows - 1 ? '100%' : '50%'}`);
-        b.classList.add('zoom'); clearTimeout(b._z); b._z = setTimeout(() => b.classList.remove('zoom'), first ? 1000 : 1100);
+        b.classList.add('zoom'); clearTimeout(b._z); b._z = setTimeout(() => b.classList.remove('zoom'), 700);
       }
       if (!first) { first = b; return; }
       moves++;
