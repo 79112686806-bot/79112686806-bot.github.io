@@ -645,6 +645,44 @@ mark.todo{background:rgba(154,58,27,.15);color:var(--sanguine);padding:0 4px;bor
   .hero .schematic-track{will-change:transform}
   .course .icon,.node .visual,.honest .mark{filter:none;color:#4a2b14}
 }
+/* ===== Окно курса и вид на телефоне ===== */
+/* окно прокручивается, если не помещается на экране (низ не уходит под панель браузера) */
+.modal{overflow-y:auto;overscroll-behavior:contain;align-items:flex-start}
+.modal-card{margin:auto}
+.modal-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.modal-actions .btn{text-decoration:none;text-align:center}
+a,button,summary,.course{touch-action:manipulation}
+/* рамка «Весь курс + набор» не теряет нижнюю линию */
+.fact-prices li.fact-best:last-child{border-bottom:1.5px solid var(--sanguine)}
+@media(max-width:600px){
+  .wrap{width:calc(100% - 14px);margin:12px auto 22px;padding:6px 16px 6px}
+  nav{padding:16px 0 8px;gap:10px}
+  .brand{font-size:15.5px;gap:8px;white-space:nowrap;letter-spacing:.01em}
+  .brand .logo{flex:none}
+  nav .btn{padding:8px 12px;font-size:13px;white-space:nowrap}
+  .hero h1{font-size:40px}
+  .hero-actions{flex-direction:column;align-items:stretch;gap:10px}
+  .hero-actions .btn{width:100%;text-align:center}
+  .section h2,.course-title{font-size:30px}
+  #coursePage .course-title{font-size:28px;line-height:1.1}
+  .section-intro{font-size:16.5px;line-height:1.65}
+  /* каталог: компактные карточки — значок слева, название и подпись справа */
+  .courses{grid-template-columns:1fr;gap:10px}
+  #courseGrid .course{min-height:0;display:grid;grid-template-columns:42px 1fr;column-gap:14px;align-items:center;padding:14px 44px 14px 14px}
+  #courseGrid .course .icon{grid-row:1/3;height:auto;margin:0;align-items:center;justify-content:center}
+  #courseGrid .course h3{min-height:0;font-size:20px}
+  #courseGrid .course small{margin-top:2px}
+  #courseGrid .course .num{top:50%;transform:translateY(-50%)}
+  /* окно курса */
+  .modal{padding:10px}
+  .modal-card{padding:34px 20px 22px}
+  .modal-card h2{font-size:30px}
+  .modal-actions .btn{flex:1 1 100%;padding:14px 16px}
+  /* кнопки внизу страниц — во всю ширину */
+  .bottom{display:flex;flex-direction:column;gap:10px}
+  .bottom .btn{width:100%;text-align:center;margin:0}
+  .feature{padding:20px 18px}
+}
 </style></head>
 <body><svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
 <filter id="torn" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="5" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="26" xChannelSelector="R" yChannelSelector="G"/></filter>
@@ -892,7 +930,7 @@ function routePath(path){const db=document.getElementById('docBody');if(db&&db.d
   if(/^\/programmy\/?$/.test(path))return showPage('courses',false);
   if(/^\/kak-prohodyat-zanyatiya\/?$/.test(path))return showPage('how',false);
   return showPage('home',false)}
-window.addEventListener('popstate',()=>routePath(location.pathname));function show(html){modalContent.innerHTML=html;modal.classList.add('open')}function closeModal(){modal.classList.remove('open')}function openCourse(i){selectedCourse=i;let c=courses[i];show(`<div class="eyebrow">Программа ${i+1}</div><h2>${c[1]}</h2><p><b>${c[2]}.</b> ${c[3]}</p><p>Часть тем школьник проходит самостоятельно — с видеоуроками, материалами и заданиями, а на ключевых этапах обсуждает идеи с преподавателем и разрабатывает собственный проект. Мы на связи в чате на протяжении всего курса.</p><p><a href="/kursy/${COURSE_SLUGS[i]}/" onclick="return go(event,'course','${COURSE_SLUGS[i]}')">Подробнее о программе курса →</a></p>${isAvailable(i)?`<button class="btn primary" onclick="closeModal();goSignup()">Выбрать этот курс</button>`:`<p class="note">Курс в разработке — запись откроется позже.</p>`}`)}
+window.addEventListener('popstate',()=>routePath(location.pathname));function show(html){modalContent.innerHTML=html;modal.classList.add('open')}function closeModal(){modal.classList.remove('open')}function openCourse(i){selectedCourse=i;let c=courses[i];show(`<div class="eyebrow">Программа ${i+1}</div><h2>${c[1]}</h2><p><b>${c[2]}.</b> ${c[3]}</p><p>Часть тем школьник проходит самостоятельно — с видеоуроками, материалами и заданиями, а на ключевых этапах обсуждает идеи с преподавателем и разрабатывает собственный проект. Мы на связи в чате на протяжении всего курса.</p><div class="modal-actions"><a class="btn" href="/kursy/${COURSE_SLUGS[i]}/" onclick="return go(event,'course','${COURSE_SLUGS[i]}')">Подробнее о программе курса →</a>${isAvailable(i)?`<button class="btn primary" onclick="closeModal();goSignup()">Выбрать этот курс</button>`:''}</div>${isAvailable(i)?'':`<p class="note">Курс в разработке — запись откроется позже.</p>`}`)}
 async function goSignup(){if(!isAvailable(selectedCourse))return;signupCourseName.textContent=courses[selectedCourse][1];
   const pr=coursePrice[selectedCourse];if(pr){signupPrice.textContent='Пробное занятие — '+RUB(pr.price_trial);signupFull.textContent='Весь курс + набор для исследований — '+RUB(pr.price)};
   const st=await courseState(courseSlug[selectedCourse]);
