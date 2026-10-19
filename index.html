@@ -298,6 +298,139 @@ a.course{display:flex;text-decoration:none}
 #coursePage h3{font-family:"Cormorant Garamond",Georgia,serif;font-size:24px;font-weight:700;color:var(--ink);margin:24px 0 8px}
 .course-lessons{margin:0;padding-left:22px;line-height:1.7}
 .course-lessons small{display:block;color:var(--ink-soft);font-size:13.5px;line-height:1.45;margin:2px 0 6px}
+/* ===== Оживлённые тексты: маркер, значки пером, «мост» через чат, дорога программы ===== */
+mark.ink-hl{color:inherit;padding:0 .08em;background:linear-gradient(transparent 58%,rgba(176,66,28,.22) 58%,rgba(176,66,28,.22) 92%,transparent 92%) no-repeat 0 0/100% 100%;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.benefits .feature{position:relative}
+.bf-ico,.duo-ico,.rs-ico{display:grid;place-items:center;border-radius:50%;border:1.5px solid var(--sanguine);color:var(--sanguine);background:var(--paper-light);box-shadow:0 0 0 4px rgba(242,228,196,.5)}
+.bf-ico{width:54px;height:54px;margin-bottom:12px}.bf-ico svg{width:28px;height:28px}
+.bf-num{position:absolute;top:10px;right:16px;font-family:"Marck Script",cursive;font-size:28px;color:var(--sanguine);opacity:.32;line-height:1}
+/* «Чем занятия полезны»: двое ребят в центре, блоки — вокруг; наведение на блок — ребята улыбаются и смотрят на него */
+.kids-wrap{grid-template-columns:1fr minmax(300px,400px) 1fr;grid-auto-flow:row;align-items:center;column-gap:22px}
+.kids{grid-column:2;grid-row:1/4;margin:0;position:relative}
+.kids-wrap>.feature:nth-of-type(-n+3){grid-column:1}.kids-wrap>.feature:nth-of-type(n+4){grid-column:3}
+.kids-wrap>.feature:nth-of-type(1),.kids-wrap>.feature:nth-of-type(4){grid-row:1}
+.kids-wrap>.feature:nth-of-type(2),.kids-wrap>.feature:nth-of-type(5){grid-row:2}
+.kids-wrap>.feature:nth-of-type(3),.kids-wrap>.feature:nth-of-type(6){grid-row:3}
+.kids svg{display:block;width:100%;height:auto;overflow:visible}
+.kids figcaption{position:absolute;inset:0;pointer-events:none;font-family:"Marck Script",cursive;font-size:20px;color:var(--sanguine)}
+.kids-age{position:absolute}.kids-age-big{left:0;top:6%}.kids-age-small{right:-2%;top:44%}
+.kids-age::after{content:"";position:absolute;top:60%;width:26px;border-top:1.5px dashed currentColor}
+.kids-age-big::after{left:100%;margin-left:4px;transform:rotate(18deg);transform-origin:left}
+.kids-age-small::after{right:100%;margin-right:4px;transform:rotate(-24deg);transform-origin:right}
+.kid .eye-happy,.kid .mouth-smile,.kid .blush,.kids .sparks{opacity:0}
+.kid .blush{opacity:0}
+.kids-wrap.happy .kid .eye-open,.kids-wrap.happy .kid .mouth-calm{opacity:0}
+.kids-wrap.happy .kid .eye-happy,.kids-wrap.happy .kid .mouth-smile,.kids-wrap.happy .kids .sparks{opacity:1}
+.kids-wrap.happy .kid .blush{opacity:.28}
+.kids-wrap[data-look=left] .pupil{transform:translateX(-3px)}.kids-wrap[data-look=right] .pupil{transform:translateX(3px)}
+.kids-wrap[data-look=up] .pupil{transform:translateY(-2.5px)}
+.kids-wrap>.feature{transition:border-color .3s ease,box-shadow .3s ease}
+.kids-wrap>.feature.tapped{border-color:rgba(154,58,27,.55);box-shadow:0 0 0 2px rgba(154,58,27,.16),0 12px 24px rgba(70,35,10,.12)}
+.bf-ico{position:relative}
+@media(max-width:900px){.kids-wrap{grid-template-columns:1fr 1fr}
+  .kids{order:99;grid-column:1/-1;grid-row:auto;position:sticky;bottom:0;z-index:3;align-self:end;width:auto;height:170px;overflow:hidden;margin:6px -8px 0;padding-top:14px;
+    background:linear-gradient(to top,rgba(239,224,189,.98) 58%,rgba(239,224,189,0))}
+  .kids svg{width:min(260px,72%);margin:0 auto}
+  .kids figcaption{display:none}
+  .kids-wrap>.feature:nth-of-type(n){grid-column:auto;grid-row:auto}}
+@media(max-width:600px){.kids-wrap{grid-template-columns:1fr}}
+.honest p.honest-sign{width:fit-content;margin:12px 0 0 auto;font-family:"Marck Script",cursive;font-style:normal;font-size:23px;color:var(--sanguine)}
+/* «Как проходят занятия»: самостоятельная часть и встречи — две половины, их связывает чат */
+.duo{grid-template-columns:1fr 170px 1fr;gap:0;align-items:stretch}
+.duo-card{padding:24px 24px 16px}
+.duo-teach{background:rgba(154,58,27,.07)}
+.duo-ico{width:58px;height:58px;border-width:2px;margin-bottom:10px}.duo-ico svg{width:30px;height:30px}
+.duo-teach .duo-ico{background:var(--sanguine);color:var(--paper-light)}
+.ticks{list-style:none;margin:0;padding:0}
+.ticks li{position:relative;padding:0 0 10px 30px;line-height:1.55;color:var(--ink-soft)}
+.ticks li::before{content:"";position:absolute;left:5px;top:.3em;width:13px;height:7px;border-left:2px solid var(--sanguine);border-bottom:2px solid var(--sanguine);transform:rotate(-45deg)}
+.duo-link{position:relative;min-height:150px}
+.duo-link::before{content:"";position:absolute;left:-2px;right:-2px;top:50%;border-top:3px dashed #b0421c;transform-origin:left}
+.duo-chat{position:absolute;left:calc(50% - 28px);top:calc(50% - 28px);width:56px;height:56px;display:grid;place-items:center;border-radius:50%;border:2px solid var(--sanguine);background:var(--paper-light);color:var(--sanguine);box-shadow:0 0 0 5px rgba(242,228,196,.6)}
+.duo-chat svg{width:28px;height:28px}
+.duo-note{position:absolute;left:6px;right:6px;top:calc(50% + 38px);text-align:center;font-family:"Marck Script",cursive;font-size:17px;line-height:1.2;color:var(--ink-soft)}
+@media(max-width:760px){.duo{grid-template-columns:1fr}.duo-link{min-height:170px}.duo-link::before{left:50%;right:auto;top:-2px;bottom:-2px;border-top:0;border-left:3px dashed #b0421c;transform-origin:top}
+  .duo-note{left:calc(50% + 40px);right:0;top:calc(50% - 20px);text-align:left}}
+/* страница курса: программа — дорога от первого занятия до своего проекта */
+.course-road{position:relative;list-style:none;margin:26px 0 10px;padding:0}
+.course-road::before,.course-road::after{content:"";position:absolute;left:27px;top:24px;bottom:30px}
+.course-road::before{border-left:3px dashed rgba(176,66,28,.38)}
+.course-road::after{width:3px;background:var(--sanguine);transform:scaleY(var(--p,1));transform-origin:top}
+.road-stop{position:relative;display:flex;gap:18px;margin:0 0 26px}
+.road-stop:last-child{margin-bottom:0}
+.road-mark{position:relative;z-index:1;flex:none;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--sanguine);background:var(--paper-light);color:var(--sanguine);font-family:"Marck Script",cursive;font-size:27px;box-shadow:0 0 0 5px rgba(242,228,196,.65)}
+.road-finish .road-mark{background:var(--sanguine);color:var(--paper-light);font-family:Georgia,serif;font-size:22px}
+.road-body{flex:1;min-width:0;padding-top:2px}
+.road-kind{display:block;font-family:"Marck Script",cursive;font-size:20px;color:var(--sanguine);line-height:1.1}
+#coursePage .road-body h3{font-family:"Cormorant Garamond",Georgia,serif;font-size:27px;font-weight:700;color:var(--ink);margin:2px 0 10px;line-height:1.1}
+.road-finish .road-body{padding-top:10px}
+.road-mods{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.road-mod{position:relative;padding:14px 18px;border:1px solid var(--line);border-radius:3px;background:#f3e6c8;box-shadow:0 6px 16px rgba(70,35,10,.08)}
+.road-badge{display:inline-block;margin-bottom:5px;padding:1px 10px;border:1px solid var(--sanguine);border-radius:20px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--sanguine)}
+.road-mod>b{display:block;font-family:"Cormorant Garamond",Georgia,serif;font-size:21px;line-height:1.2;color:var(--ink)}
+.road-mod .lesson-summary{margin:6px 0 0;color:var(--ink-soft);font-size:14.5px;line-height:1.55}
+.road-mod ul.lesson-summary{padding-left:18px;list-style:"— "}
+.road-lab{display:block;width:fit-content;max-width:100%;margin-top:10px;padding:6px 12px;border:1.5px dashed var(--sanguine);border-radius:3px;background:rgba(154,58,27,.05);color:var(--ink);font-size:14px;line-height:1.4;transform:rotate(-1deg)}
+.road-lab i{display:block;font-style:normal;font-family:"Marck Script",cursive;font-size:17px;color:var(--sanguine)}
+.road-steps{list-style:none;margin:8px 0 12px;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.road-steps li{position:relative;padding:18px 18px 16px;border:1px solid var(--line);border-radius:3px;background:rgba(255,247,226,.32)}
+.road-steps li+li::before{content:"→";position:absolute;left:-16px;top:30px;color:var(--sanguine);font-size:18px;line-height:1}
+.rs-ico{width:46px;height:46px;margin-bottom:8px}.rs-ico svg{width:24px;height:24px}
+.road-steps b{display:block;font-family:"Cormorant Garamond",Georgia,serif;font-size:21px;color:var(--ink);line-height:1.2}
+.road-steps small{display:block;margin-top:2px;color:var(--ink-soft);font-size:14.5px;line-height:1.5}
+.road-more a{color:var(--sanguine)}
+@media(max-width:700px){.road-steps{grid-template-columns:1fr;gap:16px}.road-steps li+li::before{content:"↓";left:30px;top:-16px}}
+@media(max-width:600px){.course-road::before,.course-road::after{left:20px}.road-mark{width:44px;height:44px;font-size:22px}.road-stop{gap:12px}.road-mod{padding:12px 14px}#coursePage .road-body h3{font-size:24px}}
+@media (prefers-reduced-motion:no-preference){
+  /* маркер «проводится» по ключевым словам, когда абзац появляется */
+  .js-anim .ink-hl{transition:background-size .9s cubic-bezier(.2,.8,.2,1) .45s}
+  .js-anim .ink-hl:nth-of-type(2){transition-delay:.8s}.js-anim .ink-hl:nth-of-type(3){transition-delay:1.15s}
+  .js-anim .lead:not(.in) .ink-hl,.js-anim .how-lead:not(.in) .ink-hl{background-size:0 100%}
+  /* значки прорисовываются пером */
+  .js-anim .bf-ico .sk,.js-anim .duo-ico .sk,.js-anim .rs-ico .sk,.js-anim .duo-chat .sk{stroke-dasharray:1;transition:stroke-dashoffset 1.3s ease .3s}
+  .js-anim .feature:not(.in) .bf-ico .sk,.js-anim .duo-card:not(.in) .duo-ico .sk,.js-anim .road-steps li:not(.in) .rs-ico .sk,.js-anim .duo-link:not(.in) .duo-chat .sk{stroke-dashoffset:1}
+  /* ребята: плавная смена эмоций, взгляд, моргание, искорки */
+  .kid .eye-open,.kid .eye-happy,.kid .mouth-calm,.kid .mouth-smile,.kid .blush,.kids .sparks{transition:opacity .25s ease}
+  .kid .pupil{transition:transform .3s ease}
+  .kid .brows{transition:transform .3s ease}.kids-wrap.happy .kid .brows{transform:translateY(-3px)}
+  .kid{transform-box:fill-box;transform-origin:50% 100%;transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+  .kids-wrap.happy .kid-big{transform:rotate(-1.5deg)}.kids-wrap.happy .kid-small{transform:translateY(-6px) rotate(1.5deg)}
+  .kid .eye-open{transform-box:fill-box;transform-origin:center;animation:blink 5.5s infinite}
+  .kid-small .eye-open{animation-delay:1.7s}
+  @keyframes blink{0%,95%,100%{transform:none}97%{transform:scaleY(.1)}}
+  .kids-wrap.happy .kids .sparks{animation:sparks .6s ease}
+  @keyframes sparks{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+  .kids .sparks{transform-box:fill-box;transform-origin:center}
+  .bg-wheel-rot{transition:rotate 1.4s cubic-bezier(.2,.8,.2,1)}.kids-wrap.happy .bg-wheel-rot{rotate:45deg}
+  .js-anim .kids:not(.in) .kid{transform:translateY(24px)}
+  .kids-wrap>.feature.tapped .bf-ico{animation:tapPress .4s ease}
+  .kids-wrap>.feature.tapped .bf-ico::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid var(--sanguine);pointer-events:none;animation:tapInk .75s ease-out forwards}
+  @keyframes tapPress{40%{transform:scale(.86)}}
+  @keyframes tapInk{from{transform:scale(.85);opacity:.9}to{transform:scale(1.9);opacity:0}}
+  .benefits .feature .bf-ico{transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+  .benefits .feature:hover .bf-ico{transform:rotate(-8deg) scale(1.06)}
+  /* подпись команды пишется от руки */
+  .js-anim .honest-sign{transition:clip-path 1.8s cubic-bezier(.4,0,.2,1) .3s}
+  .js-anim .honest-sign:not(.in){clip-path:inset(0 100% 0 0)}
+  /* галочки ставятся по очереди */
+  .js-anim .ticks li{transition:opacity .5s ease,transform .5s ease}
+  .js-anim .ticks li::before{transition:clip-path .45s ease}
+  .js-anim .ticks li:nth-child(2),.js-anim .ticks li:nth-child(2)::before{transition-delay:.25s}
+  .js-anim .ticks li:nth-child(3),.js-anim .ticks li:nth-child(3)::before{transition-delay:.5s}
+  .js-anim .duo-card:not(.in) .ticks li{opacity:0;transform:translateX(-8px)}
+  .js-anim .duo-card:not(.in) .ticks li::before{clip-path:inset(0 100% 0 0)}
+  /* «мост» прочерчивается, чат появляется */
+  .js-anim .duo-link::before{transition:transform 1s cubic-bezier(.2,.8,.2,1) .2s}
+  .js-anim .duo-link:not(.in)::before{transform:scaleX(0)}
+  .js-anim .duo-link.in .duo-chat{animation:markPop .6s cubic-bezier(.2,.8,.2,1) .7s both}
+  @media(max-width:760px){.js-anim .duo-link:not(.in)::before{transform:scaleY(0)}}
+  /* дорога программы: отметки «ставятся», исследования «штампуются» */
+  .js-anim .road-stop.in .road-mark{animation:markPop .6s cubic-bezier(.2,.8,.2,1) .15s both}
+  .js-anim .road-stop.in .road-lab{animation:stamp .55s cubic-bezier(.2,.8,.2,1) .55s both}
+  @keyframes stamp{0%{opacity:0;transform:scale(1.5) rotate(-8deg)}70%{opacity:1;transform:scale(.97) rotate(-1deg)}100%{transform:rotate(-1deg)}}
+  .road-mod{transition:transform .3s ease,box-shadow .3s ease}
+  .road-mod:hover{transform:translateX(4px);box-shadow:0 10px 22px rgba(70,35,10,.14)}
+}
 /* материалы модуля: блок ссылок и просмотрщик файлов без скачивания */
 .mat-more{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
 .mat-more h4{margin:0 0 4px;font-family:"Cormorant Garamond",Georgia,serif;font-size:19px;color:var(--ink)}
@@ -526,14 +659,53 @@ mark.todo{background:rgba(154,58,27,.15);color:var(--sanguine);padding:0 4px;bor
 </div>
 <p class="founders-caption">Здесь идеи превращаются в проекты</p><div class="honest"><span class="mark">"</span><p>Мы только начинаем проект и хотим, чтобы идея принесла пользу как можно большему числу детей. <strong>Ваша активность, отзывы и советы друзьям — то, что нам сейчас важнее всего</strong>, и мы благодарим за это скидками и бонусами на занятия. Растём вместе с теми, кто в нас поверил.</p><p class="honest-sign">С уважением, команда Инженерного клуба</p></div></header>
 <section class="home-block" id="homeVideos" hidden><h2>Видео о проекте</h2><p class="lead">О проекте, о нашей методике и о том, как ученики создают собственные проекты.</p><div class="video-grid" id="homeVideoList"></div></section>
-<section class="home-block"><h2>Чем занятия полезны ребёнку</h2><p class="lead">Мы не просто рассказываем, как устроены устройства, приборы и механизмы, — мы учим школьника думать как инженер: задавать вопросы, ставить задачи и превращать идеи в проекты.</p>
-<div class="benefits">
-<div class="feature"><h3>Инженерное мышление</h3><p>Школьник учится изучать устройства, понимать принцип их действия и придумывать, что можно улучшить.</p></div>
-<div class="feature"><h3>Навыки исследователя</h3><p>Выдвигает гипотезы, проводит опыты, измеряет и делает выводы — как настоящий учёный.</p></div>
-<div class="feature"><h3>Самостоятельность</h3><p>Учится сам искать ответы и доводить начатое до конца, а преподаватель мягко направляет.</p></div>
-<div class="feature"><h3>Умение рассуждать и объяснять</h3><p>На встречах с преподавателем рассказывает, что узнал, отвечает на вопросы и отстаивает свои идеи.</p></div>
-<div class="feature"><h3>Свой проект</h3><p>Курс завершается собственной разработкой: рисунком, чертежом, расчётом или моделью.</p></div>
-<div class="feature"><h3>Интерес к технике и науке</h3><p>Физика, механика и технологии становятся понятными через вещи, которые окружают ребёнка каждый день.</p></div>
+<section class="home-block"><h2>Чем занятия полезны ребёнку</h2><p class="lead">Мы не просто рассказываем, как устроены устройства, приборы и механизмы, — мы учим школьника думать как инженер: <mark class="ink-hl">задавать вопросы</mark>, <mark class="ink-hl">ставить задачи</mark> и <mark class="ink-hl">превращать идеи в проекты</mark>.</p>
+<div class="benefits kids-wrap">
+<figure class="kids" aria-hidden="true"><svg viewBox="20 26 380 354" fill="none" stroke="#3a2313" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+<g class="bg-wheel" stroke="#9a3a1b" stroke-width="1.6" opacity=".45"><path d="M150 112H350M250 12V212" stroke-dasharray="3 6"/><g transform="translate(250 112)"><g class="bg-wheel-rot"><circle r="64"/><circle r="52"/><circle r="12"/><path d="M12.0 0.0L52.0 0.0M8.5 8.5L36.8 36.8M0.0 12.0L0.0 52.0M-8.5 8.5L-36.8 36.8M-12.0 0.0L-52.0 0.0M-8.5 -8.5L-36.8 -36.8M-0.0 -12.0L-0.0 -52.0M8.5 -8.5L36.8 -36.8"/></g></g></g>
+<g class="kid kid-big">
+<path class="shirt" d="M52 380C54 286 88 214 150 208C212 214 246 286 248 380Z" fill="#e7cf9f"/>
+<path d="M92 300c10 20 12 50 10 80M208 300c-10 20-12 50-10 80" stroke-width="1.4" opacity=".55"/>
+<path d="M126 210l24 30 24-30" fill="#f3e6c8"/>
+<path d="M136 176v26M164 176v26" />
+<ellipse cx="104" cy="128" rx="7" ry="11" fill="#f1d6b6"/><ellipse cx="196" cy="128" rx="7" ry="11" fill="#f1d6b6"/>
+<ellipse class="face" cx="150" cy="126" rx="46" ry="54" fill="#f6e2c6"/>
+<path class="hair" d="M103 124C96 74 126 56 154 58C186 60 206 84 198 126C194 106 184 94 168 92C158 104 134 106 116 100C110 108 106 116 103 124Z" fill="#6b4423"/>
+<path d="M124 76c10-6 22-8 34-6M170 70c8 4 14 10 18 18" stroke="#f3e6c8" stroke-width="1.3" opacity=".6"/>
+<g class="brows"><path d="M124 110q10-5 20-1"/><path d="M156 109q10-4 20 1"/></g>
+<g class="eyes"><g class="eye-open"><circle class="pupil" cx="134" cy="124" r="4.2" fill="#3a2313"/><circle class="pupil" cx="166" cy="124" r="4.2" fill="#3a2313"/></g>
+<g class="eye-happy"><path d="M127 126q7-9 14 0"/><path d="M159 126q7-9 14 0"/></g></g>
+<path d="M150 130q-4 12 3 14" stroke-width="1.8"/>
+<circle class="blush" cx="124" cy="146" r="8" fill="#c0603a" stroke="none"/><circle class="blush" cx="176" cy="146" r="8" fill="#c0603a" stroke="none"/>
+<path class="mouth-calm" d="M140 158q10 3 20 0"/>
+<path class="mouth-smile" d="M134 153q16 20 32 0q-16 9-32 0Z" fill="#9a3a1b"/>
+</g>
+<g class="kid kid-small">
+<path class="shirt" d="M214 380C216 296 246 248 292 244C338 248 368 296 370 380Z" fill="#d9a27c"/>
+<path d="M272 246q20 18 40 0" fill="#f3e6c8"/>
+<path d="M281 218v28M303 218v28"/>
+<path class="hair" d="M250 168C248 128 268 116 292 116C318 116 336 132 334 170C334 196 330 222 322 236C320 206 314 186 306 176C296 160 286 154 270 152C262 156 254 162 250 168Z" fill="#9a5a2c"/>
+<path d="M250 168c-4 22-2 48 8 66C266 210 266 190 262 170Z" fill="#9a5a2c"/>
+<ellipse class="face" cx="292" cy="178" rx="38" ry="44" fill="#f6e2c6"/>
+<path class="hair" d="M256 166C258 136 276 128 294 128C312 128 326 140 328 162C318 150 304 146 292 150C280 144 266 150 256 166Z" fill="#9a5a2c"/>
+<path d="M322 132l14-10 4 14-14 2zM322 132l-6 12" fill="#9a3a1b" stroke-width="1.8"/>
+<g class="brows"><path d="M272 164q8-4 16 0"/><path d="M298 164q8-4 16 0"/></g>
+<g class="eyes"><g class="eye-open"><circle class="pupil" cx="280" cy="176" r="3.8" fill="#3a2313"/><circle class="pupil" cx="306" cy="176" r="3.8" fill="#3a2313"/></g>
+<g class="eye-happy"><path d="M274 178q6-8 12 0"/><path d="M300 178q6-8 12 0"/></g></g>
+<path d="M293 182q-3 9 2 11" stroke-width="1.8"/>
+<circle class="blush" cx="272" cy="195" r="7" fill="#c0603a" stroke="none"/><circle class="blush" cx="314" cy="195" r="7" fill="#c0603a" stroke="none"/>
+<path class="mouth-calm" d="M285 205q8 2 15 0"/>
+<path class="mouth-smile" d="M280 201q13 16 26 0q-13 7-26 0Z" fill="#9a3a1b"/>
+</g>
+<g class="sparks" stroke="#9a3a1b" stroke-width="1.8"><path d="M58 92l6 6M70 80v9M46 104h8"/><path d="M362 112l-6 6M350 100v9M374 124h-8"/><path d="M228 60v10M223 65h10"/></g>
+</svg>
+<figcaption><span class="kids-age kids-age-big">14 лет</span><span class="kids-age kids-age-small">9 лет</span></figcaption></figure>
+<div class="feature"><span class="bf-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="6.6"/><circle cx="12" cy="12" r="2.6"/><path d="M12 2.6v2.8M12 18.6v2.8M2.6 12h2.8M18.6 12h2.8M5.4 5.4l2 2M16.6 16.6l2 2M5.4 18.6l2-2M16.6 7.4l2-2"/></svg></span><span class="bf-num" aria-hidden="true">01</span><h3>Инженерное мышление</h3><p>Школьник учится изучать устройства, понимать принцип их действия и придумывать, что можно улучшить.</p></div>
+<div class="feature"><span class="bf-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="6.2"/><path d="M14.6 14.6L21 21"/><path d="M7 9.2c.7-1.5 2.2-2.4 3.9-2.2"/></svg></span><span class="bf-num" aria-hidden="true">02</span><h3>Навыки исследователя</h3><p>Выдвигает гипотезы, проводит опыты, измеряет и делает выводы — как настоящий учёный.</p></div>
+<div class="feature"><span class="bf-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.8 8.2l-2.3 5.3-5.3 2.3 2.3-5.3z"/><path d="M12 1.8v1.6M12 20.6v1.6M1.8 12h1.6M20.6 12h1.6"/></svg></span><span class="bf-num" aria-hidden="true">03</span><h3>Самостоятельность</h3><p>Учится сам искать ответы и доводить начатое до конца, а преподаватель мягко направляет.</p></div>
+<div class="feature"><span class="bf-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 4.5h10.5a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H8.5l-3.6 3v-3H3.5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2z"/><path d="M18.5 8.5h1.5a2 2 0 0 1 2 2v4.5a2 2 0 0 1-2 2h-.5v2.7l-3.2-2.7h-4"/><path d="M5.5 9h.01M8.7 9h.01M11.9 9h.01"/></svg></span><span class="bf-num" aria-hidden="true">04</span><h3>Умение рассуждать и объяснять</h3><p>На встречах с преподавателем рассказывает, что узнал, отвечает на вопросы и отстаивает свои идеи.</p></div>
+<div class="feature"><span class="bf-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.3-4.4L16 4.9l3.1 3.1L7.4 19.7z"/><path d="M13.9 7l3.1 3.1"/><path d="M3 21h7"/></svg></span><span class="bf-num" aria-hidden="true">05</span><h3>Свой проект</h3><p>Курс завершается собственной разработкой: рисунком, чертежом, расчётом или моделью.</p></div>
+<div class="feature"><span class="bf-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="9.5" ry="3.7"/><ellipse cx="12" cy="12" rx="9.5" ry="3.7" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="9.5" ry="3.7" transform="rotate(-60 12 12)"/><circle cx="12" cy="12" r="1.2"/></svg></span><span class="bf-num" aria-hidden="true">06</span><h3>Интерес к технике и науке</h3><p>Физика, механика и технологии становятся понятными через вещи, которые окружают ребёнка каждый день.</p></div>
 </div></section>
 <section class="home-block" id="homeReviews" hidden><h2>Отзывы учеников и родителей</h2><div class="reviews" id="homeReviewList"></div></section>
 <section class="home-block"><h2>Частые вопросы</h2><div class="faq">
@@ -548,7 +720,7 @@ mark.todo{background:rgba(154,58,27,.15);color:var(--sanguine);padding:0 4px;bor
 </div></section>
 </main>
 <section class="section page" id="howPage" style="display:none"><h1 class="course-title">Как проходят онлайн-занятия</h1>
-<p class="section-intro">Курс устроен как маршрут. Часть пути школьник проходит самостоятельно — с видеоуроками, материалами и заданиями, а на ключевых этапах встречается с преподавателем онлайн. На протяжении всего курса мы на связи в чате.</p>
+<p class="section-intro how-lead">Курс устроен как маршрут. Часть пути школьник проходит <mark class="ink-hl">самостоятельно</mark> — с видеоуроками, материалами и заданиями, а на ключевых этапах <mark class="ink-hl">встречается с преподавателем</mark> онлайн. На протяжении всего курса мы <mark class="ink-hl">на связи в чате</mark>.</p>
 <div class="route-legend" aria-label="Обозначения на маршруте"><span><i class="route-mark route-mark-self"></i>самостоятельный этап</span><span><i class="route-mark route-mark-teach"></i>встреча с преподавателем</span></div>
 <h2 class="route-title">Маршрут по курсу: шаг за шагом</h2>
 <ol class="route">
@@ -560,9 +732,12 @@ mark.todo{background:rgba(154,58,27,.15);color:var(--sanguine);padding:0 4px;bor
 <li class="route-stop route-finish"><span class="route-mark" aria-hidden="true">✦</span><div class="route-card"><span class="route-kind">на всём пути</span><h3>Мы рядом на всём пути</h3><p>В чате можно в любой момент задать вопрос, получить обратную связь и поддержку. Преподаватели сопровождают школьника от первого вопроса и исследования до готового проекта, поддерживают интерес и мягко направляют работу, чтобы школьник постепенно учился находить решения самостоятельно.</p></div></li>
 </ol>
 <h2 class="route-title">Самостоятельно и вместе с преподавателем</h2>
-<div class="features how-formats">
-<div class="feature"><h3>Самостоятельная часть</h3><p>Видеоуроки, материалы и задания в личном кабинете. Школьник занимается в удобное время, учится сам искать ответы и проводить исследования, а в чате всегда может задать вопрос и получить обратную связь.</p></div>
-<div class="feature"><h3>Встречи с преподавателем</h3><p>Онлайн-встречи по ходу курса: обсуждение изученного, дополнительные вопросы, требующие размышлений, и работа над собственным проектом — от идеи до рисунка, чертежа, расчёта или модели.</p></div>
+<div class="features how-formats duo">
+<div class="feature duo-card"><span class="duo-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="11.5" rx="1.5"/><path d="M1.5 19.5h21"/><path d="M10.5 8.2l4 2.3-4 2.3z"/></svg></span><span class="route-kind">самостоятельно</span><h3>Самостоятельная часть</h3>
+<ul class="ticks"><li>Видеоуроки, материалы и задания в личном кабинете</li><li>Занятия в удобное время</li><li>Учится сам искать ответы и проводить исследования</li></ul></div>
+<div class="duo-link"><span class="duo-chat" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 20 17h-9l-5 3.5V17H4a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 4 5z"/><path d="M7.5 11h.01M12 11h.01M16.5 11h.01"/></svg></span><span class="duo-note">в чате всегда можно задать вопрос и получить обратную связь</span></div>
+<div class="feature duo-card duo-teach"><span class="duo-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><circle cx="16.5" cy="9" r="2.5"/><path d="M2.5 19.5c.6-3.3 2.8-5 5.5-5s4.9 1.7 5.5 5"/><path d="M13.6 14.9c.9-.6 1.8-.9 2.9-.9 2.3 0 4.1 1.5 4.6 4.5"/></svg></span><span class="route-kind">с преподавателем</span><h3>Встречи с преподавателем</h3>
+<ul class="ticks"><li>Онлайн-встречи по ходу курса</li><li>Обсуждение изученного и дополнительные вопросы, требующие размышлений</li><li>Работа над собственным проектом — от идеи до рисунка, чертежа, расчёта или модели</li></ul></div>
 </div>
 <div class="bottom"><a class="btn primary" href="/programmy/" onclick="return go(event,'courses')">Посмотреть программы</a> <a class="btn" href="/" onclick="return go(event,'home')">Вернуться на главную</a></div></section>
 <section class="section page" id="coursesPage" style="display:none"><h1 class="course-title">10 программ для школьников 9–14 лет</h1><p class="section-intro">Выберите тему, которая больше всего заинтересует ребёнка.</p><div class="courses" id="courseGrid"></div><div class="bottom"><a class="btn primary" href="/" onclick="return go(event,'home')">Вернуться на главную</a></div></section>
@@ -710,8 +885,8 @@ async function showCoursePage(slug,push=true){const i=COURSE_SLUGS.indexOf(slug)
   if(body.dataset.slug!==slug){body.innerHTML='<p class="note">Загружаем программу…</p>';
     const q=s=>sb.from('courses').select(`slug,title,subtitle,description,price,price_trial,price_trial_base,price_lesson,status,modules(sort,title,lessons(sort,title,${s}research_task))`).eq('slug',slug).maybeSingle();
     let{data,error}=await q('summary,');if(error)({data}=await q(''));
-    body.innerHTML=coursePageHtml(data||{slug,title:courses[i][1],subtitle:courses[i][2],description:courses[i][3],status:'draft',modules:[]},i);body.dataset.slug=slug;observeReveal(body)}
-  showPage('course',false);const path='/kursy/'+slug+'/';if(push&&location.pathname!==path)history.pushState({},'',path);setMeta('course:'+slug)}
+    body.innerHTML=coursePageHtml(data||{slug,title:courses[i][1],subtitle:courses[i][2],description:courses[i][3],status:'draft',modules:[]},i);body.dataset.slug=slug;markSketch(body);observeReveal(body)}
+  showPage('course',false);requestAnimationFrame(updateRoadDraw);const path='/kursy/'+slug+'/';if(push&&location.pathname!==path)history.pushState({},'',path);setMeta('course:'+slug)}
 function routePath(path){const db=document.getElementById('docBody');if(db&&db.dataset.path===path)return showPage('doc',false);
   const m=path.match(/^\/kursy\/([a-z0-9-]+)\/?$/);if(m)return showCoursePage(m[1],false);
   if(/^\/programmy\/?$/.test(path))return showPage('courses',false);
@@ -1089,26 +1264,52 @@ async function sendReview(uid,courseIdValue){const t=rvText.value.trim(),n=rvNam
   rvText.value='';rvConsent.checked=false;rvMsg.textContent='Спасибо! Отзыв появится на сайте после проверки.'}
 // ---------- Анимации: появление при прокрутке, «перо» на иконках, чернильная волна ----------
 const REDUCED_MOTION=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const REVEAL_SEL='.home-block>h2,.home-block>.lead,.benefits .feature,.video-card,.review,.faq-item,.hero>.founders,#courseGrid .course,.route-stop,.how-formats .feature,#coursePageBody .features .feature,.course-lessons';
+const REVEAL_SEL='.home-block>h2,.home-block>.lead,.benefits .feature,.video-card,.review,.faq-item,.hero>.founders,#courseGrid .course,.route-stop,.how-formats .feature,#coursePageBody .features .feature,.road-stop,.road-steps li,.how-lead,.duo-link,.honest-sign,.kids';
 let revealIO=null;
 function observeReveal(root){if(!revealIO)return;const groups=new Map();
   (root||document).querySelectorAll(REVEAL_SEL).forEach(el=>{if(el.dataset.rv)return;el.dataset.rv='1';
     const n=groups.get(el.parentElement)||0;groups.set(el.parentElement,n+1);el.style.setProperty('--d',Math.min(n,6)*80+'ms');
     el.classList.add('reveal');revealIO.observe(el)})}
 // линии иконок — для эффекта «прорисовки пером»
-function markSketch(root){(root||document).querySelectorAll('.course .icon svg,.node .visual svg').forEach(svg=>svg.querySelectorAll('path,circle,line,rect,ellipse,polyline,polygon').forEach(el=>{if(el.classList.contains('sk'))return;el.setAttribute('pathLength','1');el.classList.add('sk')}))}
+function markSketch(root){(root||document).querySelectorAll('.course .icon svg,.node .visual svg,.bf-ico svg,.duo-ico svg,.duo-chat svg,.rs-ico svg').forEach(svg=>svg.querySelectorAll('path,circle,line,rect,ellipse,polyline,polygon').forEach(el=>{if(el.classList.contains('sk'))return;el.setAttribute('pathLength','1');el.classList.add('sk')}))}
 function initAnimations(){markSketch();if(REDUCED_MOTION||!('IntersectionObserver' in window))return;
   document.documentElement.classList.add('js-anim');
   revealIO=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target;el.classList.add('in');revealIO.unobserve(el);
     // после появления убираем служебный класс, чтобы вернуть обычные эффекты при наведении
     setTimeout(()=>{el.classList.remove('reveal');el.style.removeProperty('--d')},1300)}),{rootMargin:'0px 0px -6% 0px'});
-  observeReveal();
+  observeReveal();updateRoadDraw();
   document.addEventListener('pointerdown',e=>{const b=e.target.closest('.btn');if(!b)return;const r=b.getBoundingClientRect(),d=Math.max(r.width,r.height)*2.2,s=document.createElement('span');
     s.className='ink';s.style.cssText='width:'+d+'px;height:'+d+'px;left:'+(e.clientX-r.left-d/2)+'px;top:'+(e.clientY-r.top-d/2)+'px';b.appendChild(s);setTimeout(()=>s.remove(),650)})}
 // тропа на странице «Как проходят занятия» прочерчивается по мере прокрутки
 function updateRouteDraw(){document.querySelectorAll('#howPage .route').forEach(ol=>{const m=ol.querySelector('.route-mask-path');if(!m)return;
   const r=ol.getBoundingClientRect();if(!r.height)return;const p=Math.max(0,Math.min(1,(innerHeight*.85-r.top)/r.height));m.style.strokeDashoffset=String(1-p)})}
-let routeRaf=0;window.addEventListener('scroll',()=>{if(routeRaf)return;routeRaf=requestAnimationFrame(()=>{routeRaf=0;updateRouteDraw()})},{passive:true});
+// дорога программы курса закрашивается чернилами по мере прокрутки
+function updateRoadDraw(){if(!revealIO)return;document.querySelectorAll('.course-road').forEach(ol=>{const r=ol.getBoundingClientRect();if(!r.height)return;
+  ol.style.setProperty('--p',Math.max(0,Math.min(1,(innerHeight*.7-r.top)/r.height)).toFixed(3))})}
+let routeRaf=0;window.addEventListener('scroll',()=>{if(routeRaf)return;routeRaf=requestAnimationFrame(()=>{routeRaf=0;updateRouteDraw();updateRoadDraw()})},{passive:true});
+// ребята в «Чем занятия полезны»: наведение мышью на блок — улыбаются и смотрят в его сторону.
+// На телефоне ребята внизу экрана сами «нажимают» блок, который проходит середину экрана, и улыбаются;
+// касание пальцем тоже работает. Без обработчиков прокрутки — только IntersectionObserver.
+const KIDS_MQ=matchMedia('(max-width:900px)');
+function initKids(){document.querySelectorAll('.kids-wrap').forEach(w=>{let t=0,cur=null;const kids=w.querySelector('.kids'),cards=[...w.querySelectorAll(':scope>.feature')];
+  const set=(on,look)=>{clearTimeout(t);w.classList.toggle('happy',on);w.dataset.look=on&&look||''};
+  const flash=(look,ms)=>{set(true,look);t=setTimeout(()=>set(false),ms)};
+  const lookOf=i=>KIDS_MQ.matches?'up':i<3?'left':'right';
+  // «нажатие» на блок: подсветка и чернильная волна от значка
+  const tap=f=>{cards.forEach(c=>{if(c!==f)c.classList.remove('tapped')});f.classList.remove('tapped');void f.offsetWidth;f.classList.add('tapped')};
+  cards.forEach((f,i)=>{
+    f.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')set(true,lookOf(i))});
+    f.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')set(false)});
+    f.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'){cur=f;tap(f);set(true,lookOf(i))}});
+    f.addEventListener('pointerup',e=>{if(e.pointerType!=='mouse')flash(lookOf(i),1600)});
+    f.addEventListener('pointercancel',()=>flash(lookOf(i),1200));
+    f.addEventListener('focusin',()=>set(true,lookOf(i)));f.addEventListener('focusout',()=>set(false))});
+  if(kids){kids.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')set(true)});kids.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')set(false)});kids.addEventListener('click',()=>flash(KIDS_MQ.matches?'up':'',1800))}
+  if(!('IntersectionObserver' in window))return;
+  const io=new IntersectionObserver(es=>{if(!KIDS_MQ.matches)return;
+    for(const e of es)if(e.isIntersecting&&e.target!==cur){cur=e.target;tap(cur);flash('up',1500)}},{rootMargin:'-42% 0px -48% 0px'});
+  cards.forEach(c=>io.observe(c))})}
+initKids();
 initAnimations();
 routePath(location.pathname);
 function speak(text){if('speechSynthesis' in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ru-RU';u.rate=.95;speechSynthesis.speak(u)}}

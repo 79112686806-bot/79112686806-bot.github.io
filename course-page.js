@@ -13,6 +13,18 @@
       .map((m) => ({ ...m, lessons: (m.lessons || []).slice().sort((a, b) => a.sort - b.sort) }));
   }
 
+  // «Занятие 1. Вводное» → ['Занятие 1', 'Вводное']; «Модуль 3. …» → ['Модуль 3', '…']
+  const split = (t) => {
+    const m = String(t || '').match(/^((?:Заняти[ея]|Модуль|Блок)\s+[\d–-]+)\.\s*(.+)$/);
+    return m ? [m[1], m[2]] : ['', String(t || '')];
+  };
+  const stepIcon = (d) => `<span class="rs-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${d}</svg></span>`;
+  const STEP_ICON = {
+    self: stepIcon('<rect x="3" y="4.5" width="18" height="11.5" rx="1.5"/><path d="M1.5 19.5h21"/><path d="M10.5 8.2l4 2.3-4 2.3z"/>'),
+    teach: stepIcon('<circle cx="8" cy="8" r="3"/><circle cx="16.5" cy="9" r="2.5"/><path d="M2.5 19.5c.6-3.3 2.8-5 5.5-5s4.9 1.7 5.5 5"/><path d="M13.6 14.9c.9-.6 1.8-.9 2.9-.9 2.3 0 4.1 1.5 4.6 4.5"/>'),
+    chat: stepIcon('<path d="M4 5h16a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 20 17h-9l-5 3.5V17H4a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 4 5z"/><path d="M7.5 11h.01M12 11h.01M16.5 11h.01"/>'),
+  };
+
   // Краткое содержание модуля: несколько строк — списком, одна — абзацем
   function summaryHtml(t) {
     const lines = String(t || '').split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
@@ -62,10 +74,24 @@ ${available
     : '<p class="note">Курс в разработке — запись откроется позже.</p>'}
 <h2>Программа курса «${esc(c.title)}»</h2>
 ${modules.length
-    ? modules.map((m) => `<h3>${esc(m.title)}</h3><ul class="course-lessons">${m.lessons.map((l) => `<li>${esc(l.title)}${summaryHtml(l.summary)}${l.research_task ? `<small>🔬 Исследование: ${esc(l.research_task)}</small>` : ''}</li>`).join('')}</ul>`).join('\n')
+    ? `<ol class="course-road">${modules.map((m, i) => {
+      const [kind, name] = split(m.title);
+      return `<li class="road-stop"><span class="road-mark" aria-hidden="true">${i + 1}</span><div class="road-body">${kind ? `<span class="road-kind">${esc(kind)}</span>` : ''}<h3>${esc(name)}</h3>
+<ul class="road-mods">${m.lessons.map((l) => {
+        const [badge, title] = split(l.title);
+        return `<li class="road-mod">${badge ? `<span class="road-badge">${esc(badge)}</span>` : ''}<b>${esc(title)}</b>${summaryHtml(l.summary)}${l.research_task ? `<span class="road-lab"><i>исследование</i>${esc(l.research_task)}</span>` : ''}</li>`;
+      }).join('')}</ul></div></li>`;
+    }).join('\n')}
+<li class="road-stop road-finish"><span class="road-mark" aria-hidden="true">✦</span><div class="road-body"><span class="road-kind">финиш</span><h3>Свой инженерный проект</h3></div></li></ol>`
     : '<p>Подробная программа появится здесь в ближайшее время.</p>'}
 <h2>Как проходят занятия</h2>
-<p>Курс устроен как маршрут: часть тем школьник проходит самостоятельно — видеоуроки, материалы и задания открываются модуль за модулем, а на ключевых этапах встречается с преподавателем онлайн, чтобы обсудить изученное и поработать над собственным проектом. На протяжении всего курса мы на связи в чате. <a href="/kak-prohodyat-zanyatiya/" onclick="return go(event,'how')">Подробнее о формате занятий</a></p>`;
+<p>Курс устроен как маршрут:</p>
+<ol class="road-steps">
+  <li>${STEP_ICON.self}<b>Самостоятельно</b><small>видеоуроки, материалы и задания открываются модуль за модулем</small></li>
+  <li>${STEP_ICON.teach}<b>С преподавателем</b><small>онлайн-встречи, чтобы обсудить изученное и поработать над собственным проектом</small></li>
+  <li>${STEP_ICON.chat}<b>Всегда на связи</b><small>на протяжении всего курса мы на связи в чате</small></li>
+</ol>
+<p class="road-more"><a href="/kak-prohodyat-zanyatiya/" onclick="return go(event,'how')">Подробнее о формате занятий →</a></p>`;
   }
 
   root.coursePageHtml = coursePageHtml;
