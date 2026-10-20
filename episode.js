@@ -2,7 +2,9 @@
 // Серия — набор роликов-узлов в закрытом бакете episodes (<серия>/<узел>.mp4) и граф переходов ниже:
 // после узла с вопросом крутится петля ожидания (<узел>-wait), ребёнок отвечает голосом
 // (Web Speech API) или кнопками/полем, и по ответу выбирается следующий узел.
-// Episode.mount(el, { id, sb, onMeet }) → { pause, resume, destroy }; onMeet — кнопка «Встреча с преподавателем».
+// Episode.mount(el, { id, sb, onMeet, onAnswer }) → { pause, resume, destroy }; onMeet — кнопка «Встреча с преподавателем»,
+// onAnswer({ run, node, question, answer, heard, via }) — ответ на вопрос серии (run — один просмотр,
+// via: voice | text | button | mixed | skip | timeout, heard — что дословно распознал микрофон).
 (function () {
   const has = (t, ...w) => w.some((x) => t.includes(x));
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -33,7 +35,7 @@
 
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  function mount(root, { id, sb, onMeet }) {
+  function mount(root, { id, sb, onMeet, onAnswer }) {
     const E = EPISODES[id];
     if (!E) { root.textContent = 'Серия не найдена'; return null; }
     const S = { name: '', problem: '', ideas: [] };
@@ -57,6 +59,8 @@
     const slot = { name: $('.ep-slot-name'), problem: $('.ep-slot-problem'), ideas: $('.ep-slot-ideas') };
     for (const [k, [x, y, w, h]] of Object.entries(E.slots)) Object.assign(slot[k].style, { left: x / 19.2 + '%', top: y / 10.8 + '%', width: w / 19.2 + '%', height: h / 10.8 + '%' });
 
+    const newRun = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16)));
+    let run = newRun();
     let urls = {}, cur = null, onScreen = null, paused = false, dead = false, micOk = !!SR, rec = null;
     const vids = {}, resumeQ = [];
     let pausedAt = 0, pausedTotal = 0;
@@ -88,7 +92,13 @@
       overlays([]); setTimeout(() => cur === n && overlays(g.show || []), g.delay || 0);
       preload(n);
       vid(n).onended = () => {
-        if (g.ask) { show(n + '-wait'); overlays([...(g.show || []), ...(g.showAfter || [])]); askQ(g.ask).then((a) => go(g.next(a))); }
+        if (g.ask) {
+          show(n + '-wait'); overlays([...(g.show || []), ...(g.showAfter || [])]);
+          askQ(g.ask).then((r) => {
+            if (onAnswer) try { onAnswer({ run, node: n, question: g.ask.q, answer: r.answer || '', heard: r.heard || null, via: r.via }); } catch (e) { console.error(e); }
+            go(g.next(r.val));
+          });
+        }
         else go(g.next());
       };
       show(n);
@@ -117,39 +127,42 @@
     function askQ(a) {
       return new Promise((resolve) => {
         let done = false, timer = null;
-        const end = (val) => { if (done) return; done = true; clearInterval(timer); try { rec && rec.abort(); } catch (e) {} askEl.hidden = true; resolve(val); };
+        const end = (val, info = {}) => { if (done) return; done = true; clearInterval(timer); try { rec && rec.abort(); } catch (e) {} askEl.hidden = true; resolve({ val, ...info }); };
         const isDone = () => done;
         $('.ep-ask h4').textContent = a.q; heard.textContent = ''; opts.innerHTML = ''; micState(micOk);
         $('.ep-timer').hidden = a.kind !== 'ideas';
         askEl.hidden = false;
-        const btn = (label, val, main) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.className = 'btn' + (main ? ' primary' : ''); b.onclick = () => end(val); opts.append(b); return b; };
+        const btn = (label, val, main, info) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.className = 'btn' + (main ? ' primary' : ''); b.onclick = () => end(val, typeof info === 'function' ? info() : info || { answer: label, via: 'button' }); opts.append(b); return b; };
         const input = (ph, onEnter) => { const i = document.createElement('input'); i.placeholder = ph; i.maxLength = 60; i.onkeydown = (e) => { if (e.key === 'Enter' && i.value.trim()) { onEnter(i.value.trim()); i.value = ''; } }; opts.append(i); return i; };
         const onText = (t) => (heard.textContent = t + '…');
 
         if (a.kind === 'choice' || a.kind === 'any') {
           a.opts.forEach(([val, label]) => btn(label, val, true));
           const pick = (txt) => { const t = txt.toLowerCase(); heard.textContent = '«' + txt + '»';
-            const o = a.opts.find(([, , w]) => has(t, ...w)); if (o) setTimeout(() => end(o[0]), 500); else if (a.kind === 'any') setTimeout(() => end(a.opts[0][0]), 500); };
+            const o = a.opts.find(([, , w]) => has(t, ...w)) || (a.kind === 'any' ? a.opts[0] : null);
+            if (o) setTimeout(() => end(o[0], { answer: o[1], via: 'voice', heard: txt }), 500); };
           loopListen(isDone, { onText, onFinal: pick });
         } else if (a.kind === 'name' || a.kind === 'free') {
-          const save = (txt) => {
+          const save = (txt, via) => {
             const v = a.kind === 'name' ? cap(txt.replace(/^(меня зовут|я|зовут)\s+/i, '').split(/\s+/).slice(0, 2).join(' ')) : cap(txt);
             if (a.kind === 'name') { S.name = v.slice(0, 24); slot.name.textContent = S.name; }
             else { S[a.save] = v.slice(0, 80); slot.problem.textContent = S[a.save]; }
-            heard.textContent = '«' + v + '»'; setTimeout(() => end(v), 700);
+            heard.textContent = '«' + v + '»'; setTimeout(() => end(v, { answer: v, via, heard: via === 'voice' ? txt : null }), 700);
           };
-          input(a.input, save); btn('Пропустить', '');
-          loopListen(isDone, { onText, onFinal: (t) => t && save(t) });
+          input(a.input, (t) => save(t, 'text')); btn('Пропустить', '', false, { answer: '', via: 'skip' });
+          loopListen(isDone, { onText, onFinal: (t) => t && save(t, 'voice') });
         } else if (a.kind === 'ideas') {
           slot.ideas.innerHTML = ''; S.ideas = []; slot.ideas.classList.add('on');
-          const add = (txt) => txt.split(/\s*(?:,|\bи ещё\b|\bещё\b|\bили\b)\s*/i).map((s) => s.trim()).filter((s) => s.length > 2).forEach((s) => {
+          const vias = new Set(), said = [];
+          const add = (txt, via) => txt.split(/\s*(?:,|\bи ещё\b|\bещё\b|\bили\b)\s*/i).map((s) => s.trim()).filter((s) => s.length > 2).forEach((s) => {
             if (S.ideas.length >= 12) return;
-            S.ideas.push(cap(s)); const d = document.createElement('div'); d.className = 'ep-idea'; d.textContent = cap(s).slice(0, 60); slot.ideas.append(d);
+            S.ideas.push(cap(s)); vias.add(via); const d = document.createElement('div'); d.className = 'ep-idea'; d.textContent = cap(s).slice(0, 60); slot.ideas.append(d);
           });
-          input(a.input, add); btn('Готово', 'done', true);
+          const result = () => ({ answer: S.ideas.join('; '), via: vias.size > 1 ? 'mixed' : [...vias][0] || 'timeout', heard: said.length ? said.join(' | ') : null });
+          input(a.input, (t) => add(t, 'text')); btn('Готово', 'done', true, result);
           const t0 = clock(), bar = $('.ep-timer b');
-          timer = setInterval(() => { if (paused) return; const p = 1 - (clock() - t0) / (a.secs * 1000); bar.style.width = Math.max(0, p * 100) + '%'; if (p <= 0) end('done'); }, 100);
-          loopListen(isDone, { continuous: true, onText, onFinal: (t) => { heard.textContent = ''; add(t); } });
+          timer = setInterval(() => { if (paused) return; const p = 1 - (clock() - t0) / (a.secs * 1000); bar.style.width = Math.max(0, p * 100) + '%'; if (p <= 0) end('done', result()); }, 100);
+          loopListen(isDone, { continuous: true, onText, onFinal: (t) => { heard.textContent = ''; if (t) { said.push(t); add(t, 'voice'); } } });
         }
       });
     }
@@ -161,7 +174,7 @@
       $('.ep-end').hidden = false;
     }
     function restart() {
-      $('.ep-end').hidden = true; S.name = ''; S.problem = ''; S.ideas = [];
+      $('.ep-end').hidden = true; S.name = ''; S.problem = ''; S.ideas = []; run = newRun();
       for (const k in slot) slot[k].innerHTML = '';
       play(E.start);
     }

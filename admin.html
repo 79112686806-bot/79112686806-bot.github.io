@@ -13,11 +13,36 @@ a{color:var(--accent)}
 body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
 header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 24px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
 header b{font-size:16px}
-nav.tabs{display:flex;gap:4px}
-nav.tabs a{padding:6px 12px;border-radius:6px;color:var(--muted);text-decoration:none}
-nav.tabs a.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
 header .me{margin-left:auto;color:var(--muted);font-size:13px}
-main{max-width:1100px;margin:0 auto;padding:24px}
+main{max-width:1100px;margin:0 auto;padding:24px;min-width:0;width:100%}
+/* меню разделов слева, по группам; на телефоне — по кнопке «☰» */
+.authed .layout{display:grid;grid-template-columns:236px minmax(0,1fr)}
+aside.side{background:var(--card);border-right:1px solid var(--line);padding:16px 10px;position:sticky;top:var(--hh,55px);height:calc(100vh - var(--hh,55px));overflow:auto}
+.side h4{margin:18px 10px 6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.side h4:first-child{margin-top:2px}
+.side a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:var(--ink);text-decoration:none}
+.side a:hover{background:#faf6ef}
+.side a.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.side a .navcount{margin-left:auto}
+.side .ic{width:20px;text-align:center;flex:none}
+#navToggle{display:none}
+.hint{background:#fbf7f1;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:10px 14px;color:var(--muted);font-size:14px;margin:0 0 18px}
+/* главная: плитки «что нужно сделать» */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin:0 0 8px}
+.tile{display:block;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:var(--ink);text-decoration:none}
+.tile:hover{border-color:var(--accent)}
+.tile b{display:block;font-size:30px;line-height:1.1;color:var(--accent)}
+.tile span{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.tile.todo{border-color:#e8c27a;background:#fffaf0}
+.tile.done b{color:var(--ok);font-size:22px;line-height:1.5}
+/* ответы в сериях */
+.card.run{padding:0;overflow:hidden}
+.run-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line);background:#faf8f4}
+.run.fresh .run-head{background:#fffaf0}
+.run table{border:0;border-radius:0}
+.run td:first-child{width:38%;color:var(--muted)}
+.run tbody tr{cursor:default}
+.via{font-size:13px;white-space:nowrap}
 h1{font-size:22px;margin:0 0 16px}
 h2{font-size:18px;margin:24px 0 10px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
@@ -78,18 +103,36 @@ tbody tr:hover{background:#fbf7f1}
 .warn{color:var(--warn)}
 label.filebtn{display:inline-block;border:1px solid var(--accent);color:var(--accent);background:#fff;border-radius:6px;padding:6px 12px;cursor:pointer}
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;display:none;z-index:20}
-@media(max-width:700px){header{padding:10px 14px;gap:8px 12px}nav.tabs{order:5;width:100%;flex-wrap:wrap}nav.tabs a{padding:5px 9px}main{padding:14px}th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5){display:none}}
+@media(max-width:800px){.authed .layout{display:block}aside.side{display:none;position:fixed;left:0;right:0;top:var(--hh,55px);height:auto;max-height:calc(100vh - var(--hh,55px));z-index:6;border-right:0;border-bottom:1px solid var(--line);box-shadow:0 12px 30px rgba(0,0,0,.15)}
+  .menu-open aside.side{display:block}.authed #navToggle{display:inline-block}}
+@media(max-width:700px){header{padding:10px 14px;gap:8px 12px}header .me,header b{display:none}main{padding:14px}th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5){display:none}}
 </style>
 </head>
 <body>
 <header id="top" hidden>
+  <button type="button" id="navToggle" onclick="document.body.classList.toggle('menu-open')">☰ <span id="navNow">Разделы</span></button>
   <b>Инженерный клуб · админ</b>
-  <nav class="tabs"><a href="#queue" data-tab="queue">Очередь<span class="navcount" id="qCount" hidden></span></a><a href="#calls" data-tab="calls">Занятия<span class="navcount" id="cCount" hidden></span></a><a href="#students" data-tab="students">Ученики</a><a href="#materials" data-tab="materials">Материалы курса</a><a href="#reviews" data-tab="reviews">Отзывы<span class="navcount" id="rCount" hidden></span></a><a href="#videos" data-tab="videos">Видео</a><a href="#leads" data-tab="leads">Заявки<span class="navcount" id="lCount" hidden></span></a><a href="#memo" data-tab="memo">Игра<span class="navcount" id="iCount" hidden></span></a></nav>
   <span class="me" id="meEmail"></span>
   <a href="./" title="Открыть сайт">← На сайт</a>
   <button onclick="logout()">Выйти</button>
 </header>
-<main id="app"><p class="muted">Загрузка…</p></main>
+<div class="layout">
+<aside class="side" id="side" hidden>
+  <h4>Работа с учениками</h4>
+  <a href="#queue" data-tab="queue"><span class="ic">🏠</span>Главная<span class="navcount" id="qCount" hidden></span></a>
+  <a href="#calls" data-tab="calls"><span class="ic">📞</span>Занятия<span class="navcount" id="cCount" hidden></span></a>
+  <a href="#students" data-tab="students"><span class="ic">👦</span>Ученики</a>
+  <a href="#episodes" data-tab="episodes"><span class="ic">🎬</span>Ответы в сериях<span class="navcount" id="eCount" hidden></span></a>
+  <a href="#leads" data-tab="leads"><span class="ic">📝</span>Заявки<span class="navcount" id="lCount" hidden></span></a>
+  <h4>Курсы</h4>
+  <a href="#materials" data-tab="materials"><span class="ic">📚</span>Материалы курса</a>
+  <h4>Сайт</h4>
+  <a href="#reviews" data-tab="reviews"><span class="ic">💬</span>Отзывы<span class="navcount" id="rCount" hidden></span></a>
+  <a href="#videos" data-tab="videos"><span class="ic">▶️</span>Видео на главной</a>
+  <a href="#memo" data-tab="memo"><span class="ic">🃏</span>Игра «Мемо»<span class="navcount" id="iCount" hidden></span></a>
+</aside>
+<main><div class="hint" id="hint" hidden></div><div id="app"><p class="muted">Загрузка…</p></div></main>
+</div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
@@ -97,6 +140,7 @@ label.filebtn{display:inline-block;border:1px solid var(--accent);color:var(--ac
 <script src="chat.js"></script>
 <script src="home-blocks.js"></script>
 <script src="research.js"></script>
+<script src="episode.js"></script>
 <script src="/igra/memo-data.js"></script>
 <script>
 const sb=supabase.createClient(window.APP_CONFIG.supabaseUrl,window.APP_CONFIG.supabaseKey);
@@ -112,7 +156,8 @@ async function start(){
   if(!session)return showLogin();
   const{data:isAdmin}=await sb.rpc('is_admin');
   if(!isAdmin){app.innerHTML=`<div class="center card"><h1>Нет доступа</h1><p class="muted">Этот раздел только для администратора.</p><p><a href="./">На сайт</a> · <button class="link" onclick="logout()">Выйти</button></p></div>`;return}
-  me=session.user;document.getElementById('top').hidden=false;document.getElementById('meEmail').textContent=me.email;
+  me=session.user;document.getElementById('top').hidden=false;document.getElementById('side').hidden=false;document.body.classList.add('authed');
+  document.documentElement.style.setProperty('--hh',document.getElementById('top').offsetHeight+'px');document.getElementById('meEmail').textContent=me.email;
   window.addEventListener('hashchange',route);await loadStudents();route();countNewIdeas();
   refreshQueueCount();setInterval(refreshQueueCount,60000);
   sb.channel('admin-messages').on('postgres_changes',{event:'INSERT',schema:'public',table:'lesson_messages'},p=>{
@@ -132,8 +177,20 @@ async function doLogin(e){e.preventDefault();const{error}=await sb.auth.signInWi
 async function logout(){await sb.auth.signOut();location.hash='';location.reload()}
 
 // ---------- Маршруты: #students, #student/<id> ----------
+// одна строка «что здесь делать» над разделом (у отзывов, видео и игры пояснение уже в самом разделе)
+const HINTS={
+  queue:'Всё, что ждёт вашего ответа. Нажмите на плитку — откроется нужный раздел; ниже — те же дела списком.',
+  calls:'Расписание занятий с преподавателем. Назначить занятие — в карточке ученика: тема → «📞 Занятие и видеозапись».',
+  students:'Все ученики. Нажмите на ученика — откроется его курс по темам: подтвердить тему, ответить в чате, назначить занятие.',
+  student:'Курс ученика по темам. «Подтвердить тему» — ученику откроется следующая. Чат и занятие — кнопками под темой.',
+  episodes:'Что ученики ответили в интерактивных мультфильмах: 🎤 голосом, ⌨️ текстом или 👆 кнопкой. Новые просмотры отмечены и считаются просмотренными, когда вы открыли этот раздел.',
+  leads:'Заявки с сайта на консультацию. Свяжитесь с человеком и отметьте, что заявка обработана.',
+  materials:'Программа курсов: файлы и ссылки, которые видят все ученики в открытых темах.'};
 function route(){closeAdminChat();matView=null;const h=location.hash.slice(1)||'queue';const[tab,arg,cid,lid]=h.split('/');
-  document.querySelectorAll('nav.tabs a').forEach(a=>a.classList.toggle('active',a.dataset.tab===(tab==='student'?'students':tab)));
+  const key=tab==='student'?'students':tab;document.body.classList.remove('menu-open');
+  document.querySelectorAll('.side a').forEach(a=>{const on=a.dataset.tab===key;a.classList.toggle('active',on);if(on)navNow.textContent=a.childNodes[1].textContent.trim()});
+  const hint=document.getElementById('hint');hint.textContent=HINTS[tab]||'';hint.hidden=!HINTS[tab];
+  if(tab==='episodes')return showEpisodes(arg);
   if(tab==='student'&&arg)return showStudent(arg,cid?+cid:undefined,lid?+lid:undefined);
   if(tab==='students')return showStudents();
   if(tab==='materials')return showMaterials(arg?+arg:undefined);
@@ -150,24 +207,28 @@ async function loadQueueData(){const[{data:threads},{data:subs}]=await Promise.a
     sb.from('lesson_progress').select('user_id,lesson_id,submitted_at,lessons(title,modules(course_id))').eq('status','submitted').order('submitted_at')]);
   return{threads:threads||[],subs:subs||[]}}
 function setQueueCount(n){const el=document.getElementById('qCount');el.hidden=!n;el.textContent=n;document.title=(n?'('+n+') ':'')+'Админ-панель — Инженерный клуб'}
-async function refreshQueueCount(){const[{threads,subs},calls,leads,revs]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads(),countPendingReviews()]);
-  setQueueCount(threads.filter(t=>t.unread>0).length+subs.length+leads+revs);setBadge('cCount',todayCalls(calls.calls).length);setBadge('lCount',leads);setBadge('rCount',revs)}
+async function refreshQueueCount(){const[{threads,subs},calls,leads,revs,runs]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads(),countPendingReviews(),countNewRuns()]);
+  setQueueCount(threads.filter(t=>t.unread>0).length+subs.length+leads+revs+runs);setBadge('eCount',runs);setBadge('cCount',todayCalls(calls.calls).length);setBadge('lCount',leads);setBadge('rCount',revs)}
 async function countPendingReviews(){const{count}=await sb.from('reviews').select('id',{count:'exact',head:true}).eq('status','pending');return count||0}
 function setBadge(id,n){const el=document.getElementById(id);el.hidden=!n;el.textContent=n}
 async function countNewLeads(){const{count}=await sb.from('leads').select('id',{count:'exact',head:true}).eq('status','new');return count||0}
 function threadPreview(t){if(t.last_deleted)return 'Сообщение удалено';return (t.last_from_student?'':'Вы: ')+((t.last_body||'').slice(0,140)||(t.last_has_files?'📎 Вложение':''))}
 async function showQueue(){if(!app.querySelector('#queueView'))app.innerHTML='<p class="muted">Загрузка очереди…</p>';
-  const[{threads,subs},cd,newLeads,pendRev]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads(),countPendingReviews()]);const unread=threads.filter(t=>t.unread>0);
-  const today=todayCalls(cd.calls);setQueueCount(unread.length+subs.length+newLeads+pendRev);setBadge('cCount',today.length);setBadge('lCount',newLeads);setBadge('rCount',pendRev);
+  const[{threads,subs},cd,newLeads,pendRev,newRuns,newIdeas]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads(),countPendingReviews(),countNewRuns(),countNewIdeas()]);const unread=threads.filter(t=>t.unread>0);
+  const today=todayCalls(cd.calls);setQueueCount(unread.length+subs.length+newLeads+pendRev+newRuns);setBadge('cCount',today.length);setBadge('lCount',newLeads);setBadge('rCount',pendRev);setBadge('eCount',newRuns);
+  // плитка: число и подпись; ноль — зелёная «✓», дел нет
+  // to: раздел (#…) или «@id» — список ниже на этой же странице
+  const tile=(n,label,to,doneText)=>`<a class="tile ${n?'todo':'done'}" href="${to[0]==='@'?'#queue':to}"${to[0]==='@'?` onclick="document.getElementById('${to.slice(1)}').scrollIntoView({behavior:'smooth'});return false"`:''}><b>${n||'✓'}</b><span>${n?label:doneText}</span></a>`;
+  const tiles=`<div class="tiles">${tile(unread.length,'новых сообщений','@msgs','сообщения прочитаны')}${tile(subs.length,'тем на проверке','@subs','темы проверены')}${tile(today.length,'занятий сегодня','#calls','сегодня занятий нет')}${tile(newRuns,'новых просмотров серий','#episodes','ответы просмотрены')}${tile(newLeads,'новых заявок','#leads','заявки разобраны')}${tile(pendRev,'отзывов на проверке','#reviews','отзывы проверены')}${tile(newIdeas,'идей для карточек','#memo','идеи разобраны')}</div>`;
   if((location.hash.slice(1)||'queue').split('/')[0]!=='queue')return;
   const link=(sid,cid,lid)=>`#student/${sid}/${cid}/${lid}`;
-  app.innerHTML=`<div id="queueView"><h1>Очередь</h1>
+  app.innerHTML=`<div id="queueView"><h1>Главная</h1>${tiles}
     ${today.length?`<h2>📞 Занятия сегодня <span class="badge b-acc">${today.length}</span></h2><div class="card qlist">${today.map(callRowHtml).join('')}</div>`:''}
     ${pendRev?`<h2>💬 Отзывы на проверке <span class="badge b-warn">${pendRev}</span></h2><p><a href="#reviews">Проверить отзывы →</a></p>`:''}
     ${newLeads?`<h2>📝 Новые заявки <span class="badge b-warn">${newLeads}</span></h2><p><a href="#leads">Открыть заявки →</a></p>`:''}
-    <h2>💬 Новые сообщения ${unread.length?`<span class="badge b-warn">${unread.length}</span>`:''}</h2>
+    <h2 id="msgs">💬 Новые сообщения ${unread.length?`<span class="badge b-warn">${unread.length}</span>`:''}</h2>
     ${unread.length?`<div class="card qlist">${unread.map(t=>`<a class="qitem" href="${link(t.student_id,t.course_id,t.lesson_id)}"><div class="t"><b>${esc(studentName(t.student_id))}</b><span class="muted">·</span>${esc(t.lesson_title)}<span class="badge b-warn">${t.unread} нов.</span></div><div class="small muted">${esc(threadPreview(t))} · ${fmtDate(t.last_at)}</div></a>`).join('')}</div>`:'<p class="muted">Новых сообщений нет.</p>'}
-    <h2>⏳ Темы на проверке ${subs.length?`<span class="badge b-warn">${subs.length}</span>`:''}</h2>
+    <h2 id="subs">⏳ Темы на проверке ${subs.length?`<span class="badge b-warn">${subs.length}</span>`:''}</h2>
     ${subs.length?`<div class="card qlist">${subs.map(p=>`<a class="qitem" href="${link(p.user_id,p.lessons?.modules?.course_id,p.lesson_id)}"><div class="t"><b>${esc(studentName(p.user_id))}</b><span class="muted">·</span>${esc(p.lessons?.title)}</div><div class="small muted">отправлена ${fmtDate(p.submitted_at)}</div></a>`).join('')}</div>`:'<p class="muted">Нет тем, ожидающих проверки.</p>'}
     <h2>Последние переписки</h2>
     ${threads.length?`<div class="card qlist">${threads.slice(0,15).map(t=>`<a class="qitem" href="${link(t.student_id,t.course_id,t.lesson_id)}"><div class="t"><b>${esc(studentName(t.student_id))}</b><span class="muted">·</span>${esc(t.lesson_title)}${t.unread?` <span class="badge b-warn">${t.unread} нов.</span>`:''}</div><div class="small muted">${esc(threadPreview(t))} · ${fmtDate(t.last_at)}</div></a>`).join('')}</div>`:'<p class="muted">Переписок пока нет.</p>'}</div>`}
@@ -226,7 +287,7 @@ async function enroll(uid){const courseId=+enrollSel.value;const{error}=await sb
 
 // ---------- Темы курса: статусы, ответы, подтверждение ----------
 async function loadCourse(s,courseId){closeAdminChat();const box=document.getElementById('courseBox');box.innerHTML='<p class="muted">Загрузка тем…</p>';
-  const[{data:course},{data:prog},{data:answers},{data:threads},{data:calls},{data:personal},{data:enr},{data:acc}]=await Promise.all([
+  const[{data:course},{data:prog},{data:answers},{data:threads},{data:calls},{data:personal},{data:enr},{data:acc},{data:epAns}]=await Promise.all([
     // с шаблонами таблиц исследований; без миграции 016 — без них
     sb.from('courses').select('title,modules(id,sort,title,lessons(id,sort,title,research_task,research_plan))').eq('id',courseId).single()
       .then(res=>res.error?sb.from('courses').select('title,modules(id,sort,title,lessons(id,sort,title,research_task))').eq('id',courseId).single():res),
@@ -237,14 +298,16 @@ async function loadCourse(s,courseId){closeAdminChat();const box=document.getEle
     sb.from('lesson_calls').select('lesson_id,url,starts_at,note,duration_min,ended_at').eq('user_id',s.id),
     sb.from('materials').select('id,lesson_id,title,kind,url,storage_path,created_at').eq('user_id',s.id).order('id'),
     sb.from('enrollments').select('scope').eq('user_id',s.id).eq('course_id',courseId).maybeSingle(),
-    sb.from('lesson_access').select('lesson_id').eq('user_id',s.id)]);
+    sb.from('lesson_access').select('lesson_id').eq('user_id',s.id),
+    sb.from('episode_answers').select('lesson_id,run_id').eq('user_id',s.id)]);
   const modules=(course?.modules||[]).sort((a,b)=>a.sort-b.sort);const lessons=[];
   modules.forEach(m=>{m.lessons.sort((a,b)=>a.sort-b.sort);m.lessons.forEach(l=>lessons.push(l))});
   const progress={};(prog||[]).forEach(p=>progress[p.lesson_id]=p);
   const ans={};(answers||[]).forEach(a=>ans[a.lesson_id]=a);
   const unread={},hasThread={};(threads||[]).forEach(t=>{unread[t.lesson_id]=t.unread;hasThread[t.lesson_id]=true});
   const callMap={};(calls||[]).forEach(c=>callMap[c.lesson_id]=c);matCache={};(personal||[]).forEach(m=>matCache[m.id]=m);
-  card={student:s,courseId,lessons,progress,answers:ans,unread,hasThread,calls:callMap,personal:personal||[],scope:(enr&&enr.scope)||'full',access:new Set((acc||[]).map(x=>x.lesson_id))};
+  card={student:s,courseId,lessons,progress,answers:ans,unread,hasThread,calls:callMap,personal:personal||[],scope:(enr&&enr.scope)||'full',access:new Set((acc||[]).map(x=>x.lesson_id)),epRuns:{}};
+  (epAns||[]).forEach(a=>(card.epRuns[a.lesson_id]||=new Set()).add(a.run_id));
   const approved=lessons.filter(l=>progress[l.id]?.status==='approved').length;
   const ownedN=lessons.filter(isOwned).length;
   box.innerHTML=`<h2>${esc(course?.title)} — темы <span class="muted small">(подтверждено ${approved} из ${lessons.length})</span></h2>
@@ -272,7 +335,9 @@ function lessonRow(l){const p=card.progress[l.id],st=p?.status,a=card.answers[l.
   const nRec=card.personal.filter(m=>m.lesson_id===l.id).length,c=card.calls[l.id];
   const lp=open||st?`<button style="margin-top:8px" onclick="toggleLessonPanel(${l.id})">📞 Занятие и видеозапись${c?` · ${callState(c)==='ended'?'завершено':c.starts_at?fmtDate(c.starts_at):'назначено'}`:''}${nRec?` · 🎥 ${nRec}`:''}</button> `:'';
   const chat=open||st?`${lp}<button id="cb-${l.id}" style="margin-top:8px" onclick="toggleChat(${l.id})">${chatLabel(l.id)}</button><div id="lp-${l.id}"></div><div id="chat-${l.id}"></div>`:'';
-  return `<div class="lesson ${st==='submitted'?'submitted':''} ${!open&&!st?'locked':''}" id="lesson-${l.id}"><div class="row" style="justify-content:space-between"><span>${esc(l.title)}</span>${badge}</div>${open||st?answersHtml:''}<div class="actions">${actions}</div>${chat}</div>`}
+  const nRuns=card.epRuns[l.id]?.size||0;
+  const epLink=nRuns?`<div class="small" style="margin-top:6px"><a href="#episodes/${card.student.id}">🎬 Ответы в серии: ${nRuns} ${plural(nRuns,'просмотр','просмотра','просмотров')} →</a></div>`:'';
+  return `<div class="lesson ${st==='submitted'?'submitted':''} ${!open&&!st?'locked':''}" id="lesson-${l.id}"><div class="row" style="justify-content:space-between"><span>${esc(l.title)}</span>${badge}</div>${open||st?answersHtml:''}${epLink}<div class="actions">${actions}</div>${chat}</div>`}
 // ---------- Занятие (ссылка на звонок) и личные записи ученика ----------
 const TELEMOST=/^https:\/\/telemost\.yandex\.ru\/j\/\d+/;
 const MAX_FILE=50*1024*1024;
@@ -469,9 +534,33 @@ async function saveVideo(id){const box=document.getElementById('vid-'+id),v={};b
 async function deleteVideo(id,b){if(!b.dataset.sure){b.dataset.sure='1';b.textContent='точно удалить?';return}
   const{error}=await sb.from('site_videos').delete().eq('id',id);if(error)return toast('Ошибка: '+error.message);toast('Удалено');showVideos()}
 
+// ---------- Ответы в сериях: что ученики ответили в интерактивных мультфильмах (episode.js) ----------
+const VIA_RU={voice:'🎤 голосом',text:'⌨️ текстом',button:'👆 кнопкой',mixed:'🎤 голосом и ⌨️ текстом',skip:'пропустил',timeout:'⏱ время вышло'};
+const plural=(n,one,few,many)=>{const m=n%10,h=n%100;return m===1&&h!==11?one:m>=2&&m<=4&&(h<12||h>14)?few:many};
+// просмотр серии считается новым, пока администратор не открыл этот раздел
+async function countNewRuns(){const{data,error}=await sb.from('episode_answers').select('run_id').is('seen_at',null).limit(2000);
+  return error?0:new Set(data.map(r=>r.run_id)).size}
+async function showEpisodes(uid){app.innerHTML='<p class="muted">Загрузка ответов…</p>';if(!students.length)await loadStudents();
+  const{data,error}=await sb.from('episode_answers').select('id,user_id,lesson_id,episode,run_id,node,question,answer,heard,via,created_at,seen_at,lessons(title)').order('created_at',{ascending:false}).limit(2000);
+  if(error){app.innerHTML='<h1>Ответы в сериях</h1><p>Ошибка: '+esc(error.message)+' — выполните миграцию 20261020000022_episode_answers.sql.</p>';return}
+  const who=[...new Set(data.map(a=>a.user_id))];
+  const runs=new Map();data.filter(a=>!uid||a.user_id===uid).forEach(a=>{if(!runs.has(a.run_id))runs.set(a.run_id,[]);runs.get(a.run_id).push(a)});
+  const runHtml=list=>{list.sort((x,y)=>x.id-y.id);const a0=list[0],fresh=list.some(a=>!a.seen_at);
+    const title=(window.Episode&&Episode.titles[a0.episode])||a0.episode;
+    return `<div class="card run ${fresh?'fresh':''}"><div class="run-head"><b><a href="#student/${a0.user_id}">${esc(studentName(a0.user_id))}</a></b>
+      <span class="muted">·</span>${esc(title)}<span class="small muted">${esc(a0.lessons?.title||'')} · ${fmtDate(a0.created_at)}</span>${fresh?'<span class="badge b-warn">новое</span>':''}</div>
+      <table><tbody>${list.map(a=>`<tr><td>${esc(a.question)}</td><td>${a.answer?`<b>${esc(a.answer)}</b>`:'<span class="muted">—</span>'} <span class="via muted">${VIA_RU[a.via]||esc(a.via)}</span>
+        ${a.heard&&a.heard!==a.answer?`<div class="small muted">микрофон услышал: «${esc(a.heard)}»</div>`:''}</td></tr>`).join('')}</tbody></table></div>`};
+  app.innerHTML=`<h1>Ответы в сериях <span class="muted small">(${runs.size} ${plural(runs.size,'просмотр','просмотра','просмотров')})</span></h1>
+    ${who.length>1||uid?`<div class="row" style="margin-bottom:12px"><select onchange="location.hash='episodes'+(this.value?'/'+this.value:'')"><option value="">Все ученики</option>${who.map(id=>`<option value="${id}" ${id===uid?'selected':''}>${esc(studentName(id))}</option>`).join('')}</select></div>`:''}
+    ${runs.size?[...runs.values()].map(runHtml).join(''):'<p class="muted">Пока никто не смотрел серии или не отвечал на вопросы.</p>'}`;
+  // открыли раздел — новые просмотры считаются просмотренными
+  const unseen=data.filter(a=>!a.seen_at&&(!uid||a.user_id===uid)).map(a=>a.id);
+  if(unseen.length){let q=sb.from('episode_answers').update({seen_at:new Date().toISOString()}).is('seen_at',null);if(uid)q=q.eq('user_id',uid);await q;refreshQueueCount()}}
+
 // ---------- «Игра»: идеи детей для новых карточек и видео к историям ----------
 const IDEA_RU={new:'новая',liked:'понравилась',gifted:'подарок отправлен',rejected:'не подошла'};
-async function countNewIdeas(){const{count,error}=await sb.from('memo_ideas').select('id',{count:'exact',head:true}).eq('status','new');if(!error)setBadge('iCount',count||0)}
+async function countNewIdeas(){const{count,error}=await sb.from('memo_ideas').select('id',{count:'exact',head:true}).eq('status','new');if(!error)setBadge('iCount',count||0);return error?0:count||0}
 async function showMemo(){app.innerHTML='<p class="muted">Загрузка…</p>';
   const[{data:ideas,error},{data:vids}]=await Promise.all([sb.from('memo_ideas').select('*').order('created_at',{ascending:false}).limit(300),sb.from('memo_videos').select('slug,url')]);
   if(error){app.innerHTML='<p>Ошибка: '+esc(error.message)+' — выполните миграцию 20261008000015_memo_game.sql.</p>';return}

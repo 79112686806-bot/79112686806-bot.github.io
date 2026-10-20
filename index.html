@@ -1288,7 +1288,11 @@ function flipEpisode(on){const card=document.getElementById('epCard');if(!card)r
   card.classList.toggle('flipped',on);card.querySelector('.ep-front').inert=on;card.querySelector('.ep-back').inert=!on;
   if(epPlayer)on?epPlayer.pause():epPlayer.resume()}
 function startEpisode(ep){const box=document.getElementById('epBox');if(!box||!window.Episode)return;stopEpisode();
-  epPlayer=Episode.mount(box,{id:ep,sb,onMeet:()=>flipEpisode(true)})}
+  const lessonId=dash.current&&dash.current.id;
+  // ответы ребёнка в серии уходят преподавателю (админка → «Ответы в сериях»)
+  const onAnswer=r=>sb.from('episode_answers').insert({lesson_id:lessonId,episode:ep,run_id:r.run,node:r.node,question:r.question,answer:r.answer,heard:r.heard,via:r.via})
+    .then(({error})=>{if(error)console.warn('Ответ серии не сохранился:',error.message)});
+  epPlayer=Episode.mount(box,{id:ep,sb,onMeet:()=>flipEpisode(true),onAnswer})}
 function stopEpisode(){if(epPlayer){epPlayer.destroy();epPlayer=null}}
 // Материалы: ссылка открывается как есть, файл — по временной ссылке из закрытого хранилища.
 // Общие ссылки модуля (не личные записи занятий) — отдельным блоком «Узнать больше».
