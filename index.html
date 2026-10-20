@@ -242,6 +242,68 @@ table.research th{font-family:"Cormorant Garamond",Georgia,serif;font-size:16px;
 table.research input::placeholder{color:rgba(58,35,19,.4)}
 table.research input:focus{background:rgba(154,58,27,.07)}
 .research-wrap{border-radius:3px}
+/* серия-мультфильм в занятии (episode.js): карточка-перевёртыш — спереди серия, на обороте встреча с преподавателем */
+.ep-card{perspective:1800px;margin:20px 0}
+.ep-flip{display:grid;transition:transform .8s cubic-bezier(.3,.7,.2,1);transform-style:preserve-3d}
+.ep-face{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;min-width:0}
+.ep-back{transform:rotateY(180deg)}
+.ep-back .video{margin:0}
+.ep-card.flipped .ep-flip{transform:rotateY(180deg)}
+.ep-cover{position:relative;display:block;width:100%;aspect-ratio:16/9;border:1px solid var(--line);border-radius:3px;padding:0;overflow:hidden;cursor:pointer;background:var(--paper);box-shadow:0 10px 26px rgba(70,35,10,.18)}
+.ep-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ep-cover .video-play{position:absolute;left:50%;top:76%;transform:translate(-50%,-50%)}
+.ep-row{display:flex;justify-content:flex-end;margin-top:10px}
+.ep-turn{display:inline-flex;align-items:center;justify-content:center;flex-wrap:wrap;row-gap:2px;text-align:center;gap:8px;font:700 15px "PT Serif",Georgia,serif;color:var(--sanguine);background:rgba(255,248,230,.55);border:1.5px solid var(--sanguine);border-radius:30px;padding:7px 15px;cursor:pointer}
+.ep-turn:hover{background:var(--sanguine);color:var(--paper-light)}
+.ep-turn small{font:400 14px "PT Serif",Georgia,serif;opacity:.85;white-space:nowrap}
+.ep-dot{width:9px;height:9px;border-radius:50%;background:var(--sanguine);animation:epDot 1.6s infinite}
+.ep-turn:hover .ep-dot{background:var(--paper-light)}
+@keyframes epDot{0%{box-shadow:0 0 0 0 rgba(154,58,27,.5)}70%,100%{box-shadow:0 0 0 9px rgba(154,58,27,0)}}
+/* плеер серии */
+.ep-player{position:relative;container:ep/inline-size}
+.ep-player [hidden]{display:none!important}
+.ep-stage{position:relative;aspect-ratio:16/9;background:var(--paper);border:1px solid var(--line);border-radius:3px;overflow:hidden;container-type:inline-size;box-shadow:0 10px 26px rgba(70,35,10,.18)}
+.ep-stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none}
+.ep-stage video.on{opacity:1}
+.ep-load{position:absolute;inset:0;display:grid;place-items:center;font:400 clamp(18px,3cqw,30px) "Marck Script",cursive;color:var(--sanguine);padding:20px;text-align:center}
+.ep-slot{position:absolute;display:flex;align-items:flex-end;pointer-events:none;opacity:0;transition:opacity .5s}
+.ep-slot.on{opacity:1}
+.ep-slot-name{font:400 4.6cqw/1 "Marck Script",cursive;color:var(--sanguine);padding:0 0 .4cqw .6cqw;transform:rotate(-2deg)}
+.ep-slot-problem{font:700 2.1cqw/1.15 "PT Serif",serif;color:var(--ink);align-items:flex-start;padding:.4cqw .8cqw;transform:rotate(-2deg)}
+.ep-slot-ideas{flex-wrap:wrap;align-content:flex-start;align-items:flex-start;gap:.8cqw;padding:.4cqw}
+.ep-idea{max-width:13cqw;padding:.7cqw .9cqw;background:#fff3b8;box-shadow:0 .3cqw .6cqw rgba(40,20,5,.25);font:700 1.35cqw/1.2 "PT Serif",serif;color:var(--ink);animation:epStick .45s cubic-bezier(.2,.9,.3,1.4)}
+.ep-idea:nth-child(3n+2){background:#d9ecc4;transform:rotate(2deg)}.ep-idea:nth-child(3n){background:#f6d2c0;transform:rotate(-1.5deg)}.ep-idea:nth-child(3n+1){transform:rotate(-2.5deg)}
+@keyframes epStick{from{opacity:0;transform:scale(.4) rotate(-12deg)}}
+.ep-tools{position:absolute;right:1.2cqw;top:1.2cqw;display:flex;gap:.8cqw;z-index:6}
+.ep-tools button{width:clamp(32px,3.6cqw,46px);height:clamp(32px,3.6cqw,46px);border-radius:50%;border:1.5px solid var(--sanguine);background:rgba(250,240,215,.88);color:var(--sanguine);font-size:clamp(14px,1.6cqw,20px);cursor:pointer;display:grid;place-items:center;padding:0}
+.ep-tools button:hover{background:var(--sanguine);color:var(--paper-light)}
+.ep-end{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3cqw;background:radial-gradient(ellipse at 50% 40%,#f8ecd0,#ead5a8 60%,#cfae78)}
+.ep-eye{font:400 clamp(16px,3cqw,34px) "Marck Script",cursive;color:var(--sanguine)}
+.ep-end h3{font:700 clamp(22px,6cqw,72px)/1 "Cormorant Garamond",Georgia,serif;margin:.4cqw 0 1cqw;color:var(--ink)}
+.ep-end p{font-size:clamp(13px,1.6cqw,19px);max-width:62cqw;margin:0 0 1.6cqw;color:var(--ink-soft);line-height:1.5}
+.ep-end-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.ep-ask{position:absolute;left:50%;bottom:2.2cqw;transform:translateX(-50%);width:min(58cqw,96%);z-index:7;background:rgba(250,240,215,.97);border:2px solid var(--sanguine);border-radius:10px;padding:12px 18px;text-align:center;box-shadow:0 10px 26px rgba(40,20,5,.35);font-size:clamp(14px,1.6cqw,20px);animation:epUp .35s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes epUp{from{opacity:0;transform:translate(-50%,20px)}}
+.ep-ask h4{margin:0 0 6px;font:700 clamp(20px,2.4cqw,30px)/1.1 "Cormorant Garamond",Georgia,serif;color:var(--ink)}
+.ep-mic{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--sanguine)}
+.ep-mic i{width:12px;height:12px;border-radius:50%;background:var(--sanguine);animation:epDot 1.2s infinite}
+.ep-mic.off i{background:#aaa;animation:none}
+.ep-heard{min-height:1.5em;margin:4px 0;font-style:italic;color:var(--ink-soft)}
+.ep-opts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.ep-opts .btn{font-size:inherit}
+.ep-opts input{font-family:"PT Serif",serif;font-size:inherit;border-radius:6px;padding:8px 12px;border:1.5px solid var(--sanguine);background:#fffaf0;color:var(--ink);min-width:min(260px,100%)}
+.ep-timer{height:6px;background:rgba(74,44,20,.15);border-radius:6px;overflow:hidden;margin-top:10px}.ep-timer b{display:block;height:100%;background:linear-gradient(90deg,#c9a227,var(--sanguine));width:100%}
+/* на узком экране вопрос — под кадром, обычным шрифтом */
+@container ep (max-width:620px){
+  .ep-ask{position:static;transform:none;width:auto;margin-top:10px;font-size:15px;animation:none}
+  .ep-ask h4{font-size:21px}
+  .ep-end p{display:none}
+  .ep-end .btn{padding:7px 12px;font-size:14px}
+}
+.ep-player:fullscreen{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1d120a}
+.ep-player:fullscreen .ep-stage{width:min(100vw,calc(100vh * 16 / 9));border:0;border-radius:0}
+@media (prefers-reduced-motion:no-preference){.ep-cover:hover .video-play{animation:playPulse 1.4s ease-out infinite}}
+@media (prefers-reduced-motion:reduce){.ep-flip{transition:none}.ep-dot{animation:none}}
 /* таблицы замеров исследования (research.js) */
 .research-fields.one{grid-template-columns:1fr}
 .research-tables{margin:16px 0}
@@ -853,6 +915,7 @@ a,button,summary,.course{touch-action:manipulation}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
 <script src="/chat.js"></script>
+<script src="/episode.js"></script>
 <script src="/course-page.js"></script>
 <script src="/home-blocks.js"></script>
 <script src="/research.js"></script>
@@ -958,7 +1021,7 @@ const grid=document.getElementById('courseGrid');grid.innerHTML='';courses.forEa
 const ROUTES={home:'/',courses:'/programmy/',how:'/kak-prohodyat-zanyatiya/'};
 function showPage(p,push=true){['home','how','courses','course','doc','signup','requestSent','payment','myCourses','dashboard'].forEach(x=>{let el=document.getElementById(x==='home'?'homePage':x+'Page');if(el)el.style.display=x===p?'block':'none'});scrollTo(0,0);
   if(ROUTES[p]){if(push&&location.pathname!==ROUTES[p])history.pushState({},'',ROUTES[p]);setMeta(p)}
-  if(p==='how')requestAnimationFrame(drawRoutes)}
+  if(p==='how')requestAnimationFrame(drawRoutes);if(p!=='dashboard'&&typeof stopEpisode==='function')stopEpisode()}
 function drawRoutes(){document.querySelectorAll('#howPage .route').forEach(ol=>{
   let svg=ol.querySelector('.route-path');if(!svg){svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','route-path');svg.setAttribute('aria-hidden','true');svg.appendChild(document.createElementNS('http://www.w3.org/2000/svg','path'));ol.prepend(svg)}
   const box=ol.getBoundingClientRect();if(!box.width)return;
@@ -1206,7 +1269,27 @@ function callHtml(l){const c=dash.calls[l.id],st=callState(c);
   return `<div ${box}><div>📞 Занятие с преподавателем${when?' — '+escapeHtml(when):''}</div>${c.note?`<p style='${CALL_NOTE}'>${escapeHtml(c.note)}</p>`:''}<div><a class="btn primary" style="font-size:15px" href="${escapeHtml(safeUrl(c.url))}" target="_blank" rel="noopener">Подключиться к звонку</a></div></div>`}
 // Раз в минуту проверяем, не закончилось ли занятие по времени
 setInterval(()=>{const el=document.getElementById('callBox');if(!el||!dash.current)return;
-  const st=callState(dash.calls[dash.current.id])||'none';if(el.dataset.state!==st)el.outerHTML=callHtml(dash.current)},60000);
+  const st=callState(dash.calls[dash.current.id])||'none';if(el.dataset.state!==st){el.outerHTML=callHtml(dash.current);
+    const t=document.getElementById('epTurn');if(t)t.innerHTML=epTurnHtml(dash.current)}},60000);
+// Серия-мультфильм (episode.js) на месте видео: карточка-перевёртыш. Спереди — обложка и плеер,
+// на обороте — встреча с преподавателем (тот же блок звонка); ярлычок под карточкой переворачивает её.
+let epPlayer=null;
+function epTurnHtml(l){const c=dash.calls[l.id],st=callState(c);
+  const when=st==='planned'&&c.starts_at?new Date(c.starts_at).toLocaleString('ru-RU',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}):'';
+  return `${st==='planned'?'<i class="ep-dot"></i>':''}📞 Встреча с преподавателем${when?` <small>· ${escapeHtml(when)}</small>`:''}`}
+function episodeHtml(l,ep){const title=(window.Episode&&Episode.titles[ep])||'Мультфильм';
+  return `<div class="ep-card" id="epCard"><div class="ep-flip">
+    <div class="ep-face ep-front"><div id="epBox"><button type="button" class="ep-cover" onclick="startEpisode('${ep}')" aria-label="Смотреть: ${escapeHtml(title)}">
+      <img src="/assets/episodes/${ep}-cover.webp" alt="" width="1280" height="720"><span class="video-play">▶</span></button></div>
+      <div class="ep-row"><button type="button" class="ep-turn" id="epTurn" onclick="flipEpisode(true)">${epTurnHtml(l)}</button></div></div>
+    <div class="ep-face ep-back" inert>${callHtml(l)}<div class="ep-row"><button type="button" class="ep-turn" onclick="flipEpisode(false)">◀ Вернуться к мультфильму</button></div></div>
+  </div></div>`}
+function flipEpisode(on){const card=document.getElementById('epCard');if(!card)return;
+  card.classList.toggle('flipped',on);card.querySelector('.ep-front').inert=on;card.querySelector('.ep-back').inert=!on;
+  if(epPlayer)on?epPlayer.pause():epPlayer.resume()}
+function startEpisode(ep){const box=document.getElementById('epBox');if(!box||!window.Episode)return;stopEpisode();
+  epPlayer=Episode.mount(box,{id:ep,sb,onMeet:()=>flipEpisode(true)})}
+function stopEpisode(){if(epPlayer){epPlayer.destroy();epPlayer=null}}
 // Материалы: ссылка открывается как есть, файл — по временной ссылке из закрытого хранилища.
 // Общие ссылки модуля (не личные записи занятий) — отдельным блоком «Узнать больше».
 function materialLinks(list){const a=m=>m.kind==='link'
@@ -1249,7 +1332,7 @@ function closeDoc(){if(!docViewer)return;docViewer.remove();docViewer=null;docum
 document.addEventListener('keydown',e=>{if(!docViewer)return;if(e.key==='Escape')closeDoc();
   else if((e.ctrlKey||e.metaKey)&&(e.code==='KeyS'||e.code==='KeyP'))e.preventDefault()});
 // Вкладка «Материалы»: всё из открытых тем, по заголовкам тем
-function openMaterials(){flushSave();closeChat();dash.current=null;++openToken;
+function openMaterials(){flushSave();closeChat();stopEpisode();dash.current=null;++openToken;
   document.querySelectorAll('.side-item,.side-pin').forEach(x=>x.classList.toggle('active',x.dataset.id==='materials'));sideNow.textContent='Материалы';
   const groups=dash.lessons.filter(isUnlocked).map(l=>({l,list:dash.materials.filter(m=>m.lesson_id===l.id)})).filter(g=>g.list.length);
   lessonArea.innerHTML=`<h2>Материалы</h2><p>Материалы всех открытых модулей. Новые появляются здесь по мере прохождения курса.</p>`+
@@ -1259,7 +1342,7 @@ function statusHtml(l){const p=dash.progress[l.id],c=p&&p.teacher_comment?`<p cl
   if(p&&p.status==='approved')return `<p>✓ Модуль подтверждён преподавателем.</p>${c}`;
   if(p&&p.status==='submitted')return `<p>⏳ Модуль отправлен на проверку. Преподаватель посмотрит его и откроет следующий модуль.</p>${c}`;
   return `<p class="note">Изучите модуль${l.research_task?' и заполните исследование':''}, затем отправьте его преподавателю на проверку.</p><button class="btn primary" onclick="submitLesson()">Отправить на проверку</button><p class="note" id="submitMsg"></p>`}
-async function openLesson(id){flushSave();closeChat();const l=dash.lessons.find(x=>x.id===id);if(!l)return;dash.current=l;const token=++openToken;
+async function openLesson(id){flushSave();closeChat();stopEpisode();const l=dash.lessons.find(x=>x.id===id);if(!l)return;dash.current=l;const token=++openToken;
   document.querySelectorAll('.side-item,.side-pin').forEach(x=>x.classList.toggle('active',x.dataset.id===String(id)));sideNow.textContent=l.title;
   const item=document.querySelector(`.side-item[data-id="${id}"]`);if(item)item.closest('.side-group').classList.add('open');
   const title=escapeHtml(l.title),task=l.research_task?escapeHtml(l.research_task):'';
@@ -1268,10 +1351,13 @@ async function openLesson(id){flushSave();closeChat();const l=dash.lessons.find(
   lessonArea.innerHTML=`<h2>${title}</h2><p class="note">Загружаем модуль…</p>`;
   const plan=l.research_plan&&l.research_plan.tables?l.research_plan:null;
   const ansQ=f=>sb.from('research_answers').select('hypothesis,method,result,conclusion'+f).eq('user_id',dash.userId).eq('lesson_id',id).maybeSingle();
-  const{data:answer}=task?await (plan?ansQ(',data').then(res=>res.error?ansQ(''):res):ansQ('')):{data:null};
+  const[{data:answer},{data:content}]=await Promise.all([task?(plan?ansQ(',data').then(res=>res.error?ansQ(''):res):ansQ('')):{data:null},
+    sb.from('lesson_content').select('video_url').eq('lesson_id',id).maybeSingle()]);
   if(token!==openToken)return;
+  // серия-мультфильм занятия: lesson_content.video_url = 'episode:<серия>'
+  const ep=/^episode:([a-z0-9-]+)$/.exec((content&&content.video_url)||'');
   // порядок: видеосвязь → чат → материалы → исследование → проверка модуля
-  let html=`<h2>${title}</h2>${callHtml(l)}`+chatHtml();
+  let html=`<h2>${title}</h2>${ep?episodeHtml(l,ep[1]):callHtml(l)}`+chatHtml();
   const mats=dash.materials.filter(m=>m.lesson_id===l.id);
   // Занятие назначено, а записи (личного материала) ещё нет — показываем, что она появится
   const waitRecording=dash.calls[l.id]&&!mats.some(m=>m.user_id)?'<p class="note">🎥 Запись занятия появится здесь, когда преподаватель её загрузит.</p>':'';
