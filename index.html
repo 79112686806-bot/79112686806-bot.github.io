@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#9a3a1b">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Marck+Script&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Marck+Script&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 :root{--navy:#141e30;--navy2:#1b2a41;--amber:#e8a33d;--cream:#f4f1ea;--muted:#b9c0cb;--line:rgba(244,241,234,.14)}*{box-sizing:border-box}body{margin:0;background:var(--navy);color:var(--cream);font-family:Manrope,Arial,sans-serif}.grid{position:fixed;inset:0;pointer-events:none;opacity:.6;background-image:linear-gradient(rgba(244,241,234,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(244,241,234,.045) 1px,transparent 1px);background-size:42px 42px}.wrap{width:min(1160px,calc(100% - 40px));margin:auto;position:relative}nav{display:flex;align-items:center;padding:26px 0}.brand{display:flex;gap:12px;align-items:center;font-family:Unbounded;font-size:16px}.logo{width:34px;height:34px;border:2px solid var(--amber);border-radius:50%;display:grid;place-items:center;position:relative}.logo:before,.logo:after{content:"";position:absolute;background:var(--amber)}.logo:before{width:2px;height:24px}.logo:after{height:2px;width:24px}.logo i{width:8px;height:8px;background:var(--amber);border-radius:50%;z-index:1}.hero,.section{padding:50px 0 70px}.hero{text-align:center}.eyebrow{color:var(--amber);text-transform:uppercase;letter-spacing:.16em;font-size:12px;font-weight:800;margin-bottom:22px}.hero :is(h1,h2),.section h2{font-family:Unbounded}.hero :is(h1,h2){font-size:clamp(30px,5vw,64px);line-height:1.18;max-width:850px;margin:0 auto 24px}.hero p,.section-intro{max-width:680px;margin:0 auto 32px;color:var(--muted);font-size:18px;line-height:1.65}.hero-actions{display:flex;justify-content:center;gap:14px;flex-wrap:wrap}.btn{border:1px solid var(--amber);color:var(--amber);background:transparent;border-radius:30px;padding:12px 20px;text-decoration:none;font-weight:700;cursor:pointer;transition:.2s}.btn:hover{background:var(--amber);color:var(--navy);transform:translateY(-2px)}.primary{background:var(--amber);color:var(--navy)}.schematic{max-width:820px;margin:45px auto 0;display:flex;justify-content:space-between;align-items:center;gap:16px}.node{width:100px;height:100px;border:1px solid rgba(232,163,61,.55);border-radius:50%;display:grid;place-items:center;font-size:42px;animation:float 4s ease-in-out infinite}.node:nth-child(2){animation-delay:.5s}.node:nth-child(3){animation-delay:1s}.node:nth-child(4){animation-delay:1.5s}.connector{height:1px;background:rgba(232,163,61,.5);flex:1}.features,.courses,.options{display:grid;gap:16px}.features{grid-template-columns:repeat(3,1fr)}.courses{grid-template-columns:repeat(5,1fr);gap:14px}.feature,.course,.option,.dashboard-card{background:rgba(244,241,234,.045);border:1px solid var(--line);border-radius:18px;padding:24px}.feature strong{display:block;margin-bottom:8px}.feature p,.option p,.dashboard-card p{color:var(--muted);line-height:1.55;margin:0;font-size:14px}.course{position:relative;text-align:left;min-height:190px;color:var(--cream);cursor:pointer;transition:.25s;overflow:hidden}.course:hover{transform:translateY(-5px);border-color:var(--amber);background:rgba(232,163,61,.1)}.course .icon{font-size:36px;display:block;margin-bottom:22px}.course .num{position:absolute;right:15px;top:15px;color:var(--amber);font-size:12px}.course h3{font-size:15px;line-height:1.35;margin:0}.course small{display:block;color:var(--muted);margin-top:8px}.bottom{margin-top:34px}.options{grid-template-columns:1fr 1fr}.option{cursor:pointer;text-align:left;background:rgba(244,241,234,.045);color:var(--cream)}.option:hover,.option.selected{border-color:var(--amber)}.option h3{margin:0 0 8px}.option b{display:block;font-size:25px;margin-top:18px;color:var(--amber)}.form{max-width:700px;margin-top:24px}.form input,.form textarea{width:100%;padding:13px;border:1px solid #d6d9df;border-radius:10px;margin:6px 0 12px;font:inherit}.form label{font-size:13px;font-weight:700}.note{font-size:12px;color:#77808e}.payment{max-width:650px;background:var(--cream);color:var(--navy);padding:32px;border-radius:24px}.payment h3{font-family:Unbounded}.payment p{color:#536071;line-height:1.6}.payment input{width:100%;padding:13px;margin:6px 0 12px;border:1px solid #d6d9df;border-radius:10px}.dashboard{display:grid;grid-template-columns:260px 1fr;gap:22px;padding:30px 0 70px}.sidebar,.lesson,.materials{background:rgba(244,241,234,.045);border:1px solid var(--line);border-radius:20px;padding:24px}
 .research-card{margin:22px 0;padding:22px;border:1px solid rgba(232,163,61,.4);border-radius:16px;background:rgba(232,163,61,.06)}
@@ -302,6 +302,17 @@ table.research input:focus{background:rgba(154,58,27,.07)}
 }
 .ep-player:fullscreen{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1d120a}
 .ep-player:fullscreen .ep-stage{width:min(100vw,calc(100vh * 16 / 9));border:0;border-radius:0}
+.ep-player:-webkit-full-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1d120a}
+.ep-player:-webkit-full-screen .ep-stage{width:min(100vw,calc(100vh * 16 / 9));border:0;border-radius:0}
+/* iPhone не умеет «во весь экран» для блока страницы — плеер растягивается на всё окно */
+.ep-player.ep-max{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1d120a;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);overflow:auto}
+.ep-player.ep-max .ep-stage{width:min(100vw,calc(100vh * 16 / 9));width:min(100vw,calc(100dvh * 16 / 9));border:0;border-radius:0}
+html.ep-lock,html.ep-lock body{overflow:hidden}
+.ep-tap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;padding:14px 26px;border:0;border-radius:40px;background:var(--sanguine);color:#fff;font:700 18px/1 "PT Serif",Georgia,serif;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+.net-toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:2000;width:min(440px,calc(100% - 32px));padding:12px 16px;border-radius:6px;background:#3a2313;color:#f7ecd6;font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.3);display:flex;gap:12px;align-items:center}
+.net-toast[hidden]{display:none}.net-toast button{margin-left:auto;flex:none;border:1px solid #f7ecd6;background:none;color:inherit;border-radius:20px;padding:6px 12px;font:inherit;cursor:pointer}
+/* iOS увеличивает страницу при фокусе на поле со шрифтом меньше 16px — после этого часть кнопок уезжает за край */
+@supports (-webkit-touch-callout:none){input,select,textarea{font-size:max(16px,1em)!important}}
 @media (prefers-reduced-motion:no-preference){.ep-cover:hover .video-play{animation:playPulse 1.4s ease-out infinite}}
 @media (prefers-reduced-motion:reduce){.ep-flip{transition:none}.ep-dot{animation:none}}
 /* таблицы замеров исследования (research.js) */
@@ -912,8 +923,9 @@ a,button,summary,.course{touch-action:manipulation}
 <section class="section page" id="dashboardPage" style="display:none"><button class="btn" onclick="enterCabinet()" style="margin-bottom:18px">← Мои курсы</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button><h2>Личный кабинет</h2><p class="section-intro" id="dashIntro"></p><div id="dashCheer"></div><div class="dashboard"><aside class="sidebar" id="dashSide"><h3 id="dashCourse"></h3><p class="side-prog-label">Прогресс</p><div class="progress"><span id="dashProgressBar" style="width:0"></span></div><p class="note" id="dashProgressText">0% пройдено</p><button class="side-toggle" id="sideToggle" type="button" onclick="toggleProgram()" aria-expanded="false" aria-controls="sideBody"><span class="st-ico" aria-hidden="true">📚</span><span class="st-text"><b>Программа курса</b><small id="sideNow"></small></span><span class="st-pct" id="sidePct">0%</span><i class="chev" aria-hidden="true">▾</i></button><div class="side-body" id="sideBody"><hr style="border-color:var(--line)"><div id="sideAccordion"></div></div><div class="side-pins"><span class="side-pin" data-id="materials" onclick="openMaterials();phoneJump()">📁 Материалы</span><span class="side-pin" data-id="chat" onclick="openChat()">💬 Чат с нами</span></div></aside><div><div class="lesson" id="lessonArea"></div><div class="timeline" id="dashTimeline"><div class="step"><div class="dot">1</div><small>Введение</small></div><div class="step"><div class="dot">2</div><small>Исследование</small></div><div class="step"><div class="dot">3</div><small>Модель</small></div><div class="step"><div class="dot">4</div><small>Проект</small></div></div></div></div></section>
 <footer>Инженерный клуб — занятия и проекты для школьников. Учимся сейчас, готовимся к будущему.<nav class="footer-links" aria-label="Разделы сайта"><a href="/programmy/" onclick="return go(event,'courses')">Программы</a><a href="/kak-prohodyat-zanyatiya/" onclick="return go(event,'how')">Как проходят занятия</a><a href="/kursy/wheel/" onclick="return go(event,'course','wheel')">Курс «Колесо»</a><a href="/igra/">Игра «Мемо»</a><a href="/kontakty/">Контакты</a></nav><nav class="footer-docs" aria-label="Документы"><a href="/dokumenty/oferta/">Публичная оферта</a><a href="/dokumenty/polzovatelskoe-soglashenie/">Пользовательское соглашение</a><a href="/dokumenty/politika-konfidencialnosti/">Политика обработки персональных данных</a><a href="/dokumenty/oplata-i-vozvrat/">Оплата и возврат</a><a href="/kontakty/">Контакты и реквизиты</a></nav><p class="footer-legal">Самозанятый {{legalShort}} · ИНН {{inn}}</p></footer></div>
 <div class="modal" id="modal"><div class="modal-card"><button class="close" onclick="closeModal()">×</button><div id="modalContent"></div></div></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script src="/vendor/supabase.js"></script>
 <script src="/config.js"></script>
+<script src="/sb-client.js"></script>
 <script src="/chat.js"></script>
 <script src="/episode.js"></script>
 <script src="/course-page.js"></script>
@@ -923,7 +935,7 @@ a,button,summary,.course{touch-action:manipulation}
 <script>
 // Параметры ссылки из письма (invite / recovery / ошибка) — запоминаем до того, как клиент разберёт адрес
 const AUTH_LINK=Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
-const sb=supabase.createClient(window.APP_CONFIG.supabaseUrl,window.APP_CONFIG.supabaseKey);
+const sb=makeSupabase();
 </script>
 <script>
 const courses=[['⚙','Колесо','Первый технологический прорыв в истории человечества','Путь от изобретения колеса до современных автомобилей.'],['☎','Телефон','Как передается голос','Изучаем принцип передачи голоса. Изучаем устройство телефона и придумываем новые функции.'],['⛵','Лодки и корабли','Как держатся на воде','Изучаем плавучесть, форму корпуса и проектирование.'],['🔭','Оптические приборы','Как мы видим далекое','Изучаем свет, оптические свойства, линзы, оптические приборы.'],['🚗','Двигатель и автомобиль','Как машина едет','Энергия. Мотор. Движение. Автомобиль будущего.'],['✈','Самолёт','Как летает железная птица','Подъемная сила. Форма крыла. Летающие аппараты.'],['⌘','Интернет','Как связаны компьютеры','Сети, передача данных и идеи цифровых устройств.'],['🤖','Роботы','Машины, которые помогают','Датчики, механизмы и робот-помощник или друг.'],['🧬','Биоинженерия','Техника и живые организмы','Как инженерные идеи применяются к живым организмам.'],['🧠','Мозг человека','Самое сложное устройство','Узнаем информацию о мозге и пытаемся придумать необычные технологии.']];let selectedCourse=0;
@@ -932,9 +944,17 @@ const COURSE_SLUGS=['wheel','phone','boats','optics','car','airplane','internet'
 // Статусы курсов из базы: купить можно только курс со статусом available
 let courseStatus={},courseSlug={},courseId={},coursePrice={};
 // статусы и цены курсов; если поля цен в базе ещё не созданы — грузим без них
-(async()=>{let{data,error}=await sb.from('courses').select('id,sort,status,slug,price,price_trial,price_trial_base,price_block,price_lesson');
-  if(error)({data}=await sb.from('courses').select('id,sort,status,slug,price'));
-  (data||[]).forEach(c=>{courseStatus[c.sort-1]=c.status;courseSlug[c.sort-1]=c.slug;courseId[c.sort-1]=c.id;if(c.price_trial)coursePrice[c.sort-1]=c})})();
+let coursesLoaded=false;
+async function loadCourseStatus(){
+  for(let attempt=0;attempt<4;attempt++){
+    let{data,error}=await sb.from('courses').select('id,sort,status,slug,price,price_trial,price_trial_base,price_block,price_lesson');
+    if(error&&error.code)({data,error}=await sb.from('courses').select('id,sort,status,slug,price'));
+    if(!error&&data){data.forEach(c=>{courseStatus[c.sort-1]=c.status;courseSlug[c.sort-1]=c.slug;courseId[c.sort-1]=c.id;if(c.price_trial)coursePrice[c.sort-1]=c});coursesLoaded=true;return true}
+    await new Promise(r=>setTimeout(r,1500*(attempt+1)))}
+  return false}
+let coursesReady=loadCourseStatus();
+// перед действиями, которым нужны статусы и адреса курсов; если не загрузились — пробуем ещё раз
+async function ensureCourses(){if(coursesLoaded)return true;if(!await coursesReady)coursesReady=loadCourseStatus();return coursesReady}
 const RUB=n=>Number(n||0).toLocaleString('ru-RU')+' ₽';
 function isAvailable(i){return courseStatus[i]==='available'}
 
@@ -1055,8 +1075,11 @@ function routePath(path){const db=document.getElementById('docBody');if(db&&db.d
   if(/^\/programmy\/?$/.test(path))return showPage('courses',false);
   if(/^\/kak-prohodyat-zanyatiya\/?$/.test(path))return showPage('how',false);
   return showPage('home',false)}
-window.addEventListener('popstate',()=>routePath(location.pathname));function show(html){modalContent.innerHTML=html;modal.classList.add('open')}function closeModal(){modal.classList.remove('open')}function openCourse(i){selectedCourse=i;let c=courses[i];show(`<div class="eyebrow">Программа ${i+1}</div><h2>${c[1]}</h2><p><b>${c[2]}.</b> ${c[3]}</p><p>Часть тем школьник проходит самостоятельно — с видеоуроками, материалами и заданиями, а на ключевых этапах обсуждает идеи с преподавателем и разрабатывает собственный проект. Мы на связи в чате на протяжении всего курса.</p><div class="modal-actions"><a class="btn" href="/kursy/${COURSE_SLUGS[i]}/" onclick="return go(event,'course','${COURSE_SLUGS[i]}')">Подробнее о программе курса →</a>${isAvailable(i)?`<button class="btn primary" onclick="closeModal();goSignup()">Выбрать этот курс</button>`:''}</div>${isAvailable(i)?'':`<p class="note">Курс в разработке — запись откроется позже.</p>`}`)}
-async function goSignup(){if(!isAvailable(selectedCourse))return;signupCourseName.textContent=courses[selectedCourse][1];
+window.addEventListener('popstate',()=>routePath(location.pathname));function show(html){modalContent.innerHTML=html;modal.classList.add('open')}function closeModal(){modal.classList.remove('open')}async function openCourse(i){selectedCourse=i;let c=courses[i];
+  if(!coursesLoaded){show('<p class="note">Загружаем курс…</p>');if(!await ensureCourses()){show('<h2>Нет связи с сервером</h2><p>Не получилось загрузить данные курса. Проверьте интернет (попробуйте Wi‑Fi вместо мобильной сети) и нажмите ещё раз.</p><button class="btn primary" onclick="openCourse('+i+')">Попробовать ещё раз</button>');return}
+    if(selectedCourse!==i)return}
+  show(`<div class="eyebrow">Программа ${i+1}</div><h2>${c[1]}</h2><p><b>${c[2]}.</b> ${c[3]}</p><p>Часть тем школьник проходит самостоятельно — с видеоуроками, материалами и заданиями, а на ключевых этапах обсуждает идеи с преподавателем и разрабатывает собственный проект. Мы на связи в чате на протяжении всего курса.</p><div class="modal-actions"><a class="btn" href="/kursy/${COURSE_SLUGS[i]}/" onclick="return go(event,'course','${COURSE_SLUGS[i]}')">Подробнее о программе курса →</a>${isAvailable(i)?`<button class="btn primary" onclick="closeModal();goSignup()">Выбрать этот курс</button>`:''}</div>${isAvailable(i)?'':`<p class="note">Курс в разработке — запись откроется позже.</p>`}`)}
+async function goSignup(){await ensureCourses();if(!isAvailable(selectedCourse))return;signupCourseName.textContent=courses[selectedCourse][1];
   const pr=coursePrice[selectedCourse];if(pr){signupPrice.textContent='Пробное занятие — '+RUB(pr.price_trial);signupFull.textContent='Весь курс + набор для исследований — '+RUB(pr.price)};
   const st=await courseState(courseSlug[selectedCourse]);
   if(st==='full'){chosenForm.innerHTML='<div class="form"><p><b>Этот курс уже открыт в вашем личном кабинете.</b></p></div>';showPage('signup');return}
@@ -1089,7 +1112,7 @@ async function goPayment(){if(window.signupParent)buyer={parent_name:signupParen
 // Сумма здесь — только для показа; к оплате её считает сервер (функция quote_order).
 let payCourse=null;
 const plural=(n,a,b,c)=>{const x=n%10,y=n%100;return x===1&&y!==11?a:x>=2&&x<=4&&(y<10||y>=20)?b:c};
-async function loadPayCourse(){const slug=courseSlug[selectedCourse];const{data:{session}}=await sb.auth.getSession();
+async function loadPayCourse(){await ensureCourses();const slug=courseSlug[selectedCourse];const{data:{session}}=await sb.auth.getSession();
   const{data:c}=await sb.from('courses').select('id,title,price,price_trial,price_trial_base,price_block,price_lesson,modules(id,sort,title,lessons(id,sort,title))').eq('slug',slug).single();
   const mods=((c&&c.modules)||[]).sort((a,b)=>a.sort-b.sort);mods.forEach(m=>m.lessons.sort((a,b)=>a.sort-b.sort));
   let owned=new Set(),paid=0,scope=null;
@@ -1183,7 +1206,7 @@ let dash={modules:[],lessons:[],progress:{},materials:[],calls:{},unread:{},scop
 let badgeChannel=null;
 let openToken=0;
 async function openCourseDashboard(i){const session=await requireLogin();if(!session)return;
-  selectedCourse=i;const slug=courseSlug[i];const uid=session.user.id;
+  await ensureCourses();selectedCourse=i;const slug=courseSlug[i];const uid=session.user.id;
   dash={modules:[],lessons:[],progress:{},materials:[],calls:{},unread:{},scope:'full',access:new Set(),userId:uid,slug,current:null};
   dashCourse.textContent=courses[i][1];dashIntro.textContent=(DASH_MQ.matches?'В «Программе курса» — блоки и модули, материалы и исследования.':'Слева — программа по блокам и модулям, материалы и исследования.')+' Материалы открываются вместе с модулем.';dashCheer.innerHTML='';toggleProgram(false);
   sideAccordion.innerHTML='<p class="note">Загружаем программу…</p>';lessonArea.innerHTML='';showPage('dashboard');
@@ -1418,10 +1441,10 @@ function authError(e){const m=(e&&e.message)||'';if(AUTH_ERRORS[m])return AUTH_E
 let afterLogin=null;
 function authMsg(text){const el=document.getElementById('authMsg');if(el)el.textContent=text}
 function authBusy(form,busy){form.querySelectorAll('button').forEach(b=>b.disabled=busy)}
-async function requireLogin(){const{data:{session}}=await sb.auth.getSession();if(session)return session;showLogin();return false}
+async function requireLogin(){let session=null;try{({data:{session}}=await sb.auth.getSession())}catch(e){console.error(e)}if(session)return session;showLogin();return false}
 function showLogin(){show(`<h2>Вход в личный кабинет</h2><form class="form" onsubmit="doLogin(event)"><label>Email</label><input id="authEmail" type="email" autocomplete="email" required><label>Пароль</label><input id="authPassword" type="password" autocomplete="current-password" required><p class="note" id="authMsg"></p><div style="display:flex;gap:12px;flex-wrap:wrap"><button class="btn primary" type="submit">Войти</button><button class="btn" type="button" onclick="showForgot()">Забыли пароль?</button></div></form>`);authEmail.focus()}
 async function doLogin(e){e.preventDefault();const f=e.target;authBusy(f,true);authMsg('');
-  const{error}=await sb.auth.signInWithPassword({email:authEmail.value.trim(),password:authPassword.value});
+  let error;try{({error}=await sb.auth.signInWithPassword({email:authEmail.value.trim(),password:authPassword.value}))}catch(e){error=e}
   authBusy(f,false);if(error)return authMsg(authError(error));closeModal();const next=afterLogin||enterCabinet;afterLogin=null;next()}
 function showForgot(){show(`<h2>Восстановление пароля</h2><p>Укажите email, на который оформлен доступ, — пришлём ссылку для установки нового пароля.</p><form class="form" onsubmit="doForgot(event)"><label>Email</label><input id="authEmail" type="email" autocomplete="email" required><p class="note" id="authMsg"></p><div style="display:flex;gap:12px;flex-wrap:wrap"><button class="btn primary" type="submit">Отправить ссылку</button><button class="btn" type="button" onclick="showLogin()">Назад ко входу</button></div></form>`);authEmail.focus()}
 async function doForgot(e){e.preventDefault();const f=e.target;authBusy(f,true);authMsg('');
@@ -1496,7 +1519,10 @@ function updateRouteDraw(){document.querySelectorAll('#howPage .route').forEach(
 // дорога программы курса закрашивается чернилами по мере прокрутки
 function updateRoadDraw(){if(!revealIO)return;document.querySelectorAll('.course-road').forEach(ol=>{const r=ol.getBoundingClientRect();if(!r.height)return;
   ol.style.setProperty('--p',Math.max(0,Math.min(1,(innerHeight*.7-r.top)/r.height)).toFixed(3))})}
+function revealVisible(){if(!revealIO)return;document.querySelectorAll('.reveal:not(.in)').forEach(el=>{const r=el.getBoundingClientRect();if(r.height&&r.top<innerHeight&&r.bottom>0){el.classList.add('in');revealIO.unobserve(el)}})}
 let routeRaf=0;window.addEventListener('scroll',()=>{if(routeRaf)return;routeRaf=requestAnimationFrame(()=>{routeRaf=0;updateRouteDraw();updateRoadDraw()})},{passive:true});
+let revealT=0;window.addEventListener('scroll',()=>{clearTimeout(revealT);revealT=setTimeout(revealVisible,400)},{passive:true});
+setInterval(revealVisible,2000);
 // ребята в «Чем занятия полезны»: наведение мышью на блок — улыбаются и смотрят в его сторону.
 // На телефоне ребята внизу экрана сами «нажимают» блок, который проходит середину экрана, и улыбаются;
 // касание пальцем тоже работает. Без обработчиков прокрутки — только IntersectionObserver.

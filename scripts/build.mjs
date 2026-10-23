@@ -7,7 +7,8 @@
 // Локально переменные берутся из .env, на Vercel — из настроек проекта.
 // В config.js попадают ТОЛЬКО публичные ключи — service role сюда не добавлять.
 
-import { readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync, cpSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync, cpSync, existsSync, readdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
@@ -16,7 +17,7 @@ require('../home-blocks.js');
 require('../memo.js');
 const { coursePageHtml, coursePageStats, HomeBlocks, Memo } = globalThis;
 
-const FILES = ['admin.html', 'chat.js', 'course-page.js', 'episode.js', 'home-blocks.js', 'memo.js', 'research.js', 'favicon.svg'];
+const FILES = ['admin.html', 'sb-client.js', 'chat.js', 'course-page.js', 'episode.js', 'home-blocks.js', 'memo.js', 'research.js', 'favicon.svg'];
 
 // Данные самозанятого (site-info.json) — для документов и подвала. Пустое поле → заметная пометка.
 const INFO = JSON.parse(readFileSync('site-info.json', 'utf8'));
@@ -180,6 +181,7 @@ async function main() {
   mkdirSync(OUT);
   for (const f of FILES) copyFileSync(f, `${OUT}/${f}`);
   if (existsSync('assets')) cpSync('assets', `${OUT}/assets`, { recursive: true });
+  cpSync('vendor', `${OUT}/vendor`, { recursive: true });   // supabase-js со своего сайта, без внешнего CDN
   writeFileSync(`${OUT}/config.js`, `window.APP_CONFIG=${JSON.stringify({ supabaseUrl: url, supabaseKey: key })};\n`);
 
   const [courses, videos, reviews, memoVideoList] = await Promise.all([
@@ -278,6 +280,8 @@ async function main() {
       ...courses.filter((c) => coursePageStats(c).lessons).map((c) => [`/kursy/${c.slug}/`, c.status === 'available' ? '0.8' : '0.5', 'weekly'])];
     writeFileSync(`${OUT}/sitemap.xml`, `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([p, pr, cf]) => `  <url><loc>${SITE_URL}${p}</loc><lastmod>${today}</lastmod><changefreq>${cf}</changefreq><priority>${pr}</priority></url>`).join('\n')}\n</urlset>\n`);
   }
+
+  stampVersions();
 
   if (NOINDEX) console.log('Режим NOINDEX: сайт закрыт от поисковиков (тестовая копия).');
   console.log(`Готово: ${OUT}/ — главная, программы, «как проходят занятия», курсов: ${courses.length}` +
@@ -385,6 +389,25 @@ ${c.slug === 'tvoya-ideya' ? '<p class="story-cta"><a class="btn primary" href="
 
   console.log(`Игра «Мемо»: /igra/, историй — ${cards.length}, форма идеи /igra/ideya/`);
   return [['/igra/', '0.7', 'monthly'], ...cards.map((c) => [`/igra/${c.slug}/`, '0.5', 'monthly'])];
+}
+
+// Метка версии у своих скриптов и стилей (/chat.js?v=1a2b3c4d): после публикации телефон не возьмёт из кэша
+// старый скрипт к новой странице (GitHub Pages разрешает кэшировать файлы 10 минут, Safari — иногда дольше).
+function stampVersions() {
+  const hashes = {};
+  const ver = (file) => (hashes[file] ??= existsSync(file) ? createHash('sha1').update(readFileSync(file)).digest('hex').slice(0, 8) : null);
+  const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? walk(`${dir}/${d.name}`) : d.name.endsWith('.html') ? [`${dir}/${d.name}`] : []));
+  let n = 0;
+  for (const page of walk(OUT)) {
+    const html = readFileSync(page, 'utf8');
+    const out = html.replace(/(<(?:script|link)\b[^>]*?\s(?:src|href)=")(\/?[\w./-]+\.(?:js|css))(")/g, (m, a, url, b) => {
+      const file = url.startsWith('/') ? OUT + url : page.slice(0, page.lastIndexOf('/') + 1) + url;
+      const v = ver(file); if (!v) return m; n++;
+      return a + url + '?v=' + v + b;
+    });
+    if (out !== html) writeFileSync(page, out);
+  }
+  console.log(`Метки версий у скриптов: ${n}`);
 }
 
 main().catch((e) => { console.error(e); process.exitCode = 1; });

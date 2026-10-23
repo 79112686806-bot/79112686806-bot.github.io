@@ -84,7 +84,26 @@
       const v = vid(n); onScreen = v;
       Object.values(vids).forEach((x) => { if (x !== v) { x.classList.remove('on'); if (!x.paused) x.pause(); } });
       v.currentTime = 0; v.classList.add('on');
-      if (!paused) v.play().catch(() => {});
+      if (!paused) playOrTap(v);
+    }
+    // iOS иногда не даёт запустить следующий ролик со звуком без нажатия — тогда показываем кнопку
+    function playOrTap(v) {
+      v.play().catch((e) => {
+        if (e.name !== 'NotAllowedError' || dead) return;
+        let b = $('.ep-tap');
+        if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'ep-tap'; b.textContent = '▶ Продолжить'; stage.append(b); }
+        b.onclick = () => { b.remove(); if (onScreen) onScreen.play().catch(() => {}); };
+      });
+    }
+    // во весь экран: где можно — настоящий полноэкранный режим, на iPhone — растягиваем плеер на всё окно
+    const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+    function setMax(on) { wrap.classList.toggle('ep-max', on); document.documentElement.classList.toggle('ep-lock', on); }
+    function exitFs() { setMax(false); if (fsEl()) (document.exitFullscreen || document.webkitExitFullscreen).call(document)?.catch?.(() => {}); }
+    function toggleFs() {
+      if (fsEl() || wrap.classList.contains('ep-max')) return exitFs();
+      const req = wrap.requestFullscreen || wrap.webkitRequestFullscreen;
+      if (!req) return setMax(true);
+      const p = req.call(wrap); if (p && p.catch) p.catch(() => setMax(true));
     }
     function overlays(list) { for (const k in slot) slot[k].classList.toggle('on', list.includes(k)); }
     function play(n) {
@@ -185,14 +204,14 @@
     }
     function resume() {
       if (!paused) return; paused = false; pausedTotal += Date.now() - pausedAt;
-      if (onScreen && $('.ep-end').hidden) onScreen.play().catch(() => {});
+      if (onScreen && $('.ep-end').hidden) playOrTap(onScreen);
       resumeQ.splice(0).forEach((f) => f());
     }
     wrap.addEventListener('click', (e) => {
       const a = e.target.closest('[data-a]')?.dataset.a;
-      if (a === 'fs') document.fullscreenElement ? document.exitFullscreen() : wrap.requestFullscreen?.().catch(() => {});
+      if (a === 'fs') toggleFs();
       else if (a === 'again') restart();
-      else if (a === 'meet') { pause(); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); onMeet(); }
+      else if (a === 'meet') { pause(); exitFs(); onMeet(); }
     });
 
     // ---------- Старт: временные ссылки на все ролики серии, затем первый узел ----------
@@ -208,7 +227,7 @@
 
     return {
       pause, resume,
-      destroy() { dead = true; pause(); Object.values(vids).forEach((v) => { v.removeAttribute('src'); v.load(); }); root.replaceChildren(); },
+      destroy() { dead = true; pause(); exitFs(); Object.values(vids).forEach((v) => { v.removeAttribute('src'); v.load(); }); root.replaceChildren(); },
     };
   }
 
