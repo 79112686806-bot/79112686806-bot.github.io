@@ -671,7 +671,7 @@ async function supReply(e,uid){e.preventDefault();const t=supText.value.trim();i
 const NOTIFY_URL=APP_CONFIG.supabaseUrl+'/functions/v1/clever-action';   // функция notify задеплоена под этим именем
 const pushOk=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 async function pushSub(){if(!pushOk())return null;const reg=await navigator.serviceWorker.getRegistration('/');return reg?reg.pushManager.getSubscription():null}
-async function showNotify(){
+async function showNotify(askFailed){
   const ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
   const[sub,{count}]=await Promise.all([pushSub().catch(()=>null),sb.from('push_subscriptions').select('endpoint',{count:'exact',head:true})]);
@@ -681,7 +681,7 @@ async function showNotify(){
   else if(Notification.permission==='denied')state=`<p class="warn">Уведомления для этого сайта запрещены в настройках браузера. Разрешите их (значок замка у адреса сайта → Уведомления) и обновите страницу.</p>`;
   else if(sub)state=`<p><span class="badge b-ok">✓ включены на этом устройстве</span></p><div class="row"><button class="primary" onclick="pushTest()">Проверить</button><button onclick="pushOff()">Выключить на этом устройстве</button></div>`;
   else state=`<p>На этом устройстве уведомления выключены.</p><button class="primary" id="pushOnBtn" onclick="pushOn()">🔔 Включить на этом устройстве</button>
-    <p class="small muted" id="pushHint" hidden style="margin-top:10px">Не появилось окно «Разрешить уведомления»? Браузер мог скрыть вопрос: нажмите значок 🔔 или замок слева от адреса сайта → «Уведомления» → «Разрешить», затем ещё раз «Включить». На Android также проверьте: Настройки телефона → Приложения → Chrome → Уведомления — включены.</p>`;
+    <div id="pushHint" ${askFailed?'':'hidden'} class="small" style="margin-top:12px;line-height:1.6"><b>Браузер не показал вопрос о разрешении</b> — так бывает, если раньше его закрывали. Разрешите вручную:<ol style="margin:6px 0 0;padding-left:20px"><li>Нажмите значок слева от адреса сайта (замок или ползунки) → <b>Разрешения</b> → <b>Уведомления</b> → включите.<br><span class="muted">Или: Chrome ⋮ → Настройки → Настройки сайтов → Уведомления → найдите engineeringclub.ru → Разрешить.</span></li><li>Проверьте, что самому Chrome можно присылать уведомления: Настройки телефона → Приложения → Chrome → Уведомления.</li><li>Обновите страницу и нажмите «Включить» ещё раз.</li></ol></div>`;
   app.innerHTML=`<h1>Уведомления на телефон</h1><div class="card">${state}</div>
     <div class="card"><b>Что приходит</b><ul class="small" style="margin:8px 0 0;padding-left:20px;line-height:1.7"><li>💬 сообщения учеников в чатах тем</li><li>❓ вопросы с сайта</li><li>✅ темы на проверке</li><li>📝 заявки</li><li>💳 оплаты</li><li>⭐ отзывы на проверке</li><li>🎬 ученик начал смотреть мультфильм</li><li>💡 идеи для карточек «Мемо»</li></ul>
     <p class="small muted" style="margin:10px 0 0">Нажмите на уведомление — откроется нужный раздел. Включите на каждом телефоне и компьютере, где хотите получать. Сейчас подключено устройств: <b>${count||0}</b>.</p></div>`}
@@ -692,7 +692,7 @@ async function pushOn(){
   const hint=setTimeout(()=>{const h=document.getElementById('pushHint');if(h)h.hidden=false},3500);
   try{
     const perm=Notification.permission==='granted'?'granted':await Notification.requestPermission();clearTimeout(hint);
-    if(perm!=='granted')return showNotify();
+    if(perm!=='granted')return showNotify(perm==='default');
     if(btn)btn.textContent='Подключаем…';
     const reg=await navigator.serviceWorker.register('/sw.js',{scope:'/'});await navigator.serviceWorker.ready;
     const{publicKey}=await (await fetch(NOTIFY_URL)).json();
