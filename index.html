@@ -265,12 +265,13 @@ table.research input:focus{background:rgba(154,58,27,.07)}
 .ep-stage{position:relative;aspect-ratio:16/9;background:var(--paper);border:1px solid var(--line);border-radius:3px;overflow:hidden;container-type:inline-size;box-shadow:0 10px 26px rgba(70,35,10,.18)}
 .ep-stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none}
 .ep-stage video.on{opacity:1}
-.ep-start{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3cqw 6cqw;background:radial-gradient(ellipse at 50% 40%,rgba(248,236,208,.97),rgba(234,213,168,.97) 60%,rgba(207,174,120,.97))}
-.ep-start h3{font:700 clamp(22px,5.4cqw,64px)/1 "Cormorant Garamond",Georgia,serif;margin:.4cqw 0 1.6cqw;color:var(--ink)}
-.ep-start-mic{display:flex;align-items:center;gap:1.4cqw;max-width:64cqw;margin:0 0 2cqw;font-size:clamp(13px,1.7cqw,20px);line-height:1.45;color:var(--ink-soft);text-align:left}
+.ep-start{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;text-align:center;padding:3cqw 6cqw 3.6cqw;background:#3a2313 center/cover no-repeat}
+.ep-start .ep-eye,.ep-start h3{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ep-start-mic{display:flex;align-items:center;gap:1.4cqw;max-width:70cqw;margin:0 0 1.8cqw;padding:.6cqw 1.8cqw .6cqw .6cqw;border-radius:60px;background:rgba(30,12,2,.5);font-size:clamp(13px,1.7cqw,20px);line-height:1.45;color:#fff4e0;text-align:left;text-shadow:0 1px 3px rgba(0,0,0,.5)}
 .ep-start-mic svg{flex:none;width:clamp(30px,4.4cqw,54px);height:clamp(30px,4.4cqw,54px);padding:clamp(6px,.9cqw,11px);border-radius:50%;background:var(--sanguine);fill:#fff;color:#fff;animation:epDot 1.6s infinite}
-.ep-start .btn{font-size:clamp(15px,1.9cqw,22px);padding:.8em 1.8em}
-.ep-start-short{display:none;margin:0 0 10px;font-size:14px;font-weight:700;color:var(--sanguine)}
+.ep-start .btn{font-size:clamp(15px,2cqw,24px);padding:.8em 2em;box-shadow:0 8px 22px rgba(0,0,0,.35)}
+.ep-start .btn:not(.primary){background:rgba(255,248,232,.92)}
+.ep-start-short{display:none;margin:0 0 8px;font-size:14px;font-weight:700;color:#fff4e0;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .ep-big{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;width:clamp(56px,10cqw,96px);height:clamp(56px,10cqw,96px);border-radius:50%;border:0;background:rgba(30,16,6,.62);color:#fff;cursor:pointer;padding:0;display:none;place-items:center}
 .ep-big svg{width:46%;height:46%;fill:currentColor}
 .ep-player.started.paused .ep-big,.ep-player.started.touch.ui .ep-big{display:grid}
@@ -351,7 +352,7 @@ table.research input:focus{background:rgba(154,58,27,.07)}
 @container ep (max-width:620px){
   .ep-ask{position:static;transform:none;width:auto;margin-top:10px;font-size:15px;animation:none}
   .ep-q{font-size:21px}
-  .ep-start .ep-start-mic{display:none}.ep-start .ep-start-short{display:block}.ep-start h3{margin-bottom:6px}.ep-start .btn{padding:.6em 1.4em}
+  .ep-start .ep-start-mic{display:none}.ep-start .ep-start-short{display:block}.ep-start{padding-bottom:12px}.ep-start .btn{padding:.55em 1.3em}
   .ep-end p{display:none}
   .ep-end .btn{padding:7px 12px;font-size:14px}
   .ep-ctrl{padding:16px 6px 0}.ep-btns{height:40px;gap:0}.ep-btns button{width:36px;height:36px}.ep-btns svg{width:22px;height:22px}.ep-time{font-size:12px;margin-left:4px}

@@ -28,7 +28,7 @@
   // ask: вопрос после ролика; kind: name | choice | free | ideas | any; next(ответ) → следующий узел
   const EPISODES = {
     ep1: {
-      title: 'Серия 1. Как мыслит инженер',
+      title: 'Серия 1. Как мыслит инженер',   // обложка — /assets/episodes/<серия>-cover.webp (video/ep1/cover.mjs)
       start: 'n01',
       slots: { name: [660, 300, 600, 80], problem: [580, 222, 340, 104], ideas: [572, 400, 816, 296] },   // в пикселях кадра 1920×1080
       endText: 'Не забудь задание: найди дома три предмета, которые придумали инженеры, и подумай, как бы ты их улучшил.',
@@ -104,7 +104,7 @@
             `<span class="ep-time">0:00 / 0:00</span><span class="ep-sp"></span>` +
             `${onMeet ? cbtn('meet', 'Встреча с преподавателем', ICON.meet) : ''}${cbtn('fs', 'Во весь экран (F)', ICON.fs)}</div>` +
         `</div>` +
-        `<div class="ep-start"><div class="ep-eye">Интерактивный мультфильм</div><h3>${E.title.replace(/^Серия \d+\.\s*/, '')}</h3>` +
+        `<div class="ep-start" style="background-image:linear-gradient(rgba(30,12,2,0) 45%,rgba(30,12,2,.78)),url(/assets/episodes/${id}-cover.webp)"><div class="ep-eye">Интерактивный мультфильм</div><h3>${E.title.replace(/^Серия \d+\.\s*/, '')}</h3>` +
           `<p class="ep-start-short">${SR ? '🎤 Отвечай вслух — герои тебя услышат' : 'Отвечай кнопками или пиши ответ'}</p>` +
           `<p class="ep-start-mic">${MIC}<span>${SR ? 'Герои будут задавать вопросы — <b>отвечай вслух</b>, они тебя услышат. Когда браузер спросит про микрофон, нажми «Разрешить».' : 'Герои будут задавать вопросы — отвечай кнопками или пиши ответ.'}</span></p>` +
           `<div class="ep-start-btns"><button type="button" class="btn primary" data-a="start" disabled>Загружаем…</button><button type="button" class="btn" data-a="fresh" hidden>↻ Сначала</button></div></div>` +
