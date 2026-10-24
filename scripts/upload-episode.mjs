@@ -1,5 +1,5 @@
 // Загрузка роликов интерактивной серии в закрытый бакет Supabase Storage «episodes».
-// Запуск: node scripts/upload-episode.mjs ep1 video/out/ep1/player/clips
+// Запуск: node scripts/upload-episode.mjs ep1 video/out/ep1/player/clips   (+ ../names/*.mp3 — обращения по имени)
 // Ключ — SUPABASE_SERVICE_ROLE_KEY из .env (только локально, в браузер и в репозиторий не попадает).
 // Бакет создаётся, если его ещё нет; правила доступа — в миграции 20261020000021_episodes.sql.
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
@@ -31,13 +31,18 @@ if (b.status !== 200) {
   console.log('Создан бакет episodes');
 }
 
-const files = readdirSync(dir).filter((f) => f.endsWith('.mp4'));
-for (const f of files) {
-  const r = await fetch(`${url}/storage/v1/object/episodes/${episode}/${f}`, {
-    method: 'POST', headers: { ...auth, 'Content-Type': 'video/mp4', 'x-upsert': 'true', 'Cache-Control': 'max-age=86400' },
-    body: readFileSync(join(dir, f)),
+// ролики узлов и обращения по имени (папка names рядом с роликами: <имя>-<слот>.mp3)
+const namesDir = join(dir, '..', 'names');
+const files = [
+  ...readdirSync(dir).filter((f) => f.endsWith('.mp4')).map((f) => [join(dir, f), f, 'video/mp4']),
+  ...(existsSync(namesDir) ? readdirSync(namesDir).filter((f) => f.endsWith('.mp3')).map((f) => [join(namesDir, f), 'names/' + f, 'audio/mpeg']) : []),
+];
+for (const [path, name, type] of files) {
+  const r = await fetch(`${url}/storage/v1/object/episodes/${episode}/${name}`, {
+    method: 'POST', headers: { ...auth, 'Content-Type': type, 'x-upsert': 'true', 'Cache-Control': 'max-age=86400' },
+    body: readFileSync(path),
   });
-  if (!r.ok) throw new Error(`${f}: ${await r.text()}`);
-  console.log('✓', `${episode}/${f}`);
+  if (!r.ok) throw new Error(`${name}: ${await r.text()}`);
+  console.log('✓', `${episode}/${name}`);
 }
-console.log(`Готово: ${files.length} роликов в episodes/${episode}/`);
+console.log(`Готово: ${files.length} файлов в episodes/${episode}/`);

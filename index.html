@@ -265,29 +265,83 @@ table.research input:focus{background:rgba(154,58,27,.07)}
 .ep-stage{position:relative;aspect-ratio:16/9;background:var(--paper);border:1px solid var(--line);border-radius:3px;overflow:hidden;container-type:inline-size;box-shadow:0 10px 26px rgba(70,35,10,.18)}
 .ep-stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none}
 .ep-stage video.on{opacity:1}
-.ep-load{position:absolute;inset:0;display:grid;place-items:center;font:400 clamp(18px,3cqw,30px) "Marck Script",cursive;color:var(--sanguine);padding:20px;text-align:center}
+.ep-start{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3cqw 6cqw;background:radial-gradient(ellipse at 50% 40%,rgba(248,236,208,.97),rgba(234,213,168,.97) 60%,rgba(207,174,120,.97))}
+.ep-start h3{font:700 clamp(22px,5.4cqw,64px)/1 "Cormorant Garamond",Georgia,serif;margin:.4cqw 0 1.6cqw;color:var(--ink)}
+.ep-start-mic{display:flex;align-items:center;gap:1.4cqw;max-width:64cqw;margin:0 0 2cqw;font-size:clamp(13px,1.7cqw,20px);line-height:1.45;color:var(--ink-soft);text-align:left}
+.ep-start-mic svg{flex:none;width:clamp(30px,4.4cqw,54px);height:clamp(30px,4.4cqw,54px);padding:clamp(6px,.9cqw,11px);border-radius:50%;background:var(--sanguine);fill:#fff;color:#fff;animation:epDot 1.6s infinite}
+.ep-start .btn{font-size:clamp(15px,1.9cqw,22px);padding:.8em 1.8em}
+.ep-start-short{display:none;margin:0 0 10px;font-size:14px;font-weight:700;color:var(--sanguine)}
+.ep-big{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;width:clamp(56px,10cqw,96px);height:clamp(56px,10cqw,96px);border-radius:50%;border:0;background:rgba(30,16,6,.62);color:#fff;cursor:pointer;padding:0;display:none;place-items:center}
+.ep-big svg{width:46%;height:46%;fill:currentColor}
+.ep-player.started.paused .ep-big,.ep-player.started.touch.ui .ep-big{display:grid}
+.ep-player.asking .ep-big{display:none!important}
+.ep-player.paused .ep-stage video.on{filter:brightness(.82)}
+.ep-player:focus{outline:none}
+/* панель управления поверх кадра, как в обычном видеоплеере: прячется, пока смотришь */
+.ep-ctrl{position:absolute;left:0;right:0;bottom:0;z-index:8;padding:24px 12px 2px;background:linear-gradient(rgba(20,10,4,0),rgba(20,10,4,.72));color:#fff;opacity:0;transition:opacity .25s;pointer-events:none}
+.ep-player.ui .ep-ctrl,.ep-player.paused .ep-ctrl,.ep-player.asking .ep-ctrl,.ep-ctrl:focus-within{opacity:1;pointer-events:auto}
+.ep-player.started:not(.ui):not(.paused):not(.asking) .ep-stage{cursor:none}
+.ep-prog{position:relative;height:16px;display:flex;align-items:center;cursor:pointer;touch-action:none;outline:none}
+.ep-track{position:relative;flex:1;height:4px;border-radius:3px;background:rgba(255,255,255,.28);transition:height .12s}
+.ep-prog:hover .ep-track,.ep-prog.drag .ep-track,.ep-prog:focus-visible .ep-track{height:7px}
+.ep-reach,.ep-done{position:absolute;left:0;top:0;bottom:0;border-radius:inherit}
+.ep-reach{background:rgba(255,255,255,.42)}
+.ep-done{background:#e2532f}
+.ep-marks i{position:absolute;top:0;bottom:0;width:4px;margin-left:-2px;background:#f2c94c}
+.ep-knob{position:absolute;top:50%;width:15px;height:15px;margin:-7.5px 0 0 -7.5px;border-radius:50%;background:#e2532f;transform:scale(0);transition:transform .12s}
+.ep-prog:hover .ep-knob,.ep-prog.drag .ep-knob,.ep-prog:focus-visible .ep-knob,.ep-player.touch .ep-knob{transform:scale(1)}
+.ep-tip{position:absolute;bottom:20px;transform:translateX(-50%);padding:3px 8px;border-radius:4px;background:rgba(20,10,4,.88);font:700 13px "PT Serif",serif;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s}
+.ep-tip.far{color:#cdbfa8;font-weight:400}
+.ep-prog:hover .ep-tip,.ep-prog.drag .ep-tip{opacity:1}
+.ep-player.touch .ep-prog:not(.drag) .ep-tip{opacity:0}
+.ep-btns{display:flex;align-items:center;gap:2px;height:44px}
+.ep-btns button{flex:none;width:42px;height:42px;display:grid;place-items:center;border:0;border-radius:50%;background:none;color:#fff;cursor:pointer;padding:0}
+.ep-btns button:hover,.ep-btns button:focus-visible{background:rgba(255,255,255,.16);outline:none}
+.ep-btns svg{width:26px;height:26px;fill:currentColor}
+.ep-vol{display:flex;align-items:center}
+.ep-vol input{width:0;opacity:0;margin:0;accent-color:#fff;cursor:pointer;transition:width .2s,opacity .2s,margin .2s}
+.ep-vol:hover input,.ep-vol:focus-within input{width:72px;opacity:1;margin:0 6px 0 2px}
+@media (hover:none){.ep-vol input{display:none}}
+.ep-time{flex:none;margin-left:8px;font:400 14px "PT Serif",serif;color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ep-sp{flex:1}
+.ep-spin{position:absolute;left:50%;top:50%;z-index:3;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;border:5px solid rgba(255,255,255,.3);border-top-color:#fff;animation:epSpin .9s linear infinite;pointer-events:none}
+@keyframes epSpin{to{transform:rotate(360deg)}}
+/* двойное касание по краю кадра — ±10 с */
+.ep-skip{position:absolute;top:0;bottom:0;width:36%;z-index:3;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;background:rgba(255,255,255,.14);color:#fff;font:700 clamp(13px,1.8cqw,20px) "PT Serif",serif}
+.ep-skip span{display:flex;flex-direction:column;align-items:center;gap:4px}.ep-skip svg{width:clamp(28px,4cqw,44px);height:clamp(28px,4cqw,44px);fill:currentColor}
+.ep-skip-l{left:0;border-radius:0 50% 50% 0/0 50% 50% 0}.ep-skip-r{right:0;border-radius:50% 0 0 50%/50% 0 0 50%}
+.ep-skip.on{animation:epSkip .7s ease-out}
+@keyframes epSkip{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
+.ep-start-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 .ep-slot{position:absolute;display:flex;align-items:flex-end;pointer-events:none;opacity:0;transition:opacity .5s}
 .ep-slot.on{opacity:1}
 .ep-slot-name{font:400 4.6cqw/1 "Marck Script",cursive;color:var(--sanguine);padding:0 0 .4cqw .6cqw;transform:rotate(-2deg)}
 .ep-slot-problem{font:700 2.1cqw/1.15 "PT Serif",serif;color:var(--ink);align-items:flex-start;padding:.4cqw .8cqw;transform:rotate(-2deg)}
 .ep-slot-ideas{flex-wrap:wrap;align-content:flex-start;align-items:flex-start;gap:.8cqw;padding:.4cqw}
 .ep-idea{max-width:13cqw;padding:.7cqw .9cqw;background:#fff3b8;box-shadow:0 .3cqw .6cqw rgba(40,20,5,.25);font:700 1.35cqw/1.2 "PT Serif",serif;color:var(--ink);animation:epStick .45s cubic-bezier(.2,.9,.3,1.4)}
+.ep-idea.ep-pick{outline:.35cqw solid #c9a227;outline-offset:.2cqw;transform:scale(1.18) rotate(0)!important;z-index:1;animation:epPick 1.2s ease-out}
+@keyframes epPick{0%{box-shadow:0 0 0 0 rgba(201,162,39,.8)}100%{box-shadow:0 0 0 2.4cqw rgba(201,162,39,0)}}
 .ep-idea:nth-child(3n+2){background:#d9ecc4;transform:rotate(2deg)}.ep-idea:nth-child(3n){background:#f6d2c0;transform:rotate(-1.5deg)}.ep-idea:nth-child(3n+1){transform:rotate(-2.5deg)}
 @keyframes epStick{from{opacity:0;transform:scale(.4) rotate(-12deg)}}
-.ep-tools{position:absolute;right:1.2cqw;top:1.2cqw;display:flex;gap:.8cqw;z-index:6}
-.ep-tools button{width:clamp(32px,3.6cqw,46px);height:clamp(32px,3.6cqw,46px);border-radius:50%;border:1.5px solid var(--sanguine);background:rgba(250,240,215,.88);color:var(--sanguine);font-size:clamp(14px,1.6cqw,20px);cursor:pointer;display:grid;place-items:center;padding:0}
-.ep-tools button:hover{background:var(--sanguine);color:var(--paper-light)}
 .ep-end{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3cqw;background:radial-gradient(ellipse at 50% 40%,#f8ecd0,#ead5a8 60%,#cfae78)}
 .ep-eye{font:400 clamp(16px,3cqw,34px) "Marck Script",cursive;color:var(--sanguine)}
 .ep-end h3{font:700 clamp(22px,6cqw,72px)/1 "Cormorant Garamond",Georgia,serif;margin:.4cqw 0 1cqw;color:var(--ink)}
 .ep-end p{font-size:clamp(13px,1.6cqw,19px);max-width:62cqw;margin:0 0 1.6cqw;color:var(--ink-soft);line-height:1.5}
 .ep-end-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-.ep-ask{position:absolute;left:50%;bottom:2.2cqw;transform:translateX(-50%);width:min(58cqw,96%);z-index:7;background:rgba(250,240,215,.97);border:2px solid var(--sanguine);border-radius:10px;padding:12px 18px;text-align:center;box-shadow:0 10px 26px rgba(40,20,5,.35);font-size:clamp(14px,1.6cqw,20px);animation:epUp .35s cubic-bezier(.2,.9,.3,1.2)}
+.ep-ask{position:absolute;left:50%;bottom:calc(64px + 1cqw);transform:translateX(-50%);width:min(58cqw,96%);z-index:7;background:rgba(250,240,215,.97);border:2px solid var(--sanguine);border-radius:10px;padding:12px 18px;text-align:center;box-shadow:0 10px 26px rgba(40,20,5,.35);font-size:clamp(14px,1.6cqw,20px);animation:epUp .35s cubic-bezier(.2,.9,.3,1.2)}
 @keyframes epUp{from{opacity:0;transform:translate(-50%,20px)}}
-.ep-ask h4{margin:0 0 6px;font:700 clamp(20px,2.4cqw,30px)/1.1 "Cormorant Garamond",Georgia,serif;color:var(--ink)}
-.ep-mic{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--sanguine)}
-.ep-mic i{width:12px;height:12px;border-radius:50%;background:var(--sanguine);animation:epDot 1.2s infinite}
-.ep-mic.off i{background:#aaa;animation:none}
+.ep-q{margin:0 0 6px;font:700 clamp(18px,2.2cqw,28px)/1.1 "Cormorant Garamond",Georgia,serif;color:var(--ink)}
+.ep-voice{display:flex;align-items:center;justify-content:center;gap:12px;color:var(--sanguine)}
+.ep-mic{flex:none;display:grid;place-items:center;width:clamp(40px,4.6cqw,56px);height:clamp(40px,4.6cqw,56px);border-radius:50%;background:var(--sanguine);animation:epMic 1.4s infinite}
+.ep-mic svg{width:58%;height:58%;fill:#fff;color:#fff}
+.ep-ask.hear .ep-mic{animation-duration:.6s}
+@keyframes epMic{0%{box-shadow:0 0 0 0 rgba(154,58,27,.55)}70%,100%{box-shadow:0 0 0 16px rgba(154,58,27,0)}}
+.ep-say{font-size:1.05em;text-align:left}
+.ep-ask.no-mic .ep-mic{display:none}.ep-ask.no-mic .ep-say{color:var(--ink-soft)}
+.ep-or{font-size:.85em;color:var(--ink-soft);margin:2px 0 6px}.ep-or:empty{display:none}
+.ep-input{display:flex;gap:6px;flex:1 1 260px;max-width:420px}
+.ep-input input{flex:1;min-width:0!important}
+.ep-opts .ep-send{flex:none;padding:0 14px}
 .ep-heard{min-height:1.5em;margin:4px 0;font-style:italic;color:var(--ink-soft)}
 .ep-opts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .ep-opts .btn{font-size:inherit}
@@ -296,17 +350,19 @@ table.research input:focus{background:rgba(154,58,27,.07)}
 /* на узком экране вопрос — под кадром, обычным шрифтом */
 @container ep (max-width:620px){
   .ep-ask{position:static;transform:none;width:auto;margin-top:10px;font-size:15px;animation:none}
-  .ep-ask h4{font-size:21px}
+  .ep-q{font-size:21px}
+  .ep-start .ep-start-mic{display:none}.ep-start .ep-start-short{display:block}.ep-start h3{margin-bottom:6px}.ep-start .btn{padding:.6em 1.4em}
   .ep-end p{display:none}
   .ep-end .btn{padding:7px 12px;font-size:14px}
+  .ep-ctrl{padding:16px 6px 0}.ep-btns{height:40px;gap:0}.ep-btns button{width:36px;height:36px}.ep-btns svg{width:22px;height:22px}.ep-time{font-size:12px;margin-left:4px}
 }
-.ep-player:fullscreen{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1d120a}
-.ep-player:fullscreen .ep-stage{width:min(100vw,calc(100vh * 16 / 9));border:0;border-radius:0}
-.ep-player:-webkit-full-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1d120a}
-.ep-player:-webkit-full-screen .ep-stage{width:min(100vw,calc(100vh * 16 / 9));border:0;border-radius:0}
+.ep-player:fullscreen{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000}
+.ep-player:-webkit-full-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000}
+.ep-player:fullscreen .ep-stage{width:min(100vw,calc(100vh * 16 / 9));border:0;border-radius:0;box-shadow:none}
+.ep-player:-webkit-full-screen .ep-stage{width:min(100vw,calc(100vh * 16 / 9));border:0;border-radius:0;box-shadow:none}
 /* iPhone не умеет «во весь экран» для блока страницы — плеер растягивается на всё окно */
-.ep-player.ep-max{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1d120a;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);overflow:auto}
-.ep-player.ep-max .ep-stage{width:min(100vw,calc(100vh * 16 / 9));width:min(100vw,calc(100dvh * 16 / 9));border:0;border-radius:0}
+.ep-player.ep-max{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);overflow:auto}
+.ep-player.ep-max .ep-stage{width:min(100vw,calc(100vh * 16 / 9));width:min(100vw,calc(100dvh * 16 / 9));border:0;border-radius:0;box-shadow:none}
 html.ep-lock,html.ep-lock body{overflow:hidden}
 .ep-tap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;padding:14px 26px;border:0;border-radius:40px;background:var(--sanguine);color:#fff;font:700 18px/1 "PT Serif",Georgia,serif;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.35)}
 .net-toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:2000;width:min(440px,calc(100% - 32px));padding:12px 16px;border-radius:6px;background:#3a2313;color:#f7ecd6;font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.3);display:flex;gap:12px;align-items:center}
