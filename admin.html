@@ -668,7 +668,7 @@ async function supReply(e,uid){e.preventDefault();const t=supText.value.trim();i
   supText.value='';supAppend(data,false)}
 
 // ---------- Уведомления на телефон (Web Push; присылает Edge Function notify) ----------
-const NOTIFY_URL=APP_CONFIG.supabaseUrl+'/functions/v1/notify';
+const NOTIFY_URL=APP_CONFIG.supabaseUrl+'/functions/v1/clever-action';   // функция notify задеплоена под этим именем
 const pushOk=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 async function pushSub(){if(!pushOk())return null;const reg=await navigator.serviceWorker.getRegistration('/');return reg?reg.pushManager.getSubscription():null}
 async function showNotify(){

@@ -10,7 +10,7 @@
 //   VAPID_SUBJECT  — контакт отправителя, например mailto:club@engineeringclub.ru
 //   SITE_URL       — адрес сайта (ссылки в уведомлениях ведут в админку)
 // SUPABASE_URL и SUPABASE_SERVICE_ROLE_KEY Supabase подставляет сам.
-// Деплой без проверки JWT: supabase functions deploy notify --no-verify-jwt
+// В проекте задеплоена под именем clever-action (адрес — app_config.notify_url и NOTIFY_URL в admin.html), без проверки JWT.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
