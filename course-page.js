@@ -24,6 +24,8 @@
     teach: stepIcon('<circle cx="8" cy="8" r="3"/><circle cx="16.5" cy="9" r="2.5"/><path d="M2.5 19.5c.6-3.3 2.8-5 5.5-5s4.9 1.7 5.5 5"/><path d="M13.6 14.9c.9-.6 1.8-.9 2.9-.9 2.3 0 4.1 1.5 4.6 4.5"/>'),
     chat: stepIcon('<path d="M4 5h16a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 20 17h-9l-5 3.5V17H4a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 4 5z"/><path d="M7.5 11h.01M12 11h.01M16.5 11h.01"/>'),
   };
+  // значок чата на странице курса — кнопка «Вопрос нам» (support.js)
+  const CHAT_BTN = STEP_ICON.chat.replace('<span class="rs-ico" aria-hidden="true">', `<button type="button" class="rs-ico" onclick="Support.open({from:'страница курса'})" title="Написать нам" aria-label="Задать вопрос в чате">`).replace(/<\/span>$/, '</button>');
 
   // Краткое содержание модуля: несколько строк — списком, одна — абзацем
   function summaryHtml(t) {
@@ -89,7 +91,7 @@ ${modules.length
 <ol class="road-steps">
   <li>${STEP_ICON.self}<b>Самостоятельно</b><small>видеоуроки, материалы и задания открываются модуль за модулем</small></li>
   <li>${STEP_ICON.teach}<b>С преподавателем</b><small>онлайн-встречи, чтобы обсудить изученное и поработать над собственным проектом</small></li>
-  <li>${STEP_ICON.chat}<b>Всегда на связи</b><small>на протяжении всего курса мы на связи в чате</small></li>
+  <li>${CHAT_BTN}<b>Всегда на связи</b><small>на протяжении всего курса мы на связи в чате · <button type="button" class="chat-link" onclick="Support.open({from:'страница курса'})">Задать вопрос →</button></small></li>
 </ol>
 <p class="road-more"><a href="/kak-prohodyat-zanyatiya/" onclick="return go(event,'how')">Подробнее о формате занятий →</a></p>`;
   }

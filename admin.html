@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="/admin.webmanifest">
+<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Клуб · админ">
+<meta name="theme-color" content="#9a3a1b">
 <title>Админ-панель — Инженерный клуб</title>
 <style>
 :root{--bg:#f6f4ef;--card:#fff;--ink:#2a2118;--muted:#776b5d;--line:#e4ddd1;--accent:#9a3a1b;--accent-soft:#f6e6de;--ok:#2f7a3d;--ok-soft:#e3f1e5;--warn:#a76a00;--warn-soft:#fbefd6}
@@ -87,6 +92,10 @@ tbody tr:hover{background:#fbf7f1}
 .qitem:last-child{border-bottom:none}
 .qitem:hover{background:#fbf7f1}
 .qitem .t{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sup-thread{max-height:60vh;overflow:auto;padding:12px 14px}
+.sup-m{max-width:80%;margin:6px 0;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;white-space:pre-wrap;overflow-wrap:anywhere}
+.sup-m.mine{margin-left:auto;background:var(--accent-soft)}
+.sup-m .small{display:block;margin-top:2px}
 .chatwrap{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fcfaf6}
 .callrow{display:flex;gap:14px;align-items:flex-start;padding:12px 16px;border-bottom:1px solid var(--line)}
 .callrow:last-child{border-bottom:none}
@@ -127,6 +136,7 @@ label.filebtn{display:inline-block;border:1px solid var(--accent);color:var(--ac
   <a href="#calls" data-tab="calls"><span class="ic">📞</span>Занятия<span class="navcount" id="cCount" hidden></span></a>
   <a href="#students" data-tab="students"><span class="ic">👦</span>Ученики</a>
   <a href="#episodes" data-tab="episodes"><span class="ic">🎬</span>Ответы в сериях<span class="navcount" id="eCount" hidden></span></a>
+  <a href="#support" data-tab="support"><span class="ic">❓</span>Вопросы с сайта<span class="navcount" id="sCount" hidden></span></a>
   <a href="#leads" data-tab="leads"><span class="ic">📝</span>Заявки<span class="navcount" id="lCount" hidden></span></a>
   <h4>Курсы</h4>
   <a href="#materials" data-tab="materials"><span class="ic">📚</span>Материалы курса</a>
@@ -134,6 +144,8 @@ label.filebtn{display:inline-block;border:1px solid var(--accent);color:var(--ac
   <a href="#reviews" data-tab="reviews"><span class="ic">💬</span>Отзывы<span class="navcount" id="rCount" hidden></span></a>
   <a href="#videos" data-tab="videos"><span class="ic">▶️</span>Видео на главной</a>
   <a href="#memo" data-tab="memo"><span class="ic">🃏</span>Игра «Мемо»<span class="navcount" id="iCount" hidden></span></a>
+  <h4>Настройки</h4>
+  <a href="#notify" data-tab="notify"><span class="ic">🔔</span>Уведомления на телефон</a>
 </aside>
 <main><div class="hint" id="hint" hidden></div><div id="app"><p class="muted">Загрузка…</p></div></main>
 </div>
@@ -171,7 +183,14 @@ async function start(){
     const tab=(location.hash.slice(1)||'queue').split('/')[0];
     if(tab==='queue')showQueue();
     if(card&&card.student.id===m.student_id&&adminChatLesson!==m.lesson_id){card.unread[m.lesson_id]=(card.unread[m.lesson_id]||0)+1;updateChatBtn(m.lesson_id)}
-  }).subscribe()}
+  }).subscribe();
+  sb.channel('admin-support').on('postgres_changes',{event:'INSERT',schema:'public',table:'support_messages'},p=>{
+    const m=p.new;if(m.from_admin)return;refreshQueueCount();toast('❓ Вопрос с сайта');
+    const[tab,arg]=(location.hash.slice(1)||'queue').split('/');
+    if(tab==='support'){if(arg===m.user_id)supAppend(m,true);else showSupport(arg)}else if(tab==='queue')showQueue();
+  }).subscribe();
+  // пуш-уведомления: держим service worker зарегистрированным; нажатие на уведомление открывает раздел
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(()=>{});navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.open)location.href=e.data.open})}}
 function studentName(id){const s=students.find(x=>x.id===id);return s?(s.student_name||s.email):'ученик'}
 function showLogin(msg){app.innerHTML=`<form class="center card" onsubmit="doLogin(event)"><h1>Вход в админ-панель</h1>
   <label class="small muted">Email</label><input id="lEmail" type="email" autocomplete="email" required>
@@ -189,6 +208,8 @@ const HINTS={
   students:'Все ученики. Нажмите на ученика — откроется его курс по темам: подтвердить тему, ответить в чате, назначить занятие.',
   student:'Курс ученика по темам. «Подтвердить тему» — ученику откроется следующая. Чат и занятие — кнопками под темой.',
   episodes:'Что ученики ответили в интерактивных мультфильмах: 🎤 голосом, ⌨️ текстом или 👆 кнопкой. Новые просмотры отмечены и считаются просмотренными, когда вы открыли этот раздел.',
+  support:'Вопросы из чата «Вопрос нам» на сайте — от гостей и учеников. Ответ сразу появится у человека в окне чата.',
+  notify:'Пуш-уведомления на этом телефоне или компьютере обо всём, что видно в админ-панели.',
   leads:'Заявки с сайта на консультацию. Свяжитесь с человеком и отметьте, что заявка обработана.',
   materials:'Программа курсов: файлы и ссылки, которые видят все ученики в открытых темах.'};
 function route(){closeAdminChat();matView=null;const h=location.hash.slice(1)||'queue';const[tab,arg,cid,lid]=h.split('/');
@@ -201,6 +222,8 @@ function route(){closeAdminChat();matView=null;const h=location.hash.slice(1)||'
   if(tab==='materials')return showMaterials(arg?+arg:undefined);
   if(tab==='calls')return showCalls();
   if(tab==='leads')return showLeads();
+  if(tab==='support')return showSupport(arg);
+  if(tab==='notify')return showNotify();
   if(tab==='reviews')return showReviews();
   if(tab==='videos')return showVideos();
   if(tab==='memo')return showMemo();
@@ -212,19 +235,19 @@ async function loadQueueData(){const[{data:threads},{data:subs}]=await Promise.a
     sb.from('lesson_progress').select('user_id,lesson_id,submitted_at,lessons(title,modules(course_id))').eq('status','submitted').order('submitted_at')]);
   return{threads:threads||[],subs:subs||[]}}
 function setQueueCount(n){const el=document.getElementById('qCount');el.hidden=!n;el.textContent=n;document.title=(n?'('+n+') ':'')+'Админ-панель — Инженерный клуб'}
-async function refreshQueueCount(){const[{threads,subs},calls,leads,revs,runs]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads(),countPendingReviews(),countNewRuns()]);
-  setQueueCount(threads.filter(t=>t.unread>0).length+subs.length+leads+revs+runs);setBadge('eCount',runs);setBadge('cCount',todayCalls(calls.calls).length);setBadge('lCount',leads);setBadge('rCount',revs)}
+async function refreshQueueCount(){const[{threads,subs},calls,leads,revs,runs,sup]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads(),countPendingReviews(),countNewRuns(),countSupportUnread()]);
+  setQueueCount(threads.filter(t=>t.unread>0).length+subs.length+leads+revs+runs+sup);setBadge('sCount',sup);setBadge('eCount',runs);setBadge('cCount',todayCalls(calls.calls).length);setBadge('lCount',leads);setBadge('rCount',revs)}
 async function countPendingReviews(){const{count}=await sb.from('reviews').select('id',{count:'exact',head:true}).eq('status','pending');return count||0}
 function setBadge(id,n){const el=document.getElementById(id);el.hidden=!n;el.textContent=n}
 async function countNewLeads(){const{count}=await sb.from('leads').select('id',{count:'exact',head:true}).eq('status','new');return count||0}
 function threadPreview(t){if(t.last_deleted)return 'Сообщение удалено';return (t.last_from_student?'':'Вы: ')+((t.last_body||'').slice(0,140)||(t.last_has_files?'📎 Вложение':''))}
 async function showQueue(){if(!app.querySelector('#queueView'))app.innerHTML='<p class="muted">Загрузка очереди…</p>';
-  const[{threads,subs},cd,newLeads,pendRev,newRuns,newIdeas]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads(),countPendingReviews(),countNewRuns(),countNewIdeas()]);const unread=threads.filter(t=>t.unread>0);
-  const today=todayCalls(cd.calls);setQueueCount(unread.length+subs.length+newLeads+pendRev+newRuns);setBadge('cCount',today.length);setBadge('lCount',newLeads);setBadge('rCount',pendRev);setBadge('eCount',newRuns);
+  const[{threads,subs},cd,newLeads,pendRev,newRuns,newIdeas,newSup]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads(),countPendingReviews(),countNewRuns(),countNewIdeas(),countSupportUnread()]);const unread=threads.filter(t=>t.unread>0);
+  const today=todayCalls(cd.calls);setQueueCount(unread.length+subs.length+newLeads+pendRev+newRuns+newSup);setBadge('sCount',newSup);setBadge('cCount',today.length);setBadge('lCount',newLeads);setBadge('rCount',pendRev);setBadge('eCount',newRuns);
   // плитка: число и подпись; ноль — зелёная «✓», дел нет
   // to: раздел (#…) или «@id» — список ниже на этой же странице
   const tile=(n,label,to,doneText)=>`<a class="tile ${n?'todo':'done'}" href="${to[0]==='@'?'#queue':to}"${to[0]==='@'?` onclick="document.getElementById('${to.slice(1)}').scrollIntoView({behavior:'smooth'});return false"`:''}><b>${n||'✓'}</b><span>${n?label:doneText}</span></a>`;
-  const tiles=`<div class="tiles">${tile(unread.length,'новых сообщений','@msgs','сообщения прочитаны')}${tile(subs.length,'тем на проверке','@subs','темы проверены')}${tile(today.length,'занятий сегодня','#calls','сегодня занятий нет')}${tile(newRuns,'новых просмотров серий','#episodes','ответы просмотрены')}${tile(newLeads,'новых заявок','#leads','заявки разобраны')}${tile(pendRev,'отзывов на проверке','#reviews','отзывы проверены')}${tile(newIdeas,'идей для карточек','#memo','идеи разобраны')}</div>`;
+  const tiles=`<div class="tiles">${tile(unread.length,'новых сообщений','@msgs','сообщения прочитаны')}${tile(subs.length,'тем на проверке','@subs','темы проверены')}${tile(today.length,'занятий сегодня','#calls','сегодня занятий нет')}${tile(newRuns,'новых просмотров серий','#episodes','ответы просмотрены')}${tile(newSup,'вопросов с сайта','#support','вопросы отвечены')}${tile(newLeads,'новых заявок','#leads','заявки разобраны')}${tile(pendRev,'отзывов на проверке','#reviews','отзывы проверены')}${tile(newIdeas,'идей для карточек','#memo','идеи разобраны')}</div>`;
   if((location.hash.slice(1)||'queue').split('/')[0]!=='queue')return;
   const link=(sid,cid,lid)=>`#student/${sid}/${cid}/${lid}`;
   app.innerHTML=`<div id="queueView"><h1>Главная</h1>${tiles}
@@ -618,6 +641,68 @@ async function setLeadStatus(id,status){const{error}=await sb.from('leads').upda
 let adminChat=null,adminChatLesson=null;
 function chatLabel(id){const n=card&&card.unread[id];return n?`💬 Чат · ${n} нов.`:card&&card.hasThread[id]?'💬 Чат':'💬 Написать ученику'}
 function updateChatBtn(id){const b=document.getElementById('cb-'+id);if(b)b.textContent=adminChatLesson===id?'Свернуть чат':chatLabel(id)}
+// ---------- Вопросы с сайта (чат «Вопрос нам», support.js) ----------
+async function countSupportUnread(){const{count}=await sb.from('support_messages').select('id',{count:'exact',head:true}).eq('from_admin',false).is('read_at',null);return count||0}
+const supName=t=>t.name||(t.is_guest?'Гость сайта':studentName(t.user_id));
+async function showSupport(uid){
+  const[{data:threads},{data:unr}]=await Promise.all([sb.from('support_threads').select('user_id,name,contact,page,is_guest,created_at,last_at').order('last_at',{ascending:false}).limit(300),
+    sb.from('support_messages').select('user_id').eq('from_admin',false).is('read_at',null)]);
+  const un={};(unr||[]).forEach(m=>un[m.user_id]=(un[m.user_id]||0)+1);
+  if(!uid){setBadge('sCount',(unr||[]).length);
+    app.innerHTML=`<h1>Вопросы с сайта</h1>${(threads||[]).length?`<div class="card qlist">${threads.map(t=>`<a class="qitem" href="#support/${t.user_id}"><div class="t"><b>${esc(supName(t))}</b>${t.is_guest?'<span class="badge b-mute">гость</span>':'<span class="badge b-ok">ученик</span>'}${un[t.user_id]?`<span class="badge b-warn">${un[t.user_id]} новых</span>`:''}<span class="small muted" style="margin-left:auto">${fmtDate(t.last_at)}</span></div><div class="small muted">${esc([t.contact,t.page].filter(Boolean).join(' · '))}</div></a>`).join('')}</div>`:'<p class="muted">Пока никто не писал. Вопросы появятся здесь, когда посетитель нажмёт значок чата на сайте.</p>'}`;return}
+  const t=(threads||[]).find(x=>x.user_id===uid);
+  const{data:msgs}=await sb.from('support_messages').select('id,body,from_admin,created_at,read_at').eq('user_id',uid).order('created_at');
+  app.innerHTML=`<p><a href="#support">← Все вопросы</a></p><h1>${esc(t?supName(t):'Переписка')}</h1>
+    <p class="small muted">${t?esc([t.is_guest?'гость сайта':'ученик',t.contact&&'контакт: '+t.contact,t.page&&'откуда: '+t.page,'первое сообщение '+fmtDate(t.created_at)].filter(Boolean).join(' · ')):''}</p>
+    <div class="card sup-thread" id="supList">${(msgs||[]).map(supMsgHtml).join('')||'<p class="muted">Сообщений нет.</p>'}</div>
+    <form class="row" style="align-items:flex-end" onsubmit="supReply(event,'${uid}')"><textarea id="supText" rows="3" style="flex:1;min-width:220px" maxlength="2000" placeholder="Ответ придёт человеку в окно чата на сайте (Ctrl+Enter — отправить)" onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey))this.form.requestSubmit()"></textarea><button class="primary" type="submit">Отправить</button></form>`;
+  const l=document.getElementById('supList');l.scrollTop=l.scrollHeight;
+  await sb.from('support_messages').update({read_at:new Date().toISOString()}).eq('user_id',uid).eq('from_admin',false).is('read_at',null);
+  refreshQueueCount()}
+function supMsgHtml(m){return `<div class="sup-m ${m.from_admin?'mine':''}"><div>${esc(m.body)}</div><span class="small muted">${fmtDate(m.created_at)}${m.from_admin?(m.read_at?' · прочитано':' · отправлено'):''}</span></div>`}
+function supAppend(m,markRead){const l=document.getElementById('supList');if(!l)return;l.querySelector('p.muted')?.remove();l.insertAdjacentHTML('beforeend',supMsgHtml(m));l.scrollTop=l.scrollHeight;
+  if(markRead)sb.from('support_messages').update({read_at:new Date().toISOString()}).eq('id',m.id).then(refreshQueueCount)}
+async function supReply(e,uid){e.preventDefault();const t=supText.value.trim();if(!t)return;
+  const{data,error}=await sb.from('support_messages').insert({user_id:uid,body:t}).select('id,body,from_admin,created_at,read_at').single();
+  if(error){console.error(error);return toast('Не удалось отправить')}
+  supText.value='';supAppend(data,false)}
+
+// ---------- Уведомления на телефон (Web Push; присылает Edge Function notify) ----------
+const NOTIFY_URL=APP_CONFIG.supabaseUrl+'/functions/v1/notify';
+const pushOk=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+async function pushSub(){if(!pushOk())return null;const reg=await navigator.serviceWorker.getRegistration('/');return reg?reg.pushManager.getSubscription():null}
+async function showNotify(){
+  const ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+  const[sub,{count}]=await Promise.all([pushSub().catch(()=>null),sb.from('push_subscriptions').select('endpoint',{count:'exact',head:true})]);
+  let state;
+  if(!pushOk()&&ios&&!standalone)state=`<p><b>На iPhone уведомления работают из приложения на экране «Домой»:</b></p><ol><li>Откройте эту страницу в Safari.</li><li>Нажмите «Поделиться» <span class="muted">(квадрат со стрелкой)</span> → «На экран „Домой“».</li><li>Откройте админку с новой иконки, войдите и нажмите здесь «Включить».</li></ol><p class="small muted">Нужен iOS 16.4 или новее.</p>`;
+  else if(!pushOk())state=`<p>Этот браузер не умеет пуш-уведомления. На Android откройте админку в Chrome, на компьютере — в Chrome, Edge или Firefox.</p>`;
+  else if(Notification.permission==='denied')state=`<p class="warn">Уведомления для этого сайта запрещены в настройках браузера. Разрешите их (значок замка у адреса сайта → Уведомления) и обновите страницу.</p>`;
+  else if(sub)state=`<p><span class="badge b-ok">✓ включены на этом устройстве</span></p><div class="row"><button class="primary" onclick="pushTest()">Проверить</button><button onclick="pushOff()">Выключить на этом устройстве</button></div>`;
+  else state=`<p>На этом устройстве уведомления выключены.</p><button class="primary" onclick="pushOn()">🔔 Включить на этом устройстве</button>`;
+  app.innerHTML=`<h1>Уведомления на телефон</h1><div class="card">${state}</div>
+    <div class="card"><b>Что приходит</b><ul class="small" style="margin:8px 0 0;padding-left:20px;line-height:1.7"><li>💬 сообщения учеников в чатах тем</li><li>❓ вопросы с сайта</li><li>✅ темы на проверке</li><li>📝 заявки</li><li>💳 оплаты</li><li>⭐ отзывы на проверке</li><li>🎬 ученик начал смотреть мультфильм</li><li>💡 идеи для карточек «Мемо»</li></ul>
+    <p class="small muted" style="margin:10px 0 0">Нажмите на уведомление — откроется нужный раздел. Включите на каждом телефоне и компьютере, где хотите получать. Сейчас подключено устройств: <b>${count||0}</b>.</p></div>`}
+const b64u=s=>{const b=atob((s+'='.repeat((4-s.length%4)%4)).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(b,c=>c.charCodeAt(0))};
+async function pushOn(){
+  try{
+    const reg=await navigator.serviceWorker.register('/sw.js',{scope:'/'});await navigator.serviceWorker.ready;
+    if(await Notification.requestPermission()!=='granted')return showNotify();
+    const{publicKey}=await (await fetch(NOTIFY_URL)).json();
+    if(!publicKey)throw new Error('сервер уведомлений ещё не настроен');
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(publicKey)}),j=sub.toJSON();
+    const{error}=await sb.from('push_subscriptions').upsert({endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,ua:navigator.userAgent.slice(0,300),user_id:me.id},{onConflict:'endpoint'});
+    if(error)throw error;
+    toast('🔔 Уведомления включены');pushTest(true)
+  }catch(e){console.error(e);toast('Не получилось включить: '+(e.message||e))}
+  showNotify()}
+async function pushOff(){const sub=await pushSub();if(sub){await sb.from('push_subscriptions').delete().eq('endpoint',sub.endpoint);await sub.unsubscribe()}toast('Уведомления на этом устройстве выключены');showNotify()}
+async function pushTest(quiet){const{data:{session}}=await sb.auth.getSession();
+  const r=await fetch(NOTIFY_URL,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify({test:true})}).catch(()=>null);
+  const j=r?await r.json().catch(()=>({})):{};
+  if(!quiet||!j.sent)toast(j.sent?'Отправлено — уведомление придёт через пару секунд':'Проверка не отправилась: '+(j.error||(r?r.status:'нет связи')))}
+
 function closeAdminChat(){if(adminChat){adminChat.destroy();adminChat=null}const id=adminChatLesson;adminChatLesson=null;
   if(id){const el=document.getElementById('chat-'+id);if(el)el.innerHTML='';updateChatBtn(id)}}
 function toggleChat(lessonId){const was=adminChatLesson;closeAdminChat();if(was===lessonId)return;

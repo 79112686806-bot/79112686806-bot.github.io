@@ -50,10 +50,14 @@
       .finally(() => clearTimeout(timer));
   }
 
-  window.makeSupabase = function () {
+  // opts.storageKey — отдельный вход в той же вкладке (чат «Вопросы» для гостя: анонимный вход не должен
+  // выглядеть на сайте как вход в личный кабинет)
+  window.makeSupabase = function (opts = {}) {
     const cfg = window.APP_CONFIG;
+    const auth = { storage: safeStorage(), lock, persistSession: true, autoRefreshToken: true, detectSessionInUrl: !opts.storageKey };
+    if (opts.storageKey) auth.storageKey = opts.storageKey;
     const client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, {
-      auth: { storage: safeStorage(), lock, persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+      auth,
       global: { fetch: timedFetch },
     });
     // вкладка в фоне — таймеры на телефоне засыпают; обновляем токен при возвращении
