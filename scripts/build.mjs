@@ -76,9 +76,9 @@ const cut = (t, n) => (t.length <= n ? t : t.slice(0, n - 1).replace(/\s+\S*$/, 
 // ---------- Курсы из базы (публичные данные каталога) ----------
 async function loadCourses() {
   const program = (s) => `modules(sort,title,lessons(sort,title,${s ? 'summary,' : ''}research_task))`;
-  const prices = 'slug,title,subtitle,description,price,price_trial,price_trial_base,price_block,price_lesson,status,sort';
+  const prices = 'id,slug,title,subtitle,description,price,price_trial,price_trial_base,price_block,price_lesson,status,sort';
   // с вариантами цен и кратким содержанием модулей; если миграции ещё не выполнены — без них (цены возьмутся по умолчанию)
-  for (const [fields, s] of [[prices, 1], [prices, 0], ['slug,title,subtitle,description,price,status,sort', 0]]) {
+  for (const [fields, s] of [[prices, 1], [prices, 0], ['id,slug,title,subtitle,description,price,status,sort', 0]]) {
     try {
       const res = await fetch(`${url}/rest/v1/courses?select=${fields},${program(s)}&order=sort`, { headers: { apikey: key } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -252,8 +252,12 @@ async function main() {
       head: seoHead({ title, description, path, hide: thin, jsonld: [course, breadcrumbs([['Главная', '/'], ['Программы', '/programmy/'], [c.title, path]])] }),
       show: 'course', courseBody: coursePageHtml(c, i), courseSlug: c.slug,
     }));
+    // та же программа отдельным файлом: сайт берёт её с GitHub Pages, а не из базы (быстро и без замедления Cloudflare)
+    writeFileSync(`${OUT}${path}body.html`, coursePageHtml(c, i));
   }
-  writeFileSync(`${OUT}/seo.js`, `window.SEO_PAGES=${JSON.stringify(seoPages)};\n`);
+  // статусы и цены курсов на момент сборки: сайт открывает курс сразу, не дожидаясь базы (свежие данные подгрузит сам)
+  const pre = courses.map(({ id, sort, status, slug, price, price_trial, price_trial_base, price_block, price_lesson }) => ({ id, sort, status, slug, price, price_trial, price_trial_base, price_block, price_lesson }));
+  writeFileSync(`${OUT}/seo.js`, `window.SEO_PAGES=${JSON.stringify(seoPages)};\nwindow.COURSES_PRE=${JSON.stringify(pre)};\n`);
 
   // Документы и контакты
   for (const d of DOCS) {

@@ -1054,9 +1054,12 @@ async function loadCourseStatus(){
   for(let attempt=0;attempt<4;attempt++){
     let{data,error}=await sb.from('courses').select('id,sort,status,slug,price,price_trial,price_trial_base,price_block,price_lesson');
     if(error&&error.code)({data,error}=await sb.from('courses').select('id,sort,status,slug,price'));
-    if(!error&&data){data.forEach(c=>{courseStatus[c.sort-1]=c.status;courseSlug[c.sort-1]=c.slug;courseId[c.sort-1]=c.id;if(c.price_trial)coursePrice[c.sort-1]=c});coursesLoaded=true;return true}
+    if(!error&&data){applyCourses(data);coursesLoaded=true;return true}
     await new Promise(r=>setTimeout(r,1500*(attempt+1)))}
   return false}
+function applyCourses(data){data.forEach(c=>{courseStatus[c.sort-1]=c.status;courseSlug[c.sort-1]=c.slug;courseId[c.sort-1]=c.id;if(c.price_trial)coursePrice[c.sort-1]=c})}
+// статусы и цены из сборки сайта (seo.js) — курс открывается сразу; свежие данные из базы придут следом
+if(Array.isArray(window.COURSES_PRE)&&COURSES_PRE.length&&COURSES_PRE.every(c=>c.id)){applyCourses(COURSES_PRE);coursesLoaded=true}
 let coursesReady=loadCourseStatus();
 // перед действиями, которым нужны статусы и адреса курсов; если не загрузились — пробуем ещё раз
 async function ensureCourses(){if(coursesLoaded)return true;if(!await coursesReady)coursesReady=loadCourseStatus();return coursesReady}
@@ -1168,12 +1171,17 @@ function setMeta(key){const m=(window.SEO_PAGES||{})[key];if(!m)return;document.
 // Ссылка с onclick="return go(...)": обычный клик — без перезагрузки; Ctrl/колёсико — в новой вкладке
 function go(e,page,arg){if(e&&(e.ctrlKey||e.metaKey||e.shiftKey||e.button===1))return true;if(e)e.preventDefault();closeModal();
   if(page==='course')showCoursePage(arg);else showPage(page);return false}
-async function showCoursePage(slug,push=true){const i=COURSE_SLUGS.indexOf(slug);if(i<0)return showPage('courses',push);
+async function showCoursePage(slug,push=true){const i=COURSE_SLUGS.indexOf(slug);if(i<0)return showPage('courses',push);showCoursePage.want=slug;
   const body=document.getElementById('coursePageBody');
   if(body.dataset.slug!==slug){body.innerHTML='<p class="note">Загружаем программу…</p>';
+    // сначала — готовая программа с сайта (собрана при публикации, грузится сразу), затем свежие данные из базы
+    const put=html=>{if(showCoursePage.want!==slug||body.dataset.html===html)return;body.innerHTML=html;body.dataset.html=html;body.dataset.slug=slug;markSketch(body);observeReveal(body);requestAnimationFrame(updateRoadDraw)};
+    const pre=await fetch('/kursy/'+slug+'/body.html').then(r=>r.ok?r.text():'').catch(()=>'');
+    if(pre)put(pre);
     const q=s=>sb.from('courses').select(`slug,title,subtitle,description,price,price_trial,price_trial_base,price_lesson,status,modules(sort,title,lessons(sort,title,${s}research_task))`).eq('slug',slug).maybeSingle();
-    let{data,error}=await q('summary,');if(error)({data}=await q(''));
-    body.innerHTML=coursePageHtml(data||{slug,title:courses[i][1],subtitle:courses[i][2],description:courses[i][3],status:'draft',modules:[]},i);body.dataset.slug=slug;markSketch(body);observeReveal(body)}
+    const fresh=(async()=>{let{data,error}=await q('summary,');if(error)({data,error}=await q(''));
+      if(data)put(coursePageHtml(data,i));else if(!pre)put(coursePageHtml({slug,title:courses[i][1],subtitle:courses[i][2],description:courses[i][3],status:'draft',modules:[]},i))})();
+    if(!pre)await fresh}
   showPage('course',false);requestAnimationFrame(updateRoadDraw);const path='/kursy/'+slug+'/';if(push&&location.pathname!==path)history.pushState({},'',path);setMeta('course:'+slug)}
 function routePath(path){const db=document.getElementById('docBody');if(db&&db.dataset.path===path)return showPage('doc',false);
   const m=path.match(/^\/kursy\/([a-z0-9-]+)\/?$/);if(m)return showCoursePage(m[1],false);
