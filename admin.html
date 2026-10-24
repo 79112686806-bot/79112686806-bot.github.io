@@ -164,7 +164,7 @@ const sb=makeSupabase();
 const app=document.getElementById('app');
 const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
 const fmtDate=d=>d?new Date(d).toLocaleString('ru-RU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
-function toast(t){const el=document.getElementById('toast');el.textContent=t;el.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>el.style.display='none',2500)}
+function toast(t,ms){const el=document.getElementById('toast');el.textContent=t;el.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>el.style.display='none',ms||2500)}
 let me=null, students=[];
 
 // ---------- Вход и проверка прав ----------
@@ -680,15 +680,21 @@ async function showNotify(){
   else if(!pushOk())state=`<p>Этот браузер не умеет пуш-уведомления. На Android откройте админку в Chrome, на компьютере — в Chrome, Edge или Firefox.</p>`;
   else if(Notification.permission==='denied')state=`<p class="warn">Уведомления для этого сайта запрещены в настройках браузера. Разрешите их (значок замка у адреса сайта → Уведомления) и обновите страницу.</p>`;
   else if(sub)state=`<p><span class="badge b-ok">✓ включены на этом устройстве</span></p><div class="row"><button class="primary" onclick="pushTest()">Проверить</button><button onclick="pushOff()">Выключить на этом устройстве</button></div>`;
-  else state=`<p>На этом устройстве уведомления выключены.</p><button class="primary" onclick="pushOn()">🔔 Включить на этом устройстве</button>`;
+  else state=`<p>На этом устройстве уведомления выключены.</p><button class="primary" id="pushOnBtn" onclick="pushOn()">🔔 Включить на этом устройстве</button>
+    <p class="small muted" id="pushHint" hidden style="margin-top:10px">Не появилось окно «Разрешить уведомления»? Браузер мог скрыть вопрос: нажмите значок 🔔 или замок слева от адреса сайта → «Уведомления» → «Разрешить», затем ещё раз «Включить». На Android также проверьте: Настройки телефона → Приложения → Chrome → Уведомления — включены.</p>`;
   app.innerHTML=`<h1>Уведомления на телефон</h1><div class="card">${state}</div>
     <div class="card"><b>Что приходит</b><ul class="small" style="margin:8px 0 0;padding-left:20px;line-height:1.7"><li>💬 сообщения учеников в чатах тем</li><li>❓ вопросы с сайта</li><li>✅ темы на проверке</li><li>📝 заявки</li><li>💳 оплаты</li><li>⭐ отзывы на проверке</li><li>🎬 ученик начал смотреть мультфильм</li><li>💡 идеи для карточек «Мемо»</li></ul>
     <p class="small muted" style="margin:10px 0 0">Нажмите на уведомление — откроется нужный раздел. Включите на каждом телефоне и компьютере, где хотите получать. Сейчас подключено устройств: <b>${count||0}</b>.</p></div>`}
 const b64u=s=>{const b=atob((s+'='.repeat((4-s.length%4)%4)).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(b,c=>c.charCodeAt(0))};
 async function pushOn(){
+  // разрешение спрашиваем сразу по нажатию: на телефонах окно не появится, если перед ним что-то ждать
+  const btn=document.getElementById('pushOnBtn');if(btn){btn.disabled=true;btn.textContent='Ждём разрешения…'}
+  const hint=setTimeout(()=>{const h=document.getElementById('pushHint');if(h)h.hidden=false},3500);
   try{
+    const perm=Notification.permission==='granted'?'granted':await Notification.requestPermission();clearTimeout(hint);
+    if(perm!=='granted')return showNotify();
+    if(btn)btn.textContent='Подключаем…';
     const reg=await navigator.serviceWorker.register('/sw.js',{scope:'/'});await navigator.serviceWorker.ready;
-    if(await Notification.requestPermission()!=='granted')return showNotify();
     const{publicKey}=await (await fetch(NOTIFY_URL)).json();
     if(!publicKey)throw new Error('сервер уведомлений ещё не настроен');
     const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(publicKey)}),j=sub.toJSON();
@@ -696,12 +702,13 @@ async function pushOn(){
     if(error)throw error;
     toast('🔔 Уведомления включены');pushTest(true)
   }catch(e){console.error(e);toast('Не получилось включить: '+(e.message||e))}
-  showNotify()}
+  clearTimeout(hint);showNotify()}
 async function pushOff(){const sub=await pushSub();if(sub){await sb.from('push_subscriptions').delete().eq('endpoint',sub.endpoint);await sub.unsubscribe()}toast('Уведомления на этом устройстве выключены');showNotify()}
 async function pushTest(quiet){const{data:{session}}=await sb.auth.getSession();
   const r=await fetch(NOTIFY_URL,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify({test:true})}).catch(()=>null);
   const j=r?await r.json().catch(()=>({})):{};
-  if(!quiet||!j.sent)toast(j.sent?'Отправлено — уведомление придёт через пару секунд':'Проверка не отправилась: '+(j.error||(r?r.status:'нет связи')))}
+  const why=j.error==='forbidden'?'нет прав администратора':j.error||(r&&!r.ok?'ошибка сервера '+r.status:!r?'нет связи':j.devices===0?'это устройство не подключено — нажмите «Выключить» и снова «Включить»':(j.failed||[]).join('; ')||'неизвестная причина');
+  if(!quiet||!j.sent)toast(j.sent?'Отправлено — уведомление придёт через пару секунд':'Проверка не отправилась: '+why,8000)}
 
 function closeAdminChat(){if(adminChat){adminChat.destroy();adminChat=null}const id=adminChatLesson;adminChatLesson=null;
   if(id){const el=document.getElementById('chat-'+id);if(el)el.innerHTML='';updateChatBtn(id)}}

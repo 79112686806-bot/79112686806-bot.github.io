@@ -13,7 +13,6 @@
 // В проекте задеплоена под именем clever-action (адрес — app_config.notify_url и NOTIFY_URL в admin.html), без проверки JWT.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import webpush from 'npm:web-push@3.6.7';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -28,7 +27,52 @@ const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SE
 });
 const PUB = Deno.env.get('VAPID_PUBLIC_KEY') ?? '';
 const SITE_URL = (Deno.env.get('SITE_URL') ?? '').replace(/\/$/, '');
-if (PUB) webpush.setVapidDetails(Deno.env.get('VAPID_SUBJECT') ?? 'mailto:admin@example.com', PUB, Deno.env.get('VAPID_PRIVATE_KEY')!);
+const PRIV = Deno.env.get('VAPID_PRIVATE_KEY') ?? '';
+const SUBJECT = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:admin@example.com';
+
+// ---- Web Push на Web Crypto (шифрование aes128gcm — RFC 8291, подпись VAPID — RFC 8292), без npm-пакетов ----
+const enc = new TextEncoder();
+const b64uDec = (s: string) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (s.length % 4)) % 4)), (c) => c.charCodeAt(0));
+const b64uEnc = (b: ArrayBuffer | Uint8Array) => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const cat = (...a: Uint8Array[]) => { const r = new Uint8Array(a.reduce((n, x) => n + x.length, 0)); let o = 0; for (const x of a) { r.set(x, o); o += x.length; } return r; };
+async function hkdf(salt: Uint8Array, ikm: Uint8Array, info: Uint8Array, len: number) {
+  const k = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']);
+  return new Uint8Array(await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt, info }, k, len * 8));
+}
+let vapidKey: CryptoKey | null = null;
+async function vapidJwt(aud: string) {
+  if (!vapidKey) {
+    const p = b64uDec(PUB);
+    vapidKey = await crypto.subtle.importKey('jwk', { kty: 'EC', crv: 'P-256', d: PRIV, x: b64uEnc(p.slice(1, 33)), y: b64uEnc(p.slice(33, 65)), ext: true },
+      { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+  }
+  const part = (o: unknown) => b64uEnc(enc.encode(JSON.stringify(o)));
+  const unsigned = part({ typ: 'JWT', alg: 'ES256' }) + '.' + part({ aud, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: SUBJECT });
+  return unsigned + '.' + b64uEnc(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, vapidKey, enc.encode(unsigned)));
+}
+async function encryptPayload(p256dh: string, auth: string, text: string) {
+  const ua = b64uDec(p256dh), secret = b64uDec(auth);
+  const kp = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']) as CryptoKeyPair;
+  const as = new Uint8Array(await crypto.subtle.exportKey('raw', kp.publicKey) as ArrayBuffer);
+  const uaKey = await crypto.subtle.importKey('raw', ua, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const shared = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: uaKey }, kp.privateKey, 256));
+  const ikm = await hkdf(secret, shared, cat(enc.encode('WebPush: info\0'), ua, as), 32);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const cek = await hkdf(salt, ikm, enc.encode('Content-Encoding: aes128gcm\0'), 16);
+  const nonce = await hkdf(salt, ikm, enc.encode('Content-Encoding: nonce\0'), 12);
+  const key = await crypto.subtle.importKey('raw', cek, 'AES-GCM', false, ['encrypt']);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, key, cat(enc.encode(text), new Uint8Array([2]))));
+  return cat(salt, new Uint8Array([0, 0, 16, 0]), new Uint8Array([as.length]), as, ct);
+}
+async function sendPush(sub: { endpoint: string; p256dh: string; auth: string }, text: string) {
+  const r = await fetch(sub.endpoint, {
+    method: 'POST',
+    headers: { Authorization: `vapid t=${await vapidJwt(new URL(sub.endpoint).origin)}, k=${PUB}`, 'Content-Encoding': 'aes128gcm',
+      'Content-Type': 'application/octet-stream', TTL: '86400', Urgency: 'high' },
+    body: await encryptPayload(sub.p256dh, sub.auth, text),
+  });
+  return { status: r.status, text: r.ok ? '' : (await r.text()).slice(0, 200) };
+}
 
 type Note = { dedupe: string; title: string; body: string; url: string };
 const cut = (s: unknown, n = 140) => { const t = String(s ?? '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
@@ -136,15 +180,17 @@ Deno.serve(async (req) => {
   const { data: subs } = await q;
   const payload = JSON.stringify({ title: note.title, body: note.body, url: SITE_URL + note.url, tag: note.dedupe || 'test' });
   let sent = 0;
+  const failed: string[] = [];
   await Promise.all((subs ?? []).map(async (s) => {
     try {
-      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 24 * 3600, urgency: 'high' });
-      sent++;
+      const r = await sendPush(s, payload);
+      if (r.status < 300) sent++;
+      else if (r.status === 404 || r.status === 410) await db.from('push_subscriptions').delete().eq('endpoint', s.endpoint);   // устройство отписалось
+      else { failed.push(`${new URL(s.endpoint).host}: ${r.status} ${r.text}`); console.error('push', r.status, r.text); }
     } catch (e) {
-      const code = (e as { statusCode?: number }).statusCode;
-      if (code === 404 || code === 410) await db.from('push_subscriptions').delete().eq('endpoint', s.endpoint);   // устройство отписалось
-      else console.error('push', code, (e as Error).message);
+      failed.push(String((e as Error).message ?? e)); console.error('push', e);
     }
   }));
-  return json({ ok: true, sent });
+  // для проверки из админки — почему не отправилось
+  return json({ ok: true, sent, devices: (subs ?? []).length, ...(only ? { failed } : {}) });
 });
