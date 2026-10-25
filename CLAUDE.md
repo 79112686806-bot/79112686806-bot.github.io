@@ -67,6 +67,9 @@
 - Чат «Вопрос нам» — support.js (`Support.open({from})`): значки чата на «Как проходят занятия» и страницах курсов,
   плитка в кабинете. Гость пишет без регистрации (анонимный вход Supabase, отдельный клиент storageKey 'sb-support'),
   ученик — от своего аккаунта. Таблицы support_threads/support_messages, ответы — админка → «Вопросы с сайта».
+  Свои сообщения можно изменить/удалить (edited_at, deleted_at — мягкое удаление, правила в триггере support_message_guard),
+  админ удаляет любые и отмечает «Вопрос решён» (support_threads.done_at, rpc support_mark_done; новое сообщение посетителя снимает отметку).
+  Лимиты от ботов (заявки, идеи, гостевой чат, поток уведомлений) и ночная уборка гостей (pg_cron) — миграция 20261025000025.
 - Пуш-уведомления админу: триггеры notify_admin (pg_net) → Edge Function notify (web-push, VAPID-ключи в её секретах)
   → устройства из push_subscriptions (и сообщением ВК от сообщества, если заданы VK_GROUP_TOKEN/VK_USER_ID);
   service worker — sw.js, манифест админки — admin.webmanifest. Функция задеплоена под именем clever-action.

@@ -96,6 +96,9 @@ tbody tr:hover{background:#fbf7f1}
 .sup-m{max-width:80%;margin:6px 0;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;white-space:pre-wrap;overflow-wrap:anywhere}
 .sup-m.mine{margin-left:auto;background:var(--accent-soft)}
 .sup-m .small{display:block;margin-top:2px}
+.sup-acts{display:flex;gap:4px;margin-top:4px;opacity:0;transition:opacity .15s}.sup-m:hover .sup-acts,.sup-m:focus-within .sup-acts{opacity:1}
+.sup-acts button{font-size:12px;padding:2px 8px}
+@media(hover:none){.sup-acts{opacity:1}}
 .chatwrap{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fcfaf6}
 .callrow{display:flex;gap:14px;align-items:flex-start;padding:12px 16px;border-bottom:1px solid var(--line)}
 .callrow:last-child{border-bottom:none}
@@ -184,7 +187,9 @@ async function start(){
     if(tab==='queue')showQueue();
     if(card&&card.student.id===m.student_id&&adminChatLesson!==m.lesson_id){card.unread[m.lesson_id]=(card.unread[m.lesson_id]||0)+1;updateChatBtn(m.lesson_id)}
   }).subscribe();
-  sb.channel('admin-support').on('postgres_changes',{event:'INSERT',schema:'public',table:'support_messages'},p=>{
+  sb.channel('admin-support').on('postgres_changes',{event:'UPDATE',schema:'public',table:'support_messages'},p=>{
+    if(document.getElementById('supList'))supPut(p.new);if(p.new.deleted_at)refreshQueueCount();
+  }).on('postgres_changes',{event:'INSERT',schema:'public',table:'support_messages'},p=>{
     const m=p.new;if(m.from_admin)return;refreshQueueCount();toast('❓ Вопрос с сайта');
     const[tab,arg]=(location.hash.slice(1)||'queue').split('/');
     if(tab==='support'){if(arg===m.user_id)supAppend(m,true);else showSupport(arg)}else if(tab==='queue')showQueue();
@@ -642,30 +647,52 @@ let adminChat=null,adminChatLesson=null;
 function chatLabel(id){const n=card&&card.unread[id];return n?`💬 Чат · ${n} нов.`:card&&card.hasThread[id]?'💬 Чат':'💬 Написать ученику'}
 function updateChatBtn(id){const b=document.getElementById('cb-'+id);if(b)b.textContent=adminChatLesson===id?'Свернуть чат':chatLabel(id)}
 // ---------- Вопросы с сайта (чат «Вопрос нам», support.js) ----------
-async function countSupportUnread(){const{count}=await sb.from('support_messages').select('id',{count:'exact',head:true}).eq('from_admin',false).is('read_at',null);return count||0}
+async function countSupportUnread(){const{count}=await sb.from('support_messages').select('id',{count:'exact',head:true}).eq('from_admin',false).is('read_at',null).is('deleted_at',null);return count||0}
 const supName=t=>t.name||(t.is_guest?'Гость сайта':studentName(t.user_id));
+const SUP_COLS='id,body,from_admin,created_at,read_at,edited_at,deleted_at';
+let supMsgs={};
 async function showSupport(uid){
-  const[{data:threads},{data:unr}]=await Promise.all([sb.from('support_threads').select('user_id,name,contact,page,is_guest,created_at,last_at').order('last_at',{ascending:false}).limit(300),
-    sb.from('support_messages').select('user_id').eq('from_admin',false).is('read_at',null)]);
+  const[{data:threads},{data:unr}]=await Promise.all([sb.from('support_threads').select('user_id,name,contact,page,is_guest,created_at,last_at,done_at').order('last_at',{ascending:false}).limit(300),
+    sb.from('support_messages').select('user_id').eq('from_admin',false).is('read_at',null).is('deleted_at',null)]);
   const un={};(unr||[]).forEach(m=>un[m.user_id]=(un[m.user_id]||0)+1);
   if(!uid){setBadge('sCount',(unr||[]).length);
-    app.innerHTML=`<h1>Вопросы с сайта</h1>${(threads||[]).length?`<div class="card qlist">${threads.map(t=>`<a class="qitem" href="#support/${t.user_id}"><div class="t"><b>${esc(supName(t))}</b>${t.is_guest?'<span class="badge b-mute">гость</span>':'<span class="badge b-ok">ученик</span>'}${un[t.user_id]?`<span class="badge b-warn">${un[t.user_id]} новых</span>`:''}<span class="small muted" style="margin-left:auto">${fmtDate(t.last_at)}</span></div><div class="small muted">${esc([t.contact,t.page].filter(Boolean).join(' · '))}</div></a>`).join('')}</div>`:'<p class="muted">Пока никто не писал. Вопросы появятся здесь, когда посетитель нажмёт значок чата на сайте.</p>'}`;return}
+    app.innerHTML=`<h1>Вопросы с сайта</h1>${(threads||[]).length?`<div class="card qlist">${threads.map(t=>`<a class="qitem" href="#support/${t.user_id}"><div class="t"><b>${esc(supName(t))}</b>${t.is_guest?'<span class="badge b-mute">гость</span>':'<span class="badge b-ok">ученик</span>'}${un[t.user_id]?`<span class="badge b-warn">${un[t.user_id]} новых</span>`:t.done_at?'<span class="badge b-ok">✓ решён</span>':''}<span class="small muted" style="margin-left:auto">${fmtDate(t.last_at)}</span></div><div class="small muted">${esc([t.contact,t.page].filter(Boolean).join(' · '))}</div></a>`).join('')}</div>`:'<p class="muted">Пока никто не писал. Вопросы появятся здесь, когда посетитель нажмёт значок чата на сайте.</p>'}`;return}
   const t=(threads||[]).find(x=>x.user_id===uid);
-  const{data:msgs}=await sb.from('support_messages').select('id,body,from_admin,created_at,read_at').eq('user_id',uid).order('created_at');
-  app.innerHTML=`<p><a href="#support">← Все вопросы</a></p><h1>${esc(t?supName(t):'Переписка')}</h1>
+  const{data:msgs}=await sb.from('support_messages').select(SUP_COLS).eq('user_id',uid).order('created_at');
+  supMsgs={};(msgs||[]).forEach(m=>supMsgs[m.id]=m);
+  app.innerHTML=`<p><a href="#support">← Все вопросы</a></p><div class="row" style="align-items:center;justify-content:space-between"><h1 style="margin:0">${esc(t?supName(t):'Переписка')}</h1>
+    ${t?(t.done_at?`<span class="row" style="align-items:center"><span class="badge b-ok">✓ вопрос решён ${fmtDate(t.done_at)}</span><button onclick="supDone('${uid}',false)">Открыть снова</button></span>`:`<button class="primary" onclick="supDone('${uid}',true)">✓ Вопрос решён</button>`):''}</div>
     <p class="small muted">${t?esc([t.is_guest?'гость сайта':'ученик',t.contact&&'контакт: '+t.contact,t.page&&'откуда: '+t.page,'первое сообщение '+fmtDate(t.created_at)].filter(Boolean).join(' · ')):''}</p>
     <div class="card sup-thread" id="supList">${(msgs||[]).map(supMsgHtml).join('')||'<p class="muted">Сообщений нет.</p>'}</div>
-    <form class="row" style="align-items:flex-end" onsubmit="supReply(event,'${uid}')"><textarea id="supText" rows="3" style="flex:1;min-width:220px" maxlength="2000" placeholder="Ответ придёт человеку в окно чата на сайте (Ctrl+Enter — отправить)" onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey))this.form.requestSubmit()"></textarea><button class="primary" type="submit">Отправить</button></form>`;
+    <form class="row" style="align-items:flex-end" onsubmit="supReply(event,'${uid}')"><textarea id="supText" rows="3" style="flex:1;min-width:220px" maxlength="2000" placeholder="Ответ придёт человеку в окно чата на сайте (Ctrl+Enter — отправить)" onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey))this.form.requestSubmit()"></textarea><button class="primary" type="submit">Отправить</button></form>
+    <p class="small muted">Свои ответы можно изменить или удалить, сообщения посетителя — удалить (например, спам). «Вопрос решён» гасит непрочитанные; новое сообщение посетителя снова откроет вопрос.</p>`;
   const l=document.getElementById('supList');l.scrollTop=l.scrollHeight;
   await sb.from('support_messages').update({read_at:new Date().toISOString()}).eq('user_id',uid).eq('from_admin',false).is('read_at',null);
   refreshQueueCount()}
-function supMsgHtml(m){return `<div class="sup-m ${m.from_admin?'mine':''}"><div>${esc(m.body)}</div><span class="small muted">${fmtDate(m.created_at)}${m.from_admin?(m.read_at?' · прочитано':' · отправлено'):''}</span></div>`}
-function supAppend(m,markRead){const l=document.getElementById('supList');if(!l)return;l.querySelector('p.muted')?.remove();l.insertAdjacentHTML('beforeend',supMsgHtml(m));l.scrollTop=l.scrollHeight;
+function supMsgHtml(m){
+  const body=m.deleted_at?'<i class="muted">Сообщение удалено</i>':`<div>${esc(m.body)}</div>`;
+  const acts=m.deleted_at?'':`<span class="sup-acts">${m.from_admin?`<button type="button" onclick="supEdit(${m.id})">✎ Изменить</button>`:''}<button type="button" onclick="supDel(${m.id})">🗑 Удалить</button></span>`;
+  return `<div class="sup-m ${m.from_admin?'mine':''}" data-id="${m.id}">${body}<span class="small muted">${fmtDate(m.created_at)}${m.edited_at&&!m.deleted_at?' · изменено':''}${m.from_admin&&!m.deleted_at?(m.read_at?' · прочитано':' · отправлено'):''}</span>${acts}</div>`}
+function supPut(m){supMsgs[m.id]={...supMsgs[m.id],...m};const el=document.querySelector(`#supList [data-id="${m.id}"]`);if(el)el.outerHTML=supMsgHtml(supMsgs[m.id]);return !!el}
+function supAppend(m,markRead){const l=document.getElementById('supList');if(!l)return;if(supPut(m))return;l.querySelector('p.muted')?.remove();l.insertAdjacentHTML('beforeend',supMsgHtml(m));l.scrollTop=l.scrollHeight;
   if(markRead)sb.from('support_messages').update({read_at:new Date().toISOString()}).eq('id',m.id).then(refreshQueueCount)}
 async function supReply(e,uid){e.preventDefault();const t=supText.value.trim();if(!t)return;
-  const{data,error}=await sb.from('support_messages').insert({user_id:uid,body:t}).select('id,body,from_admin,created_at,read_at').single();
+  const{data,error}=await sb.from('support_messages').insert({user_id:uid,body:t}).select(SUP_COLS).single();
   if(error){console.error(error);return toast('Не удалось отправить')}
   supText.value='';supAppend(data,false)}
+function supEdit(id){const m=supMsgs[id],el=document.querySelector(`#supList [data-id="${id}"]`);if(!m||!el)return;
+  el.innerHTML=`<textarea rows="3" style="width:100%" maxlength="2000">${esc(m.body)}</textarea><div class="row" style="margin-top:6px"><button class="primary" type="button">Сохранить</button><button type="button">Отмена</button></div>`;
+  const[save,cancel]=el.querySelectorAll('button'),ta=el.querySelector('textarea');ta.focus();
+  cancel.onclick=()=>supPut(m);
+  save.onclick=async()=>{const t=ta.value.trim();if(!t)return;save.disabled=true;
+    const{data,error}=await sb.from('support_messages').update({body:t}).eq('id',id).select(SUP_COLS).single();
+    if(error){console.error(error);save.disabled=false;return toast('Не удалось изменить')}supPut(data)}}
+async function supDel(id){if(!confirm('Удалить сообщение? У посетителя оно тоже исчезнет.'))return;
+  const{data,error}=await sb.from('support_messages').update({deleted_at:new Date().toISOString()}).eq('id',id).select(SUP_COLS).single();
+  if(error){console.error(error);return toast('Не удалось удалить')}supPut(data);refreshQueueCount()}
+async function supDone(uid,done){const{error}=await sb.rpc('support_mark_done',{p_user:uid,p_done:done});
+  if(error){console.error(error);return toast('Не получилось: '+(error.message||''))}
+  toast(done?'✓ Вопрос отмечен решённым':'Вопрос снова открыт');showSupport(uid);refreshQueueCount()}
 
 // ---------- Уведомления на телефон (Web Push; присылает Edge Function notify) ----------
 const NOTIFY_URL=APP_CONFIG.supabaseUrl+'/functions/v1/clever-action';   // функция notify задеплоена под этим именем

@@ -25,6 +25,13 @@
 .sup-them{align-self:flex-start;background:rgba(255,250,236,.9);border:1px solid rgba(74,44,20,.18);border-bottom-left-radius:4px}
 .sup-me{align-self:flex-end;background:rgba(154,58,27,.12);border:1px solid rgba(154,58,27,.25);border-bottom-right-radius:4px}
 .sup-me.sending{opacity:.6}
+.sup-me[data-id]{cursor:pointer}
+.sup-msg.gone{font-style:italic;color:var(--ink-soft,#6e4b2c);background:transparent;cursor:default}
+.sup-act{align-self:flex-end;display:flex;gap:6px;margin-top:-4px;animation:supIn .2s ease-out}
+.sup-act button{border:1px solid rgba(74,44,20,.3);border-radius:4px;background:rgba(255,250,236,.9);color:var(--ink,#3a2313);font:inherit;font-size:13px;padding:4px 10px;cursor:pointer}
+.sup-act button:hover{border-color:var(--sanguine,#9a3a1b);color:var(--sanguine,#9a3a1b)}
+.sup-edit{display:flex;align-items:center;gap:8px;padding:6px 14px 0;font-size:13px;color:var(--sanguine,#9a3a1b)}.sup-edit[hidden]{display:none}
+.sup-edit span{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.sup-edit button{border:0;background:none;color:inherit;font-size:18px;cursor:pointer}
 .sup-sys{align-self:center;max-width:92%;font-size:13px;color:var(--ink-soft,#6e4b2c);text-align:center}
 @keyframes supIn{from{opacity:0;transform:translateY(6px)}}
 .sup-intro{padding:0 14px 8px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -62,15 +69,51 @@
     return { c: guestClient, user: session ? session.user : null, guest: true };
   }
 
+  const msgs = {};   // id → сообщение (для правки)
+  function paint(d, m) {
+    d.classList.toggle('gone', !!m.deleted_at);
+    d.innerHTML = m.deleted_at ? `Сообщение удалено<time>${tm(m.created_at)}</time>`
+      : `${esc(m.body)}<time>${m.edited_at ? 'изменено · ' : ''}${m.created_at ? tm(m.created_at) : 'отправляется…'}</time>`;
+  }
   function addMsg(m, mine) {
     const list = box.querySelector('.sup-list');
-    if (m.id && list.querySelector(`[data-id="${m.id}"]`)) return;
+    if (m.id && list.querySelector(`[data-id="${m.id}"]`)) return updMsg(m);
     const d = document.createElement('div');
-    d.className = 'sup-msg ' + (mine ? 'sup-me' : 'sup-them'); if (m.id) d.dataset.id = m.id;
-    d.innerHTML = `${esc(m.body)}<time>${m.created_at ? tm(m.created_at) : 'отправляется…'}</time>`;
+    d.className = 'sup-msg ' + (mine ? 'sup-me' : 'sup-them'); if (m.id) { d.dataset.id = m.id; msgs[m.id] = m; }
+    paint(d, m);
+    if (mine && m.id) d.onclick = () => actions(d);
     list.append(d); list.scrollTop = list.scrollHeight;
     return d;
   }
+  function updMsg(m) {
+    const d = box && box.querySelector(`.sup-list [data-id="${m.id}"]`); if (!d) return;
+    msgs[m.id] = { ...msgs[m.id], ...m }; paint(d, msgs[m.id]);
+    if (m.deleted_at && d.nextElementSibling && d.nextElementSibling.classList.contains('sup-act')) d.nextElementSibling.remove();
+    return d;
+  }
+  function actions(d) {
+    const m = msgs[d.dataset.id], next = d.nextElementSibling;
+    box.querySelectorAll('.sup-act').forEach((a) => a.remove());
+    if (!m || m.deleted_at || (next && next.classList.contains('sup-act'))) return;
+    const a = document.createElement('div'); a.className = 'sup-act';
+    a.innerHTML = '<button type="button" data-a="edit">✎ Изменить</button><button type="button" data-a="del">🗑 Удалить</button>';
+    a.onclick = async (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      a.remove();
+      if (b.dataset.a === 'edit') return startEdit(m);
+      if (!confirm('Удалить сообщение?')) return;
+      const { data, error } = await ctx.c.from('support_messages').update({ deleted_at: new Date().toISOString() }).eq('id', m.id).select('id,body,edited_at,deleted_at,created_at').single();
+      if (error) { console.error(error); box.querySelector('.sup-err').textContent = 'Не получилось удалить. Попробуйте ещё раз.'; } else updMsg(data);
+    };
+    d.after(a);
+  }
+  let editing = null;
+  function startEdit(m) {
+    editing = m; const ta = box.querySelector('textarea'), bar = box.querySelector('.sup-edit');
+    bar.hidden = false; bar.querySelector('span').textContent = 'Изменить: ' + m.body;
+    ta.value = m.body; grow(ta); ta.focus();
+  }
+  function stopEdit() { editing = null; box.querySelector('.sup-edit').hidden = true; const ta = box.querySelector('textarea'); ta.value = ''; grow(ta); }
   function sys(t) { const d = document.createElement('div'); d.className = 'sup-sys'; d.textContent = t; box.querySelector('.sup-list').append(d); }
 
   async function markRead() {
@@ -84,7 +127,7 @@
       const m = p.new;
       if (box && box.classList.contains('on')) { if (m.from_admin) { addMsg(m, false); markRead(); } else addMsg(m, true); }
       else if (m.from_admin) pill(1);
-    }).subscribe();
+    }).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'support_messages', filter: 'user_id=eq.' + ctx.user.id }, (p) => { if (box) updMsg(p.new); }).subscribe();
   }
 
   async function load() {
@@ -96,7 +139,7 @@
     if (!ctx.user) return;
     const [{ data: th }, { data: msgs }] = await Promise.all([
       ctx.c.from('support_threads').select('name,contact').eq('user_id', ctx.user.id).maybeSingle(),
-      ctx.c.from('support_messages').select('id,body,from_admin,created_at').eq('user_id', ctx.user.id).order('created_at').limit(200),
+      ctx.c.from('support_messages').select('id,body,from_admin,created_at,edited_at,deleted_at').eq('user_id', ctx.user.id).order('created_at').limit(200),
     ]);
     hasThread = !!th;
     if (th) { box.querySelector('[name=name]').value = th.name || ''; box.querySelector('[name=contact]').value = th.contact || ''; if (th.name || th.contact) box.querySelector('.sup-intro').hidden = true; }
@@ -108,6 +151,13 @@
     const ta = box.querySelector('textarea'), btn = box.querySelector('.sup-send'), err = box.querySelector('.sup-err');
     const text = ta.value.trim(); if (!text) return;
     err.textContent = ''; btn.disabled = true;
+    if (editing) {
+      const m = editing;
+      const { data, error } = await ctx.c.from('support_messages').update({ body: text.slice(0, 2000) }).eq('id', m.id).select('id,body,edited_at,deleted_at,created_at').single();
+      btn.disabled = false;
+      if (error) { console.error(error); err.textContent = 'Не получилось изменить. Попробуйте ещё раз.'; return; }
+      stopEdit(); updMsg(data); return;
+    }
     const tmp = addMsg({ body: text }, true); tmp.classList.add('sending'); ta.value = ''; grow(ta);
     // скрытое поле видят и заполняют только боты — им делаем вид, что всё отправлено
     if (box.querySelector('[name=website]').value) { tmp.classList.remove('sending'); btn.disabled = false; return; }
@@ -161,13 +211,15 @@
       <div class="sup-list" aria-live="polite"></div>
       <div class="sup-intro"><input name="name" maxlength="80" placeholder="Как к вам обращаться" autocomplete="name"><input name="contact" maxlength="200" placeholder="Телефон или Telegram" autocomplete="tel"><p>Необязательно — если удобнее получить ответ ещё и там.</p></div>
       <div class="sup-err" role="alert"></div>
+      <div class="sup-edit" hidden><span></span><button type="button" aria-label="Отменить изменение">×</button></div>
       <form class="sup-form"><input name="website" class="sup-hp" tabindex="-1" autocomplete="off" aria-hidden="true"><textarea rows="1" maxlength="2000" placeholder="Напишите вопрос…" aria-label="Сообщение"></textarea><button type="submit" class="sup-send" aria-label="Отправить">➜</button></form>`;
     box.querySelector('.sup-x').onclick = close;
+    box.querySelector('.sup-edit button').onclick = stopEdit;
     const ta = box.querySelector('textarea');
     ta.addEventListener('input', () => grow(ta));
     ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } });
     box.querySelector('form').onsubmit = (e) => { e.preventDefault(); send(); };
-    box.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    box.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (editing) stopEdit(); else close(); } });
     document.body.append(back, box);
   }
   function open(o = {}) {
@@ -194,7 +246,7 @@
   }
   async function unread() {
     const w = await who(); if (!w.user) return 0;
-    const { count } = await w.c.from('support_messages').select('id', { count: 'exact', head: true }).eq('user_id', w.user.id).eq('from_admin', true).is('read_at', null);
+    const { count } = await w.c.from('support_messages').select('id', { count: 'exact', head: true }).eq('user_id', w.user.id).eq('from_admin', true).is('read_at', null).is('deleted_at', null);
     if (!ctx) { ctx = w; listen(); }
     return count || 0;
   }
