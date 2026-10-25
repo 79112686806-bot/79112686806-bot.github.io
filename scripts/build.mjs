@@ -182,7 +182,7 @@ async function main() {
   for (const f of FILES) copyFileSync(f, `${OUT}/${f}`);
   if (existsSync('assets')) cpSync('assets', `${OUT}/assets`, { recursive: true });
   cpSync('vendor', `${OUT}/vendor`, { recursive: true });   // supabase-js со своего сайта, без внешнего CDN
-  writeFileSync(`${OUT}/config.js`, `window.APP_CONFIG=${JSON.stringify({ supabaseUrl: url, supabaseKey: key })};\n`);
+  writeFileSync(`${OUT}/config.js`, `window.APP_CONFIG=${JSON.stringify({ supabaseUrl: url, supabaseKey: key, siteEmail: INFO.email || '' })};\n`);
 
   const [courses, videos, reviews, memoVideoList] = await Promise.all([
     loadCourses(),

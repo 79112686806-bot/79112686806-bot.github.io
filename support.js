@@ -35,7 +35,9 @@
 .sup-form textarea:focus,.sup-intro input:focus{outline:2px solid rgba(154,58,27,.35);outline-offset:0}
 .sup-send{flex:none;width:46px;height:46px;border:0;border-radius:50%;background:var(--sanguine,#9a3a1b);color:#fff7e6;font-size:20px;cursor:pointer;transition:transform .15s}
 .sup-send:hover{transform:scale(1.06)}.sup-send:disabled{opacity:.5;transform:none;cursor:default}
+.sup-hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
 .sup-err{padding:0 14px 6px;font-size:13px;color:var(--sanguine,#9a3a1b)}.sup-err:empty{display:none}
+.sup-mail{display:inline-block;margin-top:6px;padding:6px 12px;border:1.5px solid var(--sanguine,#9a3a1b);border-radius:4px;color:var(--sanguine,#9a3a1b);font-weight:700;text-decoration:none}.sup-mail:hover{background:var(--sanguine,#9a3a1b);color:#fff7e6}
 .sup-pill{position:fixed;right:18px;bottom:18px;z-index:1400;display:flex;align-items:center;gap:8px;padding:10px 16px 10px 12px;border:0;border-radius:40px;background:var(--sanguine,#9a3a1b);color:#fff7e6;
   font:700 15px "PT Serif",Georgia,serif;box-shadow:0 10px 26px rgba(60,20,5,.4);cursor:pointer;animation:supIn .4s ease-out}
 .sup-pill i{width:9px;height:9px;border-radius:50%;background:#ffd36b;box-shadow:0 0 0 0 rgba(255,211,107,.7);animation:supPulse 1.6s infinite}
@@ -107,6 +109,8 @@
     const text = ta.value.trim(); if (!text) return;
     err.textContent = ''; btn.disabled = true;
     const tmp = addMsg({ body: text }, true); tmp.classList.add('sending'); ta.value = ''; grow(ta);
+    // скрытое поле видят и заполняют только боты — им делаем вид, что всё отправлено
+    if (box.querySelector('[name=website]').value) { tmp.classList.remove('sending'); btn.disabled = false; return; }
     try {
       if (!ctx || !ctx.user) {
         ctx = ctx || await who();
@@ -133,8 +137,18 @@
       listen();
     } catch (e) {
       console.error(e); tmp.remove(); ta.value = text; grow(ta);
-      err.textContent = e && e.message === 'auth' ? 'Чат пока недоступен. Напишите нам на почту — она в разделе «Контакты».'
-        : /Слишком много/.test(e && e.message) ? 'Слишком много сообщений подряд. Попробуйте чуть позже.' : 'Не получилось отправить. Проверьте интернет и попробуйте ещё раз.';
+      if (/Слишком много/.test(e && e.message)) err.textContent = 'Слишком много сообщений подряд. Попробуйте чуть позже.';
+      else {
+        // чат не отвечает — сразу предлагаем письмо с уже написанным вопросом
+        err.textContent = e && e.message === 'auth' ? 'Чат сейчас недоступен — отправьте вопрос письмом, ответим на почту.' : 'Не получилось отправить. Проверьте интернет или отправьте вопрос письмом.';
+        const mail = (window.APP_CONFIG || {}).siteEmail;
+        if (mail) {
+          const f = box.querySelector('.sup-intro'), who = ['name', 'contact'].map((n) => (f.querySelector(`[name=${n}]`) || {}).value || '').map((v) => v.trim()).filter(Boolean).join(', ');
+          const a = document.createElement('a'); a.className = 'sup-mail';
+          a.href = `mailto:${mail}?subject=${encodeURIComponent('Вопрос с сайта')}&body=${encodeURIComponent(text + (who ? '\n\n' + who : ''))}`;
+          a.textContent = '✉ Написать на почту'; err.append(' ', a);
+        }
+      }
     } finally { btn.disabled = false; ta.focus(); }
   }
   const grow = (ta) => { ta.style.height = 'auto'; ta.style.height = Math.min(140, ta.scrollHeight) + 'px'; };
@@ -147,7 +161,7 @@
       <div class="sup-list" aria-live="polite"></div>
       <div class="sup-intro"><input name="name" maxlength="80" placeholder="Как к вам обращаться" autocomplete="name"><input name="contact" maxlength="200" placeholder="Телефон или Telegram" autocomplete="tel"><p>Необязательно — если удобнее получить ответ ещё и там.</p></div>
       <div class="sup-err" role="alert"></div>
-      <form class="sup-form"><textarea rows="1" maxlength="2000" placeholder="Напишите вопрос…" aria-label="Сообщение"></textarea><button type="submit" class="sup-send" aria-label="Отправить">➜</button></form>`;
+      <form class="sup-form"><input name="website" class="sup-hp" tabindex="-1" autocomplete="off" aria-hidden="true"><textarea rows="1" maxlength="2000" placeholder="Напишите вопрос…" aria-label="Сообщение"></textarea><button type="submit" class="sup-send" aria-label="Отправить">➜</button></form>`;
     box.querySelector('.sup-x').onclick = close;
     const ta = box.querySelector('textarea');
     ta.addEventListener('input', () => grow(ta));
