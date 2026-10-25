@@ -37,7 +37,6 @@
 .sup-intro{padding:0 14px 8px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sup-intro input,.sup-form textarea{width:100%;font:inherit;font-size:14.5px;color:var(--ink,#3a2313);background:rgba(255,250,236,.85);border:1px solid rgba(74,44,20,.28);border-radius:6px;padding:8px 10px}
 .sup-intro input.need{border-color:var(--sanguine,#9a3a1b);box-shadow:0 0 0 2px rgba(154,58,27,.25)}
-.sup-intro p{grid-column:1/-1;margin:0;font-size:12.5px;color:var(--ink-soft,#6e4b2c)}
 .sup-form{display:flex;gap:8px;align-items:flex-end;padding:10px 14px 14px;border-top:1px solid rgba(74,44,20,.2)}
 .sup-form textarea{resize:none;min-height:44px;max-height:140px;line-height:1.4}
 .sup-form textarea:focus,.sup-intro input:focus{outline:2px solid rgba(154,58,27,.35);outline-offset:0}
@@ -45,6 +44,7 @@
 .sup-send:hover{transform:scale(1.06)}.sup-send:disabled{opacity:.5;transform:none;cursor:default}
 .sup-hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
 .sup-err{padding:0 14px 6px;font-size:13px;color:var(--sanguine,#9a3a1b)}.sup-err:empty{display:none}
+.sup-err.warn{margin:0 14px 8px;padding:9px 12px;background:var(--sanguine,#9a3a1b);color:#fff;border-radius:4px;font-size:13.5px;line-height:1.35;animation:supIn .2s ease-out}
 .sup-mail{display:inline-block;margin-top:6px;padding:6px 12px;border:1.5px solid var(--sanguine,#9a3a1b);border-radius:4px;color:var(--sanguine,#9a3a1b);font-weight:700;text-decoration:none}.sup-mail:hover{background:var(--sanguine,#9a3a1b);color:#fff7e6}
 .sup-pill{position:fixed;right:18px;bottom:18px;z-index:1400;display:flex;align-items:center;gap:8px;padding:10px 16px 10px 12px;border:0;border-radius:40px;background:var(--sanguine,#9a3a1b);color:#fff7e6;
   font:700 15px "PT Serif",Georgia,serif;box-shadow:0 10px 26px rgba(60,20,5,.4);cursor:pointer;animation:supIn .4s ease-out}
@@ -151,7 +151,7 @@
   async function send() {
     const ta = box.querySelector('textarea'), btn = box.querySelector('.sup-send'), err = box.querySelector('.sup-err');
     const text = ta.value.trim(); if (!text) return;
-    err.textContent = ''; btn.disabled = true;
+    err.textContent = ''; err.classList.remove('warn'); btn.disabled = true;
     if (editing) {
       const m = editing;
       const { data, error } = await ctx.c.from('support_messages').update({ body: text.slice(0, 2000) }).eq('id', m.id).select('id,body,edited_at,deleted_at,created_at').single();
@@ -161,7 +161,7 @@
     }
     const nameEl = box.querySelector('[name=name]');
     if (!box.querySelector('.sup-intro').hidden && nameEl.value.trim().length < 2) {
-      btn.disabled = false; err.textContent = 'Напишите, как к вам обращаться, — без имени сообщение не отправится.';
+      btn.disabled = false; err.textContent = '⚠ Сообщение не отправлено. Заполните строку «Как к вам обращаться» — без имени отправить нельзя.'; err.classList.add('warn');
       nameEl.classList.add('need'); nameEl.focus(); return;
     }
     const tmp = addMsg({ body: text }, true); tmp.classList.add('sending'); ta.value = ''; grow(ta);
@@ -215,7 +215,7 @@
     box = document.createElement('div'); box.className = 'sup'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', 'Вопрос нам');
     box.innerHTML = `<div class="sup-head"><span class="sup-ava">${ICON}</span><div><h3>Вопрос нам</h3><small>Инженерный клуб · отвечаем в чате</small></div><button type="button" class="sup-x" aria-label="Закрыть">×</button></div>
       <div class="sup-list" aria-live="polite"></div>
-      <div class="sup-intro"><input name="name" maxlength="80" placeholder="Как к вам обращаться *" autocomplete="name" required oninput="this.classList.remove('need')"><input name="contact" maxlength="200" placeholder="Телефон или Telegram" autocomplete="tel"><p>Имя — обязательно. Телефон — по желанию, если удобнее получить ответ ещё и там.</p></div>
+      <div class="sup-intro"><input name="name" maxlength="80" placeholder="Как к вам обращаться *" autocomplete="name" required oninput="this.classList.remove('need');const e=this.closest('.sup').querySelector('.sup-err.warn');if(e){e.textContent='';e.classList.remove('warn')}"><input name="contact" maxlength="200" placeholder="Телефон или Telegram" autocomplete="tel"></div>
       <div class="sup-err" role="alert"></div>
       <div class="sup-edit" hidden><span></span><button type="button" aria-label="Отменить изменение">×</button></div>
       <form class="sup-form"><input name="website" class="sup-hp" tabindex="-1" autocomplete="off" aria-hidden="true"><textarea rows="1" maxlength="2000" placeholder="Напишите вопрос…" aria-label="Сообщение"></textarea><button type="submit" class="sup-send" aria-label="Отправить">➜</button></form>`;
