@@ -68,7 +68,8 @@
   плитка в кабинете. Гость пишет без регистрации (анонимный вход Supabase, отдельный клиент storageKey 'sb-support'),
   ученик — от своего аккаунта. Таблицы support_threads/support_messages, ответы — админка → «Вопросы с сайта».
 - Пуш-уведомления админу: триггеры notify_admin (pg_net) → Edge Function notify (web-push, VAPID-ключи в её секретах)
-  → устройства из push_subscriptions; service worker — sw.js, манифест админки — admin.webmanifest.
+  → устройства из push_subscriptions (и сообщением ВК от сообщества, если заданы VK_GROUP_TOKEN/VK_USER_ID);
+  service worker — sw.js, манифест админки — admin.webmanifest. Функция задеплоена под именем clever-action.
   Включаются в админке → «Уведомления на телефон» (на iPhone — только с экрана «Домой»).
 - Кабинет: карточки курсов с кольцом прогресса и кнопкой «Продолжить», плитки (вопрос, мои данные, отзыв, программы).
 - Клиент Supabase в странице — глобальная переменная `sb`, создаётся через `makeSupabase()` из sb-client.js

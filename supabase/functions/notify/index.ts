@@ -9,6 +9,8 @@
 //   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY — пара ключей Web Push (npx web-push generate-vapid-keys)
 //   VAPID_SUBJECT  — контакт отправителя, например mailto:club@engineeringclub.ru
 //   SITE_URL       — адрес сайта (ссылки в уведомлениях ведут в админку)
+//   VK_GROUP_TOKEN, VK_USER_ID — (необязательно) те же уведомления сообщением ВКонтакте от вашего сообщества;
+//                    VK_USER_ID — числовой id страницы администратора (несколько — через запятую)
 // SUPABASE_URL и SUPABASE_SERVICE_ROLE_KEY Supabase подставляет сам.
 // В проекте задеплоена под именем clever-action (адрес — app_config.notify_url и NOTIFY_URL в admin.html), без проверки JWT.
 
@@ -64,6 +66,27 @@ async function encryptPayload(p256dh: string, auth: string, text: string) {
   const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, key, cat(enc.encode(text), new Uint8Array([2]))));
   return cat(salt, new Uint8Array([0, 0, 16, 0]), new Uint8Array([as.length]), as, ct);
 }
+// ---- те же уведомления сообщением ВКонтакте: пишет ваше сообщество (ключ доступа с правом «сообщения») ----
+const VK_TOKEN = Deno.env.get('VK_GROUP_TOKEN') ?? '';
+const VK_USERS = (Deno.env.get('VK_USER_ID') ?? '').split(',').map((x) => x.trim()).filter(Boolean);
+// → сколько человек получили сообщение; ошибки — в failed
+async function sendVk(note: Note, failed: string[]) {
+  if (!VK_TOKEN || !VK_USERS.length) return 0;
+  let ok = 0;
+  const text = [note.title, note.body, SITE_URL ? SITE_URL + note.url : ''].filter(Boolean).join('\n');
+  await Promise.all(VK_USERS.map(async (user_id) => {
+    try {
+      const r = await fetch('https://api.vk.com/method/messages.send', {
+        method: 'POST',
+        body: new URLSearchParams({ access_token: VK_TOKEN, v: '5.199', user_id, random_id: String(crypto.getRandomValues(new Uint32Array(1))[0]), message: text, dont_parse_links: '1' }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (j.response) ok++; else failed.push(`вк: ${j.error?.error_code ?? r.status} ${j.error?.error_msg ?? ''}`.trim());
+    } catch (e) { failed.push('вк: ' + String((e as Error).message ?? e)); }
+  }));
+  return ok;
+}
+
 async function sendPush(sub: { endpoint: string; p256dh: string; auth: string }, text: string) {
   const r = await fetch(sub.endpoint, {
     method: 'POST',
@@ -152,7 +175,6 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method === 'GET') return json({ publicKey: PUB });
   if (req.method !== 'POST') return json({ error: 'method' }, 405);
-  if (!PUB) return json({ error: 'no_vapid' }, 500);
 
   let body: { table?: string; key?: Record<string, unknown>; test?: boolean };
   try { body = await req.json(); } catch { return json({ error: 'bad_request' }, 400); }
@@ -175,12 +197,14 @@ Deno.serve(async (req) => {
     if (dup) return json({ ok: true, duplicate: true });
   }
 
+  const failed: string[] = [];
+  const vk = await sendVk(note, failed);
+
   let q = db.from('push_subscriptions').select('endpoint,p256dh,auth');
   if (only) q = q.eq('user_id', only);
-  const { data: subs } = await q;
+  const { data: subs } = PUB ? await q : { data: [] };
   const payload = JSON.stringify({ title: note.title, body: note.body, url: SITE_URL + note.url, tag: note.dedupe || 'test' });
   let sent = 0;
-  const failed: string[] = [];
   await Promise.all((subs ?? []).map(async (s) => {
     try {
       const r = await sendPush(s, payload);
@@ -192,5 +216,5 @@ Deno.serve(async (req) => {
     }
   }));
   // для проверки из админки — почему не отправилось
-  return json({ ok: true, sent, devices: (subs ?? []).length, ...(only ? { failed } : {}) });
+  return json({ ok: true, sent, devices: (subs ?? []).length, vk, vkOn: !!(VK_TOKEN && VK_USERS.length), ...(only ? { failed } : {}) });
 });
