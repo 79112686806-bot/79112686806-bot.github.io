@@ -36,6 +36,7 @@
 @keyframes supIn{from{opacity:0;transform:translateY(6px)}}
 .sup-intro{padding:0 14px 8px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sup-intro input,.sup-form textarea{width:100%;font:inherit;font-size:14.5px;color:var(--ink,#3a2313);background:rgba(255,250,236,.85);border:1px solid rgba(74,44,20,.28);border-radius:6px;padding:8px 10px}
+.sup-intro input.need{border-color:var(--sanguine,#9a3a1b);box-shadow:0 0 0 2px rgba(154,58,27,.25)}
 .sup-intro p{grid-column:1/-1;margin:0;font-size:12.5px;color:var(--ink-soft,#6e4b2c)}
 .sup-form{display:flex;gap:8px;align-items:flex-end;padding:10px 14px 14px;border-top:1px solid rgba(74,44,20,.2)}
 .sup-form textarea{resize:none;min-height:44px;max-height:140px;line-height:1.4}
@@ -142,7 +143,7 @@
       ctx.c.from('support_messages').select('id,body,from_admin,created_at,edited_at,deleted_at').eq('user_id', ctx.user.id).order('created_at').limit(200),
     ]);
     hasThread = !!th;
-    if (th) { box.querySelector('[name=name]').value = th.name || ''; box.querySelector('[name=contact]').value = th.contact || ''; if (th.name || th.contact) box.querySelector('.sup-intro').hidden = true; }
+    if (th) { box.querySelector('[name=name]').value = th.name || ''; box.querySelector('[name=contact]').value = th.contact || ''; if (th.name) box.querySelector('.sup-intro').hidden = true; }
     (msgs || []).forEach((m) => addMsg(m, !m.from_admin));
     listen(); markRead();
   }
@@ -157,6 +158,11 @@
       btn.disabled = false;
       if (error) { console.error(error); err.textContent = 'Не получилось изменить. Попробуйте ещё раз.'; return; }
       stopEdit(); updMsg(data); return;
+    }
+    const nameEl = box.querySelector('[name=name]');
+    if (!box.querySelector('.sup-intro').hidden && nameEl.value.trim().length < 2) {
+      btn.disabled = false; err.textContent = 'Напишите, как к вам обращаться, — без имени сообщение не отправится.';
+      nameEl.classList.add('need'); nameEl.focus(); return;
     }
     const tmp = addMsg({ body: text }, true); tmp.classList.add('sending'); ta.value = ''; grow(ta);
     // скрытое поле видят и заполняют только боты — им делаем вид, что всё отправлено
@@ -209,7 +215,7 @@
     box = document.createElement('div'); box.className = 'sup'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', 'Вопрос нам');
     box.innerHTML = `<div class="sup-head"><span class="sup-ava">${ICON}</span><div><h3>Вопрос нам</h3><small>Инженерный клуб · отвечаем в чате</small></div><button type="button" class="sup-x" aria-label="Закрыть">×</button></div>
       <div class="sup-list" aria-live="polite"></div>
-      <div class="sup-intro"><input name="name" maxlength="80" placeholder="Как к вам обращаться" autocomplete="name"><input name="contact" maxlength="200" placeholder="Телефон или Telegram" autocomplete="tel"><p>Необязательно — если удобнее получить ответ ещё и там.</p></div>
+      <div class="sup-intro"><input name="name" maxlength="80" placeholder="Как к вам обращаться *" autocomplete="name" required oninput="this.classList.remove('need')"><input name="contact" maxlength="200" placeholder="Телефон или Telegram" autocomplete="tel"><p>Имя — обязательно. Телефон — по желанию, если удобнее получить ответ ещё и там.</p></div>
       <div class="sup-err" role="alert"></div>
       <div class="sup-edit" hidden><span></span><button type="button" aria-label="Отменить изменение">×</button></div>
       <form class="sup-form"><input name="website" class="sup-hp" tabindex="-1" autocomplete="off" aria-hidden="true"><textarea rows="1" maxlength="2000" placeholder="Напишите вопрос…" aria-label="Сообщение"></textarea><button type="submit" class="sup-send" aria-label="Отправить">➜</button></form>`;
