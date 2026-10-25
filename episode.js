@@ -4,8 +4,8 @@
 // (Web Speech API) или кнопками/полем, и по ответу выбирается следующий узел.
 // Управление как в обычном видеоплеере: панель поверх кадра (прячется, пока смотришь), полоса перемотки с подсказкой
 // времени, ±10 с, громкость, полный экран, клавиши (пробел/K, ←/→, J/L, M, F), двойное касание по краю — ±10 с.
-// Перематывать можно по уже просмотренному: вперёд — до места, где остановился; при повторе уже данные ответы
-// не спрашиваются заново. Место просмотра запоминается на устройстве — потом можно продолжить.
+// Перематывать можно вперёд и назад, как в обычном плеере; вперёд — до ближайшего вопроса без ответа (вопросы не пропускаются).
+// При повторе уже данные ответы не спрашиваются заново. Место просмотра запоминается на устройстве — потом можно продолжить.
 // Обращения по имени — отдельные короткие записи (<серия>/names/<имя>-hi.mp3 …), плеер включает их поверх ролика
 // (если имя длиннее места в ролике, кадр ждёт, пока оно прозвучит).
 // Episode.mount(el, { id, sb, onMeet, onAnswer }) → { pause, resume, destroy }; onMeet — кнопка «Встреча с преподавателем»,
@@ -25,17 +25,17 @@
   const NAME_MAP = Object.fromEntries(NAMES.split(' ').map((n) => [norm(n), n]));
 
   // ---------- Сценарии серий ----------
-  // ask: вопрос после ролика; kind: name | choice | free | ideas | any; next(ответ) → следующий узел
+  // ask: вопрос после ролика; kind: name | choice | free | ideas | any | pick (выбор своей идеи) | checks (вопросы «да / пока нет»);
+  // next(ответ) → следующий узел
   const EPISODES = {
     ep1: {
       title: 'Серия 1. Как мыслит инженер',   // обложка — /assets/episodes/<серия>-cover.webp (video/ep1/cover.mjs)
       start: 'n01',
-      slots: { name: [660, 300, 600, 80], problem: [580, 222, 340, 104], ideas: [572, 400, 816, 296] },   // в пикселях кадра 1920×1080
+      slots: { name: [660, 300, 600, 80], problem: [580, 222, 340, 104], ideas: [572, 400, 816, 296], idea: [580, 196, 760, 76], good: [576, 346, 358, 104], fix: [986, 346, 358, 104], checks: [1290, 493, 50, 182] },   // в пикселях кадра 1920×1080
       endText: 'Не забудь задание: найди дома три предмета, которые придумали инженеры, и подумай, как бы ты их улучшил.',
-      // длительность роликов, с (для полосы перемотки), момент и длина места для обращения по имени, момент, когда инженер выбирает идею
-      dur: { n01: 35.93, n02: 11.4, n03: 38.63, n04a: 4.9, n04b: 7.47, n05: 28.33, n06: 49.93, pNaush: 8.73, pZaryad: 8.83, pRyukzak: 8.73, pPoter: 8.6, pBudil: 7.8, pShnur: 6.93, pPen: 7.17, pTech: 7.67, pZont: 7.67, pChai: 7.93, pAny: 7.57, pNone: 12.37, n07: 13.13, n08a: 10.17, n08b: 15.13, n09: 13.3, n10a: 26.53, n10b: 19.4, n11: 34.73, n12: 6.5 },
+      // длительность роликов, с (для полосы перемотки), момент и длина места для обращения по имени
+      dur: { n01: 35.93, n02: 11.4, n03: 38.63, n04a: 4.9, n04b: 7.47, n05: 28.33, n06: 49.93, pNaush: 8.73, pZaryad: 8.83, pRyukzak: 8.73, pPoter: 8.6, pBudil: 7.8, pShnur: 6.93, pPen: 7.17, pTech: 7.67, pZont: 7.67, pChai: 7.93, pAny: 6.83, pNone: 12.37, pLife: 19.27, pOdd: 14.1, n07: 13.13, n08a: 13.5, n08b: 15.13, n09: 13.3, n10a: 26.53, n10b: 19.4, s01: 17.13, s02: 5.67, sFan: 8.9, sApp: 8.33, sBat: 9.93, sMag: 9.2, sSpr: 10.23, sKol: 8.53, sFly: 7.9, sSig: 9, sTep: 8.13, sZas: 7.7, sMat: 7.53, sRob: 10.1, sAny: 11.37, sOdd: 12.7, s03: 11.8, sGood: 17.23, sWork: 16.13, n11: 34.73, n12: 6.5 },
       voice: { n02: { slot: 'hi', at: 0.6, room: 1.77 }, n12: { slot: 'bye', at: 1.53, room: 1.3 } },
-      pickAt: { n08a: 6.7 },
       // реакция на названную проблему: узел с примером идеи (порядок важен — «телефон разряжается» → зарядка)
       problems: [
         ['pNaush', ['наушник', 'провод', 'шнур от', 'кабел', 'путают']], ['pZaryad', ['заряд', 'разряж', 'батаре', 'аккумулятор', 'садится']],
@@ -45,21 +45,72 @@
         ['pZont', ['зонт', 'дожд', 'лужа', 'лужи', 'промока']], ['pChai', ['чай', 'кружк', 'горяч', 'остыва', 'суп', 'какао']],
       ],
       noProblem: 'Наушники путаются',
+      // ответ «не знаю / ничего» — как пустой; проблема не про вещь (люди, уроки, чувства) — психолог просит назвать предмет
+      none: /^(не знаю|незнаю|не помню|ничего|нет|никакая|никакой|никакие|все удобно|все нормально|все хорошо)([\s.,!]|$)/,
+      life: ['брат', 'сестр', 'мама', 'маму', 'мамой', 'папа', 'папу', 'папой', 'родител', 'бабушк', 'дедушк', 'урок', 'домашк', 'домашн', 'школ', 'учител', 'училк', 'оценк', 'двойк', 'контрольн',
+        'скучн', 'скука', 'лень', 'ленюсь', 'друз', 'подруг', 'дружб', 'одноклассн', 'обижа', 'дерут', 'дразн', 'ругают', 'ругает', 'страшн', 'боюсь', 'грустн', 'одиноко', 'кошк', 'собак', 'младш', 'старш', 'не дают', 'не пускают'],
+      // шутка вместо проблемы (или набор букв) — психолог смеётся и просит назвать настоящую вещь
+      odd: ['динозавр', 'инопланет', 'пришельц', 'зомби', 'монстр', 'привидени', 'призрак', 'дракон', 'единорог', 'вампир', 'какашк', 'какаш', 'пук', 'жоп', 'дурак', 'ерунд', 'фигн', 'хз', 'бла-бла', 'блабла', 'хаха', 'ха-ха', 'лол', 'кринж', 'скибиди'],
+      // странная идея («ковёр», «торт») — инженер просит объяснить, как она поможет
+      oddIdea: ['ковер', 'ковр', 'диван', 'торт', 'пицц', 'конфет', 'морожен', 'шоколад', 'банан', 'арбуз', 'котик', 'кошк', 'собак', 'хомяк', 'слон', 'жираф', 'бегемот', 'крокодил', 'акул', 'обезьян', 'лошад', 'коров', 'свинь'],
+      // пример идеи из реакции на проблему — если ребёнок не назвал своих идей
+      examples: { pNaush: 'Катушка, которая сама сматывает провод', pZaryad: 'Рюкзак с солнечной батареей', pRyukzak: 'Рюкзак на колёсиках', pPoter: 'Маячок, который пищит',
+        pBudil: 'Будильник, который зажигает свет', pShnur: 'Застёжка на магнитах', pPen: 'Карандаш, который сам точится', pTech: 'Подставка, которая охлаждает',
+        pZont: 'Зонт, который стряхивает воду', pChai: 'Кружка с вентилятором', pNone: 'Катушка, которая сама сматывает провод' },
+      // ответ инженера на выбранную идею: узел по словам в идее (порядок важен — первый подходящий)
+      feedback: [
+        ['sFan', ['ковер-самол', 'ковер самол', 'волшеб', 'магия', 'магич', 'телепорт', 'невидим', 'лазер', 'портал', 'машина времени', 'вечн']],
+        ['sApp', ['приложени', 'телефон', 'смартфон', 'блютуз', 'bluetooth', 'программ', 'вайфай', 'wifi', 'wi-fi', 'интернет', 'сайт']],
+        ['sBat', ['батаре', 'заряд', 'аккумулятор', 'солнечн', 'электр', 'мотор', 'розетк']],
+        ['sMag', ['магнит']],
+        ['sSpr', ['пружин', 'резинк', 'катушк', 'сматыва', 'складн', 'склады', 'рулетк', 'сворачива']],
+        ['sKol', ['колес', 'колесик', 'ролик', 'тележк']],
+        ['sFly', ['самолет', 'лета', 'летит', 'дрон', 'крыл', 'пропеллер', 'вертол', 'ракет', 'парашют']],
+        ['sSig', ['свет', 'ламп', 'фонар', 'пищ', 'звук', 'звен', 'сигнал', 'маяч', 'gps', 'джипиэс', 'датчик', 'музык']],
+        ['sTep', ['вентилятор', 'охлажд', 'холод', 'нагрев', 'подогрев', 'тепл', 'грелк']],
+        ['sZas', ['липучк', 'застежк', 'клей', 'крюч', 'крепл', 'карман', 'ремен', 'зажим', 'прищеп', 'держател', 'кольц']],
+        ['sMat', ['мягк', 'резин', 'ткан', 'пластик', 'металл', 'дерев', 'непромока', 'водонепрониц', 'легк', 'прочн', 'стекл', 'бумаг']],
+        ['sRob', ['робот', 'сам', 'автомат', 'умн', 'искусствен']],
+      ],
+      checks: ['Идея решает проблему?', 'Её можно сделать?', 'Ей удобно пользоваться?'],
       graph: (S, E) => {
         const react = Object.fromEntries([...E.problems.map(([k]) => k), 'pAny', 'pNone'].map((k) => [k, { show: ['problem'], next: () => 'n07' }]));
+        const reacts = ['pAny', 'pNone', 'pLife', 'pOdd', ...E.problems.map(([k]) => k)];
+        // какая реакция на проблему: нет ответа → pNone, вещь → свой пример, не про вещь → pLife, прочее → pAny
+        // какая реакция на проблему: нет ответа → pNone, вещь → свой пример, шутка → pOdd, не про вещь → pLife, прочее → pAny
+        const silly = (t) => t.length < 3 || !/[аеиоуыэюяaeiouy]/.test(t) || new Set(t.replace(/[^а-яa-z]/g, '')).size <= 2 || has(t, ...E.odd);
+        const classify = (t) => (!t || E.none.test(t) ? 'pNone' : (E.problems.find(([, w]) => has(t, ...w)) || [silly(t) ? 'pOdd' : has(t, ...E.life) ? 'pLife' : 'pAny'])[0]);
+        // второй раз не про вещь — берём пример
+        const onProblem = (again) => { let k = classify(norm(S.problem || '')); if (k === 'pNone' || (again && (k === 'pLife' || k === 'pOdd'))) { S.problem = E.noProblem; k = 'pNone'; } S.react = k; return k; };
+        // ответ на идею: по словам в ней; странная или из одного слова — «объясни, как поможет»; прочее — sAny
+        const onIdea = () => { const t = norm(S.idea || ''); return (S.fb = pickFb(t)); };
+        const pickFb = (t) => { if (has(t, ...E.feedback[0][1])) return 'sFan'; if (silly(t) || has(t, ...E.oddIdea)) return 'sOdd';
+          const f = E.feedback.find(([, w]) => has(t, ...w)); return f ? f[0] : /\s/.test(t) ? 'sAny' : 'sOdd'; };
+        const fbIds = [...E.feedback.map(([k]) => k), 'sAny', 'sOdd'];
+        const FQ = { sAny: 'Что может пойти не так?', sOdd: 'Как она решит твою проблему?' };
+        const fb = Object.fromEntries(fbIds.map((k) => [k, { show: ['idea', 'good'], showAfter: ['fix'],
+          ask: { kind: 'free', q: FQ[k] || 'Как это исправить?', input: 'Твоя мысль', save: 'fix', slot: 'fix' }, next: () => 's03' }]));
         return {
           n01: { ask: { kind: 'name', q: 'Как тебя зовут?', input: 'Твоё имя' }, next: () => 'n02' },
           n02: { next: () => 'n03', show: ['name'], delay: 800 },
           n03: { ask: { kind: 'choice', q: 'Что придумали раньше?', opts: [['wheel', 'Колесо', ['колес', 'колёс']], ['bag', 'Чемодан на колёсиках', ['чемод', 'сумк']]] }, next: (a) => (a === 'wheel' ? 'n04a' : 'n04b'), outs: ['n04a', 'n04b'] },
           n04a: { next: () => 'n05' }, n04b: { next: () => 'n05' }, n05: { next: () => 'n06' },
-          n06: { ask: { kind: 'free', q: 'Какая вещь тебе мешает?', input: 'Например: наушники путаются', save: 'problem' }, showAfter: ['problem'],
-            next: () => { const t = norm(S.problem || ''); if (!t) { S.problem = E.noProblem; return 'pNone'; } return (E.problems.find(([, w]) => has(t, ...w)) || ['pAny'])[0]; },
-            outs: ['pAny', 'pNone', ...E.problems.map(([k]) => k)] },
+          n06: { ask: { kind: 'free', q: 'Какая вещь тебе мешает?', input: 'Например: наушники путаются', save: 'problem' }, showAfter: ['problem'], next: () => onProblem(false), outs: reacts },
           ...react,
+          // проблема не про вещь (pLife) или шутка (pOdd) — психолог просит назвать предмет
+          ...Object.fromEntries(['pLife', 'pOdd'].map((k) => [k, { show: ['problem'], ask: { kind: 'free', q: 'Какая вещь тебе мешает?', input: 'Например: рюкзак тяжёлый', save: 'problem' }, showAfter: ['problem'],
+            next: () => onProblem(true), outs: reacts.filter((x) => x !== 'pLife' && x !== 'pOdd') }])),
           n07: { show: ['problem'], ask: { kind: 'ideas', q: 'Мозговой штурм: говори все идеи подряд!', secs: 20, input: 'Напиши идею и нажми Enter' }, next: () => (S.ideas.length >= 3 ? 'n08a' : 'n08b'), outs: ['n08a', 'n08b'] },
           n08a: { show: ['problem', 'ideas'], next: () => 'n09' }, n08b: { show: ['problem', 'ideas'], next: () => 'n09' },
           n09: { ask: { kind: 'choice', q: 'Куда отправимся?', opts: [['past', 'В прошлое', ['прош', 'древн', 'назад', 'истор']], ['future', 'В будущее', ['будущ', 'вперёд', 'вперед', 'завтра']]] }, next: (a) => (a === 'future' ? 'n10b' : 'n10a'), outs: ['n10a', 'n10b'] },
-          n10a: { next: () => 'n11' }, n10b: { next: () => 'n11' },
+          n10a: { next: () => 's01' }, n10b: { next: () => 's01' },
+          // проверка идеи: выбрать свою идею → что в ней хорошего → ответ инженера по идее и «как исправить» → три вопроса → итог
+          s01: { show: ['problem', 'ideas'], delay: 900, ask: { kind: 'pick', q: 'Какая идея нравится тебе больше всех?' }, next: () => 's02' },
+          s02: { show: ['idea'], delay: 500, showAfter: ['good'], ask: { kind: 'free', q: 'Что хорошего в твоей идее?', input: 'Например: ничего не теряется', save: 'good', slot: 'good' },
+            next: onIdea, outs: ['sAny', ...fbIds.filter((k) => k !== 'sAny')] },
+          ...fb,
+          s03: { show: ['idea', 'good', 'fix'], showAfter: ['checks'], ask: { kind: 'checks', q: E.checks }, next: (a) => (a === 'good' && S.fb !== 'sOdd' ? 'sGood' : 'sWork'), outs: ['sWork', 'sGood'] },
+          sGood: { show: ['idea', 'good', 'fix', 'checks'], next: () => 'n11' }, sWork: { show: ['idea', 'good', 'fix', 'checks'], next: () => 'n11' },
           n11: { ask: { kind: 'any', q: 'Скажи: «Поехали!»', opts: [['go', 'Поехали!', []]] }, next: () => 'n12' },
           n12: { next: () => null },
         };
@@ -86,7 +137,8 @@
   function mount(root, { id, sb, onMeet, onAnswer }) {
     const E = EPISODES[id];
     if (!E) { root.textContent = 'Серия не найдена'; return null; }
-    const S = { name: '', problem: '', ideas: [] };
+    const blank = () => ({ name: '', problem: '', react: '', ideas: [], idea: '', fb: '', good: '', fix: '', checks: [] });
+    const S = blank();
     const G = E.graph(S, E);
     const KEY = 'ep-progress:' + id;
     const wrap = document.createElement('div'); wrap.className = 'ep-player'; wrap.tabIndex = -1;
@@ -94,6 +146,7 @@
     wrap.innerHTML =
       `<div class="ep-stage">` +
         `<div class="ep-slot ep-slot-name"></div><div class="ep-slot ep-slot-problem"></div><div class="ep-slot ep-slot-ideas"></div>` +
+        `<div class="ep-slot ep-slot-idea"></div><div class="ep-slot ep-slot-good ep-slot-note"></div><div class="ep-slot ep-slot-note ep-slot-fix"></div><div class="ep-slot ep-slot-checks"></div>` +
         `<div class="ep-spin" hidden></div>` +
         `<div class="ep-skip ep-skip-l"><span>${ICON.back}−10 с</span></div><div class="ep-skip ep-skip-r"><span>${ICON.fwd}+10 с</span></div>` +
         `<button type="button" class="ep-big" data-a="toggle" aria-label="Продолжить">${ICON.play}</button>` +
@@ -119,7 +172,7 @@
     const $ = (s) => wrap.querySelector(s);
     const stage = $('.ep-stage'), askEl = $('.ep-ask'), heard = $('.ep-heard'), opts = $('.ep-opts'), big = $('.ep-big');
     const prog = $('.ep-prog'), doneEl = $('.ep-done'), reachEl = $('.ep-reach'), knob = $('.ep-knob'), tip = $('.ep-tip'), marksEl = $('.ep-marks'), volIn = $('.ep-vol input');
-    const slot = { name: $('.ep-slot-name'), problem: $('.ep-slot-problem'), ideas: $('.ep-slot-ideas') };
+    const slot = { name: $('.ep-slot-name'), problem: $('.ep-slot-problem'), ideas: $('.ep-slot-ideas'), idea: $('.ep-slot-idea'), good: $('.ep-slot-good'), fix: $('.ep-slot-fix'), checks: $('.ep-slot-checks') };
     for (const [k, [x, y, w, h]] of Object.entries(E.slots)) Object.assign(slot[k].style, { left: x / 19.2 + '%', top: y / 10.8 + '%', width: w / 19.2 + '%', height: h / 10.8 + '%' });
 
     const newRun = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16)));
@@ -151,7 +204,7 @@
       const g = G[n]; if (!g) return;
       if (g.ask) vid(n + '-wait');
       const i = hist.indexOf(n);
-      (i >= 0 && i < hist.length - 1 ? [hist[i + 1]] : g.outs || [g.next('')]).forEach((x) => x && vid(x));
+      (i >= 0 && i < hist.length - 1 ? [hist[i + 1]] : g.outs || [g.next('')]).forEach((x) => { if (x) { vid(x); if (!E.voice[n]) primeVoice(x); } });
     }
     function show(n, at = 0) {
       const v = vid(n); onScreen = v;
@@ -207,6 +260,14 @@
       const paths = want.map((s) => `${id}/names/${n ? slug(n) : '_'}-${s}.mp3`);
       const { data } = await sb.storage.from('episodes').createSignedUrls(paths, 4 * 3600).catch(() => ({}));
       want.forEach((s, i) => { const u = data && data[i] && data[i].signedUrl; if (u) voiceUrls[s] = u; else if (n) voiceUrls[s] = voiceUrls['_' + s]; });
+      primeVoice(Object.keys(E.voice)[0]);
+    }
+    // заранее загрузить запись для узла n, чтобы она начиналась без задержки
+    let voiceSrc = '';
+    function primeVoice(n) {
+      const x = E.voice[n], u = x && voiceUrls[x.slot];
+      if (!u || u === voiceSrc || voiceOn) return;
+      voiceSrc = u; voiceEl.src = u; voiceEl.load();
     }
     const voiceDone = () => { if (!hold) return; hold = false; if (!paused && onScreen) playOrTap(onScreen); };
     voiceEl.addEventListener('ended', voiceDone); voiceEl.addEventListener('error', voiceDone);
@@ -216,9 +277,9 @@
       const g = G[n];
       waiting = false; voiceEl.pause(); voiceOn = false; hold = false;
       voiceAt = E.voice[n] && voiceUrls[E.voice[n].slot] ? { n, ...E.voice[n] } : null;
-      if (voiceAt) voiceEl.src = voiceUrls[E.voice[n].slot];
+      if (voiceAt) primeVoice(n);
       slot.ideas.querySelectorAll('.ep-pick').forEach((x) => x.classList.remove('ep-pick'));
-      slot.problem.textContent = S.problem;
+      paintSlots();
       overlays([]);
       if (at > 0) overlays(g.show || []); else setTimeout(() => G[curNode()] === g && overlays(g.show || []), g.delay || 0);
       preload(n);
@@ -257,32 +318,43 @@
       return before(cur) + (waiting || !$('.ep-end').hidden ? dur(n) : Math.min(dur(n), vids[n] ? vids[n].currentTime : 0));
     }
     function total() { return Math.max(1, path().reduce((s, n) => s + dur(n), 0)); }
+    // докуда можно перемотать: конец ближайшего ролика с вопросом, на который ещё не ответили
+    function limit() {
+      let s = before(hist.length), n = hist[hist.length - 1], guard = 0;
+      if (!n || G[n].ask) return s;
+      while ((n = G[n].next()) && guard++ < 40) { s += dur(n); if (G[n].ask) break; }
+      return s;
+    }
+    function jump(i, off) {
+      if (cancelAsk) cancelAsk();
+      $('.ep-end').hidden = true;
+      cur = i;
+      play(hist[i], Math.max(0, Math.min(dur(hist[i]) - 0.05, off)));
+    }
     function seekTo(t) {
-      t = Math.max(0, Math.min(t, reached));
+      t = Math.max(0, Math.min(t, limit()));
       let s = 0;
       for (let i = 0; i < hist.length; i++) {
         const d = dur(hist[i]);
-        if (t < s + d || i === hist.length - 1) {
-          if (cancelAsk) cancelAsk();
-          $('.ep-end').hidden = true;
-          cur = i;
-          play(hist[i], Math.max(0, Math.min(d - 0.05, t - s)));
-          return;
-        }
+        if (t < s + d) return jump(i, t - s);
         s += d;
       }
+      // дальше пройденного: путь дописывается до нужного места (на вопросе останавливаемся — limit())
+      let n = hist[hist.length - 1];
+      if (!G[n].ask) while ((n = G[n].next())) { hist.push(n); const d = dur(n); if (t < s + d || G[n].ask) return jump(hist.length - 1, t - s); s += d; }
+      jump(hist.length - 1, dur(hist[hist.length - 1]));
     }
     function skip(d) {
       if (!started || !hist.length) return;
       const p = pos();
-      if (d > 0 && p >= reached - 0.3) return;   // дальше ещё не смотрели (впереди вопрос)
+      if (d > 0 && p >= limit() - 0.3) return;   // впереди вопрос без ответа
       seekTo(p + d);
       const el = $(d < 0 ? '.ep-skip-l' : '.ep-skip-r'); el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
     }
     let marksKey = '';
     function paint() {
-      const T = total(), p = drag != null ? Math.min(drag * T, reached) : pos(), pc = (x) => Math.min(100, (x / T) * 100) + '%';
-      doneEl.style.width = pc(p); knob.style.left = pc(p); reachEl.style.width = pc(reached);
+      const T = total(), lim = limit(), p = drag != null ? Math.min(drag * T, lim) : pos(), pc = (x) => Math.min(100, (x / T) * 100) + '%';
+      doneEl.style.width = pc(p); knob.style.left = pc(p); reachEl.style.width = pc(Math.max(reached, lim));
       $('.ep-time').textContent = fmt(p) + ' / ' + fmt(T);
       prog.setAttribute('aria-valuemax', Math.round(T)); prog.setAttribute('aria-valuenow', Math.round(p)); prog.setAttribute('aria-valuetext', fmt(p) + ' из ' + fmt(T));
       // отметки вопросов на полосе
@@ -300,16 +372,18 @@
       wrap.classList.toggle('asking', waiting);
       const v = onScreen, n = curNode();
       // обращение по имени; если имя длиннее места в ролике — кадр ждёт, пока оно прозвучит
-      if (voiceAt && voiceAt.n === n && v === vids[n] && !paused && !voiceOn && v.currentTime >= voiceAt.at && v.currentTime < voiceAt.at + 0.5) {
-        voiceOn = true; voiceEl.currentTime = Math.max(0, v.currentTime - voiceAt.at); voiceEl.play().catch(() => {});
+      // запуск чуть заранее по таймеру — тики раз в 150 мс, иначе начало записи срезалось бы
+      if (voiceAt && voiceAt.n === n && v === vids[n] && !paused && !voiceOn && v.currentTime >= voiceAt.at - 0.3 && v.currentTime < voiceAt.at + 0.5) {
+        voiceOn = true;
+        const late = v.currentTime - voiceAt.at;
+        const start = () => {
+          if (paused || onScreen !== v) { voiceOn = false; return; }
+          voiceEl.currentTime = Math.max(0, v.currentTime - voiceAt.at - 0.15); voiceEl.play().catch(() => {});
+        };
+        if (late < 0) setTimeout(start, (-late * 1000) / (v.playbackRate || 1)); else start();
       }
       if (voiceOn && voiceAt && voiceAt.room && v === vids[n] && !paused && !hold && !voiceEl.paused && !voiceEl.ended && v.currentTime >= voiceAt.at + voiceAt.room - 0.05) {
         hold = true; v.pause();
-      }
-      // инженер выбирает одну из идей ребёнка
-      const pk = E.pickAt[n];
-      if (pk && v === vids[n] && v.currentTime >= pk && S.ideas.length && !slot.ideas.querySelector('.ep-pick')) {
-        const els = slot.ideas.querySelectorAll('.ep-idea'); els[Math.floor(Math.random() * els.length)]?.classList.add('ep-pick');
       }
       if (Date.now() - saveT > 3000) { saveT = Date.now(); saveProgress(); }
     }
@@ -318,9 +392,9 @@
     // полоса: нажать/потянуть — перемотка (не дальше досмотренного), наведение — подсказка времени
     const frac = (e) => { const r = prog.getBoundingClientRect(); return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); };
     function showTip(f) {
-      const T = total(), t = f * T, w = prog.getBoundingClientRect().width;
-      tip.textContent = t > reached + 0.5 ? fmt(t) + ' · ещё впереди' : fmt(t);
-      tip.classList.toggle('far', t > reached + 0.5);
+      const T = total(), t = f * T, w = prog.getBoundingClientRect().width, far = t > limit() + 0.5;
+      tip.textContent = far ? fmt(t) + ' · сначала ответь на вопрос' : fmt(t);
+      tip.classList.toggle('far', far);
       tip.style.left = Math.min(w - tip.offsetWidth / 2, Math.max(tip.offsetWidth / 2, f * w)) + 'px';
     }
     prog.addEventListener('pointerdown', (e) => {
@@ -366,6 +440,11 @@
     }
     // слушаем по кругу, пока вопрос открыт; на паузе — ждём продолжения
     const loopListen = (isDone, o) => { const loop = () => { if (isDone() || dead) return; if (paused) { resumeQ.push(loop); return; } rec = listen({ ...o, onEnd: () => setTimeout(loop, 200) }); }; loop(); };
+    // текстовые места на доске и отметки проверки (✓ — да, ? — пока нет)
+    function paintSlots() {
+      for (const k of ['problem', 'idea', 'good', 'fix']) slot[k].textContent = S[k] || '';
+      slot.checks.innerHTML = (S.checks || []).map((v) => `<i class="${v ? 'yes' : 'no'}">${v ? '✓' : '?'}</i>`).join('');
+    }
     function ideaEl(s) { const d = document.createElement('div'); d.className = 'ep-idea'; d.textContent = s.slice(0, 60); slot.ideas.append(d); }
 
     function askQ(a) {
@@ -395,15 +474,55 @@
             if (o) setTimeout(() => end(o[0], { answer: o[1], via: 'voice', heard: txt }), 500); };
           loopListen(isDone, { onText, onFinal: pick });
         } else if (a.kind === 'name' || a.kind === 'free') {
-          if (a.save) { S[a.save] = ''; slot.problem.textContent = ''; }
+          const sl = slot[a.slot || 'problem'];
+          if (a.save) { S[a.save] = ''; sl.textContent = ''; }
           const save = (txt, via) => {
             const v = a.kind === 'name' ? cap(txt.replace(/^(меня зовут|я|зовут)\s+/i, '').split(/\s+/).slice(0, 2).join(' ')) : cap(txt);
             if (a.kind === 'name') { S.name = v.slice(0, 24); slot.name.textContent = S.name; }
-            else { S[a.save] = v.slice(0, 80); slot.problem.textContent = S[a.save]; }
+            else { S[a.save] = v.slice(0, 80); sl.textContent = S[a.save]; }
             heard.textContent = '«' + v + '»'; setTimeout(() => end(v, { answer: v, via, heard: via === 'voice' ? txt : null }), 700);
           };
           input(a.input, (t) => save(t, 'text')); btn('Пропустить', '', false, { answer: '', via: 'skip' });
           loopListen(isDone, { onText, onFinal: (t) => t && save(t, 'voice') });
+        } else if (a.kind === 'pick') {
+          // своя идея из мозгового штурма; нет идей — пример из реакции на проблему; одна — она и есть (via: skip — выбирать не пришлось)
+          const list = S.ideas.length ? S.ideas : [E.examples[S.react] || E.examples.pNone];
+          const choose = (i, via, txt) => {
+            S.idea = list[i]; slot.idea.textContent = S.idea;
+            slot.ideas.querySelectorAll('.ep-idea').forEach((x, k) => x.classList.toggle('ep-pick', k === i));
+            heard.textContent = '«' + S.idea + '»'; setTimeout(() => end(S.idea, { answer: S.idea, via, heard: txt || null }), 900);
+          };
+          if (list.length === 1) { $('.ep-q').textContent = 'Твоя идея'; choose(0, 'skip'); return; }
+          list.forEach((s, i) => { const b = btn(s, i, i === 0); b.onclick = () => choose(i, 'button'); });
+          // голосом: «первая», «последняя» или слова из идеи
+          const ORD = [['перв', 0], ['втор', 1], ['трет', 2], ['четв', 3], ['пят', 4], ['последн', list.length - 1]];
+          const stems = (x) => norm(x).split(/[^a-zа-я0-9]+/).filter((w) => w.length > 2).map((w) => w.slice(0, 5));
+          loopListen(isDone, { onText, onFinal: (txt) => {
+            const t = norm(txt), o = ORD.find(([w, i]) => t.includes(w) && i < list.length);
+            if (o) return choose(o[1], 'voice', txt);
+            const said = stems(txt), sc = list.map((s) => stems(s).filter((w) => said.includes(w)).length), best = Math.max(...sc);
+            if (best > 0) choose(sc.indexOf(best), 'voice', txt); else heard.textContent = '«' + txt + '» — нажми на свою идею';
+          } });
+        } else if (a.kind === 'checks') {
+          // вопросы по очереди: «да» / «пока нет» голосом или кнопками
+          S.checks = []; paintSlots(); slot.checks.classList.add('on');
+          const said = [], vias = new Set();
+          const next = (yes, via, txt) => {
+            if (S.checks.length >= a.q.length) return;
+            S.checks.push(yes); vias.add(via); if (txt) said.push(txt); paintSlots();
+            if (S.checks.length < a.q.length) { setTimeout(() => { if (!done) { $('.ep-q').textContent = a.q[S.checks.length]; heard.textContent = ''; } }, 500); return; }
+            const val = S.checks.every(Boolean) ? 'good' : 'work';
+            setTimeout(() => end(val, { answer: a.q.map((q, i) => q + ' — ' + (S.checks[i] ? 'да' : 'пока нет')).join('; '), via: vias.size > 1 ? 'mixed' : [...vias][0], heard: said.length ? said.join(' | ') : null }), 700);
+          };
+          $('.ep-q').textContent = a.q[0];
+          const yes = btn('Да', '', true), no = btn('Пока нет', '', false);
+          yes.onclick = () => next(true, 'button'); no.onclick = () => next(false, 'button');
+          const NO = ['нет', 'не', 'пока', 'неа', 'нельзя', 'вряд'], YES = ['да', 'конечно', 'ага', 'угу', 'можно', 'решает', 'удобно', 'наверное', 'точно'];
+          loopListen(isDone, { onText, onFinal: (txt) => {
+            const w = norm(txt).split(/[^a-zа-я]+/);
+            if (w.some((x) => NO.includes(x))) next(false, 'voice', txt); else if (w.some((x) => YES.includes(x))) next(true, 'voice', txt);
+            else heard.textContent = '«' + txt + '» — скажи «да» или «пока нет»';
+          } });
         } else if (a.kind === 'ideas') {
           slot.ideas.innerHTML = ''; S.ideas = []; slot.ideas.classList.add('on');
           const vias = new Set(), said = [];
@@ -441,7 +560,7 @@
     }
     function reset() {
       if (cancelAsk) cancelAsk();
-      $('.ep-end').hidden = true; S.name = ''; S.problem = ''; S.ideas = []; run = newRun(); reached = 0;
+      $('.ep-end').hidden = true; Object.assign(S, blank()); run = newRun(); reached = 0;
       for (const k in slot) slot[k].innerHTML = '';
       delete voiceUrls.hi; delete voiceUrls.bye;
       Object.values(E.voice).forEach((x) => { voiceUrls[x.slot] = voiceUrls['_' + x.slot]; });
@@ -480,7 +599,7 @@
       if (!saved) { store.del(KEY); play(E.start); return; }
       // продолжить: восстановить ответы и путь, начать за пару секунд до места остановки
       Object.assign(S, saved.S || {}); run = saved.run || run; hist = saved.hist; cur = saved.cur;
-      slot.name.textContent = S.name; slot.problem.textContent = S.problem; (S.ideas || []).forEach(ideaEl);
+      slot.name.textContent = S.name; paintSlots(); (S.ideas || []).forEach(ideaEl);
       reached = Math.max(+saved.reached || 0, before(cur) + (+saved.t || 0));
       Promise.resolve(S.name ? loadNameVoice() : null).finally(() => play(hist[cur], Math.max(0, (+saved.t || 0) - 2)));
     }
