@@ -95,6 +95,22 @@
 .side-item.active{color:var(--amber);border-left-color:var(--amber)}
 .side-pin{display:block;padding:11px 0;color:var(--muted);font-size:13px;cursor:pointer;border-top:1px solid var(--line)}
 .side-pin:hover,.side-pin.active{color:var(--amber)}
+.path-back{font-size:14px;padding:8px 14px;margin:0 0 6px}
+/* курс-игра: карта в центре, справа — награды и кнопки (на телефоне — сверху) */
+.dashboard.game{grid-template-columns:minmax(0,1fr) 300px;align-items:start}
+.dashboard.game>#dashSide,.dashboard.game #dashTimeline{display:none}
+.dash-rail{position:sticky;top:12px;display:grid;gap:12px}
+.dash-rail .pb{grid-template-columns:1fr 1fr;margin:0}.dash-rail .pb-q{grid-column:1/-1}.dash-rail .pb-chip{padding:10px 12px;gap:8px}
+.rail-prog{display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--ink-soft)}.rail-prog b{font:700 30px/1 "Cormorant Garamond",Georgia,serif;color:var(--sanguine)}
+.rail-btns{display:grid;gap:8px}.rail-btn{text-align:left;font-size:15px;padding:10px 14px}.rail-btn.active{background:var(--sanguine);color:#fff6e6}
+.cab-mats{margin-top:12px}.cab-mats h3{margin:4px 0 10px;font:700 24px/1.15 "Cormorant Garamond",Georgia,serif}
+.mat-block{margin:0 0 14px;padding:12px 16px 6px;border:1.5px solid var(--line);border-left:5px solid var(--sanguine);border-radius:4px;background:rgba(255,248,230,.5)}
+.mat-block>h4{margin:0 0 8px;font:700 20px/1.15 "Cormorant Garamond",Georgia,serif;color:var(--sanguine)}
+.mat-mod{margin:0 0 10px;padding:8px 12px;border:1px dashed var(--line);border-radius:4px;background:rgba(255,252,242,.7)}
+.mat-mod h5{margin:0 0 2px;font-size:15px;color:var(--ink)}.mat-mod a{display:block;color:var(--amber);margin:6px 0}.mat-mod .mat-more{margin-top:6px}
+@media(max-width:900px){.dashboard.game{grid-template-columns:1fr}.dash-rail{position:static;order:-1}
+  .rail-prog{display:none}.rail-btns{grid-template-columns:repeat(3,1fr)}.rail-btn{text-align:center;font-size:13px;padding:9px 6px}.rb-long{display:none}
+  .dash-rail .pb-q ul{display:none}.dash-rail .pb-q.open ul{display:grid}.dash-rail .pb-q h4{cursor:pointer}.dash-rail .pb-q h4::after{content:"▾";margin-left:4px;color:var(--sanguine)}}
 
 /* Таблица исследований и измерений */
 .research-intro{color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 18px}
@@ -862,7 +878,7 @@ a,button,summary,.course{touch-action:manipulation}
 .cab-go{margin-top:auto;align-self:flex-start}
 .cab-course:hover .cab-go{background:#7d2c12;border-color:#7d2c12}
 .cab-empty{padding:18px;border:1px dashed var(--line);border-radius:3px}
-.cab-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0 4px}
+.cab-quick{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:16px 0 4px}
 .cab-tile{position:relative;display:flex;align-items:center;gap:12px;padding:14px 16px;color:var(--ink);font:inherit;text-align:left;text-decoration:none;cursor:pointer;transition:transform .2s,background .2s,border-color .2s}
 .cab-tile:hover{transform:translateY(-2px);background:rgba(154,58,27,.07);border-color:var(--sanguine)}
 .cab-tile .fact-icon{width:42px;height:42px;margin:0;flex:none}
@@ -1030,8 +1046,8 @@ a,button,summary,.course{touch-action:manipulation}
 <section class="section page" id="signupPage" style="display:none"><nav class="crumbs" aria-label="Навигация"><a href="/" onclick="return go(event,'home')">Главная</a> › <a href="/programmy/" onclick="return go(event,'courses')">Программы</a> › <a id="signupCrumb" href="/programmy/" onclick="return go(event,'course',this.dataset.slug)"></a> › <span>Заявка</span></nav><div class="eyebrow">Заявка на курс</div><h2 class="course-title">Курс «<span id="signupCourseName"></span>»</h2><p class="section-intro">Онлайн-формат: часть тем школьник проходит самостоятельно — видеоуроки, материалы и задания в личном кабинете, а на ключевых этапах занимается с преподавателем. На протяжении всего курса мы на связи в чате.</p><div class="features course-facts su-grid"><div class="feature su-form-box"><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L8 18.5z"/><path d="M13.5 7l3 3"/><path d="M12 20h8"/></svg></span><strong id="suFormTitle">Оставьте контакт</strong><div id="chosenForm"></div></div><div class="feature"><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4h8.5L20 12.5 12.5 20z"/><circle cx="7.5" cy="8.5" r="1.3"/></svg></span><strong>Стоимость</strong><ul class="fact-prices"><li><span>Пробное занятие</span><b id="signupPrice">1 500 ₽</b><s id="signupBase">3 000 ₽</s></li><li><span>Модуль</span><b id="signupLesson">4 500 ₽</b><small>блок — по цене его модулей</small></li><li class="fact-best"><span>Весь курс + набор для исследований</span><b id="signupFull">29 750 ₽</b><small>уже оплаченное вычитается</small></li></ul><p class="fact-small su-ask">Есть вопрос? <a href="#" onclick="Support.open({from:'заявка на курс'});return false">Напишите нам в чат →</a></p></div></div><div class="bottom"><a class="btn" href="/programmy/" onclick="return go(event,'courses')">Назад к программам</a></div></section>
 <section class="section page" id="requestSentPage" style="display:none"><div class="eyebrow">Заявка на курс</div><h2 class="course-title">Заявка отправлена</h2><div class="features course-facts su-sent"><div class="feature"><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M8 12.3l2.7 2.7L16.2 9.3"/></svg></span><strong>Спасибо!</strong><p>Мы получили вашу заявку на курс «<span id="reqCourseName"></span>» и свяжемся с вами по указанному контакту в ближайшее время, чтобы ответить на вопросы и подобрать удобное время занятий.</p><div class="su-actions"><a class="btn primary" href="/" onclick="return go(event,'home')">На главную</a></div></div></div></section>
 <section class="section page" id="paymentPage" style="display:none"><h2>Оплата курса</h2><div class="payment" id="paymentForm"><h3 id="paymentTitle"></h3><p id="paymentText"></p><div id="planBox"></div><div id="accountFields"></div><label>Номер карты</label><input placeholder="0000 0000 0000 0000"><label>Срок действия</label><input placeholder="ММ/ГГ"><label>Код</label><input placeholder="CVC"><label class="consent"><input type="checkbox" id="payConsent"><span>Я принимаю условия <a href="/dokumenty/oferta/" target="_blank">публичной оферты</a> и даю <a href="/dokumenty/soglasie-na-obrabotku/" target="_blank">согласие на обработку персональных данных</a> — своих и ребёнка</span></label><p class="note" id="payMsg"></p><button class="btn primary" id="payBtn" onclick="completePayment()">Оплатить (демо)</button><p class="note">Это демонстрационная страница. Реальная оплата пока не подключена.</p></div><div class="payment" id="paymentSuccess" style="display:none"><h3>Оплата прошла успешно</h3><p>Доступ открыт в личном кабинете. Письмо с логином для входа отправлено вам на почту.</p><p class="note" style="margin-bottom:14px">Если письмо не пришло в течение нескольких минут — проверьте папку «Спам» или напишите нам.</p><button class="btn primary" onclick="enterDashboard()">Войти в личный кабинет</button></div></section>
-<section class="section page" id="myCoursesPage" style="display:none"><nav class="crumbs" aria-label="Навигация"><a href="/" onclick="return go(event,'home')">Главная</a> › <span>Личный кабинет</span></nav><div class="eyebrow">Личный кабинет</div><h2 class="course-title" id="myHello">Мои курсы</h2><p class="section-intro cab-intro">Выберите курс — продолжим с того места, где остановились.</p><div class="cab-nav"><button class="btn" onclick="showPage('home')">← На сайт</button><button class="btn" id="adminLink" onclick="location.href='/admin.html'" style="display:none">⚙ Админ-панель</button><button class="btn" onclick="logout()">Выйти</button></div><div class="features course-facts cab-courses" id="myCourseGrid"></div><div class="cab-quick"><button type="button" class="feature cab-tile" onclick="Support.open({from:'cabinet'})"><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 20 17h-9l-5 3.5V17H4a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 4 5z"/><path d="M7.5 11h.01M12 11h.01M16.5 11h.01"/></svg></span><span><b>Вопрос нам</b><small>ответим в чате</small></span><i class="cab-dot" id="cabSupDot" hidden></i></button><button type="button" class="feature cab-tile" onclick="cabOpen('myProfileBox')"><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/></svg></span><span><b>Мои данные</b><small id="cabProfHint">имя и контакт</small></span></button><button type="button" class="feature cab-tile" id="cabReviewTile" onclick="cabOpen('myReviewBox')"><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg></span><span><b>Отзыв</b><small>о курсе</small></span></button><a class="feature cab-tile" href="/programmy/" onclick="return go(event,'courses')"><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5C6.5 4 9.5 4 12 6c2.5-2 5.5-2 8-.5V19c-2.5-1.5-5.5-1.5-8 .5-2.5-2-5.5-2-8-.5z"/><path d="M12 6v13.5"/></svg></span><span><b>Все программы</b><small>выбрать ещё курс</small></span></a></div><details class="feature cab-more" id="myProfileBox"><summary><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/></svg></span>Мои данные</summary><div id="myProfile"></div></details><details class="feature cab-more" id="myReviewBox"><summary><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg></span>Отзыв о курсе</summary><div id="myReview"></div></details></section>
-<section class="section page" id="dashboardPage" style="display:none"><button class="btn" onclick="enterCabinet()" style="margin-bottom:18px">← Мои курсы</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button><h2>Личный кабинет</h2><p class="section-intro" id="dashIntro"></p><div id="dashCheer"></div><div class="dashboard"><aside class="sidebar" id="dashSide"><h3 id="dashCourse"></h3><p class="side-prog-label">Прогресс</p><div class="progress"><span id="dashProgressBar" style="width:0"></span></div><p class="note" id="dashProgressText">0% пройдено</p><button class="side-toggle" id="sideToggle" type="button" onclick="toggleProgram()" aria-expanded="false" aria-controls="sideBody"><span class="st-ico" aria-hidden="true">📚</span><span class="st-text"><b>Программа курса</b><small id="sideNow"></small></span><span class="st-pct" id="sidePct">0%</span><i class="chev" aria-hidden="true">▾</i></button><div class="side-body" id="sideBody"><hr style="border-color:var(--line)"><div id="sideAccordion"></div></div><div class="side-pins"><span class="side-pin" data-id="materials" onclick="openMaterials();phoneJump()">📁 Материалы</span><span class="side-pin" data-id="chat" onclick="openChat()">💬 Чат с нами</span></div></aside><div><div class="lesson" id="lessonArea"></div><div class="timeline" id="dashTimeline"><div class="step"><div class="dot">1</div><small>Введение</small></div><div class="step"><div class="dot">2</div><small>Исследование</small></div><div class="step"><div class="dot">3</div><small>Модель</small></div><div class="step"><div class="dot">4</div><small>Проект</small></div></div></div></div></section>
+<section class="section page" id="myCoursesPage" style="display:none"><nav class="crumbs" aria-label="Навигация"><a href="/" onclick="return go(event,'home')">Главная</a> › <span>Личный кабинет</span></nav><div class="eyebrow">Личный кабинет</div><h2 class="course-title" id="myHello">Мои курсы</h2><p class="section-intro cab-intro">Выберите курс — продолжим с того места, где остановились.</p><div class="cab-nav"><button class="btn" onclick="showPage('home')">← На сайт</button><button class="btn" id="adminLink" onclick="location.href='/admin.html'" style="display:none">⚙ Админ-панель</button><button class="btn" onclick="logout()">Выйти</button></div><div id="cabHero"></div><div class="features course-facts cab-courses" id="myCourseGrid"></div><div class="cab-quick"><button type="button" class="feature cab-tile" onclick="cabOpen('myMatsBox')"><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M3 10h18"/></svg></span><span><b>Мои материалы</b><small id="cabMatsHint">все курсы</small></span></button><button type="button" class="feature cab-tile" onclick="Support.open({from:'cabinet'})"><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 20 17h-9l-5 3.5V17H4a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 4 5z"/><path d="M7.5 11h.01M12 11h.01M16.5 11h.01"/></svg></span><span><b>Вопрос нам</b><small>ответим в чате</small></span><i class="cab-dot" id="cabSupDot" hidden></i></button><button type="button" class="feature cab-tile" onclick="cabOpen('myProfileBox')"><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/></svg></span><span><b>Мои данные</b><small id="cabProfHint">имя и контакт</small></span></button><button type="button" class="feature cab-tile" id="cabReviewTile" onclick="cabOpen('myReviewBox')"><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg></span><span><b>Отзыв</b><small>о курсе</small></span></button><a class="feature cab-tile" href="/programmy/" onclick="return go(event,'courses')"><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5C6.5 4 9.5 4 12 6c2.5-2 5.5-2 8-.5V19c-2.5-1.5-5.5-1.5-8 .5-2.5-2-5.5-2-8-.5z"/><path d="M12 6v13.5"/></svg></span><span><b>Все программы</b><small>выбрать ещё курс</small></span></a></div><details class="feature cab-more" id="myMatsBox"><summary><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M3 10h18"/></svg></span>Мои материалы</summary><div id="myMats"><p class="note">Загружаем…</p></div></details><details class="feature cab-more" id="myProfileBox"><summary><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/></svg></span>Мои данные</summary><div id="myProfile"></div></details><details class="feature cab-more" id="myReviewBox"><summary><span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg></span>Отзыв о курсе</summary><div id="myReview"></div></details></section>
+<section class="section page" id="dashboardPage" style="display:none"><button class="btn" onclick="enterCabinet()" style="margin-bottom:18px">← Мои курсы</button> <button class="btn" onclick="logout()" style="margin-bottom:18px">Выйти</button><h2 id="dashH">Личный кабинет</h2><p class="section-intro" id="dashIntro"></p><div id="dashCheer"></div><div class="dashboard game"><aside class="sidebar" id="dashSide"><h3 id="dashCourse"></h3><p class="side-prog-label">Прогресс</p><div class="progress"><span id="dashProgressBar" style="width:0"></span></div><p class="note" id="dashProgressText">0% пройдено</p><button class="side-toggle" id="sideToggle" type="button" onclick="toggleProgram()" aria-expanded="false" aria-controls="sideBody"><span class="st-ico" aria-hidden="true">📚</span><span class="st-text"><b>Программа курса</b><small id="sideNow"></small></span><span class="st-pct" id="sidePct">0%</span><i class="chev" aria-hidden="true">▾</i></button><div class="side-body" id="sideBody"><hr style="border-color:var(--line)"><div id="sideAccordion"></div></div><div class="side-pins"><span class="side-pin" data-id="map" onclick="openMap();phoneJump()">🗺 Карта курса</span><span class="side-pin" data-id="materials" onclick="openMaterials();phoneJump()">📁 Материалы</span><span class="side-pin" data-id="chat" onclick="openChat()">💬 Чат с нами</span></div></aside><div><div class="lesson" id="lessonArea"></div><div class="timeline" id="dashTimeline"><div class="step"><div class="dot">1</div><small>Введение</small></div><div class="step"><div class="dot">2</div><small>Исследование</small></div><div class="step"><div class="dot">3</div><small>Модель</small></div><div class="step"><div class="dot">4</div><small>Проект</small></div></div></div><aside class="dash-rail" id="dashRail"><div class="rail-prog"><b id="railPct">0%</b><span>курса пройдено</span></div><div id="dashBar"></div><div class="rail-btns"><button type="button" class="btn rail-btn" data-id="map" onclick="openMap()">🗺 Карта курса</button><button type="button" class="btn rail-btn" data-id="shop" onclick="openShop()">⚙ Лавка<span class="rb-long"> мастера</span></button><button type="button" class="btn rail-btn" data-id="chat" onclick="openChat()">💬 Чат<span class="rb-long"> с преподавателем</span></button></div></aside></div></section>
 <footer>Инженерный клуб — занятия и проекты для школьников. Учимся сейчас, готовимся к будущему.<nav class="footer-links" aria-label="Разделы сайта"><a href="/programmy/" onclick="return go(event,'courses')">Программы</a><a href="/kak-prohodyat-zanyatiya/" onclick="return go(event,'how')">Как проходят занятия</a><a href="/kursy/wheel/" onclick="return go(event,'course','wheel')">Курс «Колесо»</a><a href="/igra/">Игра «Мемо»</a><a href="/kontakty/">Контакты</a></nav><nav class="footer-docs" aria-label="Документы"><a href="/dokumenty/oferta/">Публичная оферта</a><a href="/dokumenty/polzovatelskoe-soglashenie/">Пользовательское соглашение</a><a href="/dokumenty/politika-konfidencialnosti/">Политика обработки персональных данных</a><a href="/dokumenty/oplata-i-vozvrat/">Оплата и возврат</a><a href="/kontakty/">Контакты и реквизиты</a></nav><p class="footer-legal">Самозанятый {{legalShort}} · ИНН {{inn}}</p></footer></div>
 <div class="modal" id="modal"><div class="modal-card"><button class="close" onclick="closeModal()">×</button><div id="modalContent"></div></div></div>
 <script src="/vendor/supabase.js"></script>
@@ -1040,6 +1056,10 @@ a,button,summary,.course{touch-action:manipulation}
 <script src="/chat.js"></script>
 <script src="/support.js"></script>
 <script src="/episode.js"></script>
+<script src="/hero.js"></script>
+<script src="/path.js"></script>
+<script src="/world.js"></script>
+<script src="/shop.js"></script>
 <script src="/course-page.js"></script>
 <script src="/home-blocks.js"></script>
 <script src="/research.js"></script>
@@ -1295,7 +1315,7 @@ async function completePayment(){
 async function enterDashboard(){return enterCabinet()}
 async function enterCabinet(){const session=await requireLogin();if(!session)return;
   const[{data,error},{data:prog}]=await Promise.all([
-    sb.from('enrollments').select('courses(id,slug,title,subtitle,sort,modules(sort,lessons(id,title,sort)))').eq('user_id',session.user.id).in('status',['active','finished']),
+    sb.from('enrollments').select('courses(id,slug,title,subtitle,sort,modules(sort,title,lessons(id,title,sort)))').eq('user_id',session.user.id).in('status',['active','finished']),
     sb.from('lesson_progress').select('lesson_id,status').eq('user_id',session.user.id)]);
   const st=Object.fromEntries((prog||[]).map(d=>[d.lesson_id,d.status]));
   const list=(data||[]).map(e=>e.courses).filter(Boolean).sort((a,b)=>a.sort-b.sort);
@@ -1320,8 +1340,27 @@ async function enterCabinet(){const session=await requireLogin();if(!session)ret
   myHello.textContent=prof&&prof.student_name?`Привет, ${prof.student_name}! 👋`:'Мои курсы';
   cabProfHint.textContent=prof&&prof.contact?'заполнены ✓':'укажите контакт';
   cabReviewTile.hidden=!list.length;
-  renderMyProfile(prof||{},session.user.email);renderMyReview(session.user.id,prof||{},list);
+  renderMyProfile(prof||{},session.user.email);renderMyReview(session.user.id,prof||{},list);renderMyMats(session.user.id,list,st);
+  // герой-инженер: анкета родителя или уровни и новые очки
+  if(window.Hero)Hero.mountCabinet(cabHero,{sb,userId:session.user.id,name:prof&&prof.student_name}).catch(e=>console.warn('Герой:',e));
   if(window.Support)Support.unread().then(n=>{cabSupDot.hidden=!n}).catch(()=>{})}
+// «Мои материалы»: курс → блок → модуль; модуль появляется здесь, только когда преподаватель его одобрил
+let cabMats=[];
+async function renderMyMats(uid,list,st){
+  const tree=list.map(c=>({c,blocks:(c.modules||[]).slice().sort((a,b)=>a.sort-b.sort).map(m=>({m,ls:(m.lessons||[]).slice().sort((a,b)=>a.sort-b.sort)}))}));
+  const ok=tree.flatMap(t=>t.blocks.flatMap(b=>b.ls)).filter(l=>st[l.id]==='approved');
+  const empty=t=>{myMats.innerHTML=`<p class="note">${t}</p>`;cabMatsHint.textContent='пока пусто'};
+  if(!ok.length)return empty('Материалы модуля появятся здесь, когда преподаватель его одобрит.');
+  const{data,error}=await sb.from('materials').select('id,lesson_id,user_id,title,kind,url,storage_path,sort').in('lesson_id',ok.map(l=>l.id));
+  if(error){myMats.innerHTML='<p class="note">Не удалось загрузить материалы. Обновите страницу.</p>';return}
+  cabMats=(data||[]).filter(m=>!m.user_id||m.user_id===uid).sort((a,b)=>a.sort-b.sort||a.id-b.id);const n=cabMats.length;
+  if(!n)return empty('В одобренных модулях пока нет материалов.');
+  cabMatsHint.textContent=n+' '+(n%10===1&&n%100!==11?'материал':n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?'материала':'материалов');
+  const mod=l=>{const ms=cabMats.filter(m=>m.lesson_id===l.id);return ms.length?`<div class="mat-mod"><h5>${escapeHtml(l.title)}</h5>${materialLinks(ms)}</div>`:''};
+  myMats.innerHTML=tree.map(t=>{const blocks=t.blocks.map(b=>{const inner=b.ls.filter(l=>st[l.id]==='approved').map(mod).join('');
+      const later=b.ls.filter(l=>st[l.id]!=='approved').length;
+      return inner?`<section class="mat-block"><h4>${escapeHtml(b.m.title||'Блок '+b.m.sort)}</h4>${inner}${later?`<p class="note">Ещё ${later} — после одобрения преподавателем.</p>`:''}</section>`:''}).join('');
+    return blocks?`<div class="cab-mats"><h3>Курс «${escapeHtml(t.c.title)}»</h3>${blocks}</div>`:''}).join('')}
 // плитки «Мои данные» / «Отзыв» раскрывают блок ниже
 function cabOpen(id){const d=document.getElementById(id);d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'})}
 // «Мои данные»: ученик сам указывает имя и контакт — они сразу видны в админ-панели
@@ -1338,13 +1377,14 @@ async function saveMyProfile(){const{data:{session}}=await sb.auth.getSession();
 // Этапы полосы внизу кабинета: номера модулей (modules.sort), входящих в каждый этап.
 // Для курсов без настройки модули делятся на 4 этапа поровну.
 const COURSE_STAGES={wheel:[[1],[2,3],[4,5],[6]]};
-let dash={modules:[],lessons:[],progress:{},materials:[],calls:{},unread:{},scope:'full',access:new Set(),userId:null,slug:null,current:null};
+let dash={modules:[],lessons:[],progress:{},materials:[],calls:{},unread:{},scope:'full',access:new Set(),userId:null,slug:null,current:null,eps:new Set(),watched:new Set(),researched:new Set(),status:null};
 let badgeChannel=null;
 let openToken=0;
 async function openCourseDashboard(i){const session=await requireLogin();if(!session)return;
   await ensureCourses();selectedCourse=i;const slug=courseSlug[i];const uid=session.user.id;
-  dash={modules:[],lessons:[],progress:{},materials:[],calls:{},unread:{},scope:'full',access:new Set(),userId:uid,slug,current:null};
-  dashCourse.textContent=courses[i][1];dashIntro.textContent=(DASH_MQ.matches?'В «Программе курса» — блоки и модули, материалы и исследования.':'Слева — программа по блокам и модулям, материалы и исследования.')+' Материалы открываются вместе с модулем.';dashCheer.innerHTML='';toggleProgram(false);
+  dash={modules:[],lessons:[],progress:{},materials:[],calls:{},unread:{},scope:'full',access:new Set(),userId:uid,slug,current:null,eps:new Set(),watched:new Set(),researched:new Set(),status:null};
+  dashBar.innerHTML='';
+  dashCourse.textContent=courses[i][1];dashH.textContent='Курс «'+courses[i][1]+'»';dashIntro.textContent='Путешествие по курсу: проходи темы по порядку, открывай новые земли и сундуки. Материалы открываются вместе с темой.';dashCheer.innerHTML='';toggleProgram(false);
   sideAccordion.innerHTML='<p class="note">Загружаем программу…</p>';lessonArea.innerHTML='';showPage('dashboard');
   const courseQ=f=>sb.from('courses').select(`modules(id,sort,title,lessons(id,sort,title,research_task${f}))`).eq('slug',slug).single();
   const[{data:course,error},{data:prog},{data:calls},{data:enr},{data:acc}]=await Promise.all([
@@ -1359,18 +1399,46 @@ async function openCourseDashboard(i){const session=await requireLogin();if(!ses
   dash.modules.forEach(m=>{m.lessons.sort((a,b)=>a.sort-b.sort);m.lessons.forEach(l=>{l.module=m;dash.lessons.push(l)})});
   (prog||[]).forEach(p=>dash.progress[p.lesson_id]=p);
   (calls||[]).forEach(c=>dash.calls[c.lesson_id]=c);
-  const{data:unread}=await sb.from('lesson_messages').select('lesson_id').eq('student_id',uid).neq('author_id',uid).is('read_at',null).is('deleted_at',null);
+  lessonArea.innerHTML='<p class="note" style="text-align:center;padding:40px 0">Загружаем карту курса…</p>';
+  // всё остальное — одним заходом: непрочитанные, материалы, для карты (серии, ответы, исследования) и награды
+  const ids=dash.lessons.map(l=>l.id);
+  const[{data:unread},{data:mats},{data:lc},{data:ea},{data:ra},st]=await Promise.all([
+    sb.from('lesson_messages').select('lesson_id').eq('student_id',uid).neq('author_id',uid).is('read_at',null).is('deleted_at',null),
+    sb.from('materials').select('id,lesson_id,user_id,title,kind,url,storage_path,sort').in('lesson_id',ids),
+    sb.from('lesson_content').select('lesson_id,video_url').in('lesson_id',ids),
+    sb.from('episode_answers').select('lesson_id').eq('user_id',uid).limit(2000),
+    sb.from('research_answers').select('lesson_id').eq('user_id',uid),
+    window.Path?Path.bar(dashBar,{sb,userId:uid,onGears:()=>openShop()}).catch(()=>null):null]);
   (unread||[]).forEach(m=>dash.unread[m.lesson_id]=(dash.unread[m.lesson_id]||0)+1);
   if(badgeChannel)sb.removeChannel(badgeChannel);
   badgeChannel=sb.channel('badges-'+uid).on('postgres_changes',{event:'INSERT',schema:'public',table:'lesson_messages',filter:'student_id=eq.'+uid},p=>{
     const m=p.new;if(m.author_id===uid||(dash.current&&dash.current.id===m.lesson_id&&!document.hidden))return;
     dash.unread[m.lesson_id]=(dash.unread[m.lesson_id]||0)+1;updateBadge(m.lesson_id)}).subscribe();
   // Материалы курса: общие и личные этого ученика (база отдаёт только открытые темы)
-  const{data:mats}=await sb.from('materials').select('id,lesson_id,user_id,title,kind,url,storage_path,sort').in('lesson_id',dash.lessons.map(l=>l.id));
   dash.materials=(mats||[]).filter(m=>!m.user_id||m.user_id===uid).sort((a,b)=>a.sort-b.sort||a.id-b.id);
   buildAccordion();celebrateApproved();
-  const next=dash.lessons.find(l=>isUnlocked(l)&&lessonStatus(l)!=='approved')||dash.lessons.find(isOwned)||dash.lessons[0];
-  if(next)openLesson(next.id)}
+  // для карты курса: в каких темах есть серия, что ребёнок уже посмотрел и заполнил
+  (lc||[]).forEach(c=>{if(/^episode:/.test(c.video_url||''))dash.eps.add(c.lesson_id)});
+  (ea||[]).forEach(a=>dash.watched.add(a.lesson_id));(ra||[]).forEach(a=>dash.researched.add(a.lesson_id));
+  dash.status=st;
+  if(window.World)openMap();
+  else{const next=dash.lessons.find(l=>isUnlocked(l)&&lessonStatus(l)!=='approved')||dash.lessons.find(isOwned)||dash.lessons[0];if(next)openLesson(next.id)}}
+// ---------- Карта курса (path.js): темы — станции, после блока — сундук, в конце — кубок ----------
+function mapState(l,cur){const s=lessonStatus(l);if(!isOwned(l))return 'buy';if(s==='approved')return 'done';if(s==='submitted')return 'review';
+  if(!isUnlocked(l))return 'locked';return l===cur?'current':'open'}
+function openMap(){flushSave();closeChat();stopEpisode();dash.current=null;++openToken;
+  document.querySelectorAll('.side-item,.side-pin,.rail-btn').forEach(x=>x.classList.toggle('active',x.dataset.id==='map'));sideNow.textContent='Карта курса';
+  const cur=dash.lessons.find(l=>isUnlocked(l)&&!lessonStatus(l));
+  const modules=dash.modules.map(m=>({id:m.id,title:m.title,lessons:m.lessons.map(l=>{const hasEp=dash.eps.has(l.id),hasR=!!l.research_task,s=lessonStatus(l);
+    return{id:l.id,title:l.title,state:mapState(l,cur),steps:(hasEp?1:0)+(hasR?1:0)+1,
+      done:(hasEp&&dash.watched.has(l.id)?1:0)+(hasR&&dash.researched.has(l.id)?1:0)+(s==='submitted'||s==='approved'?1:0)}})}));
+  lessonArea.innerHTML=`<div id="pathMap"></div><p class="note" style="text-align:center;margin-top:12px">Нажми на тему, чтобы открыть её. Нажми на свой транспорт — он расскажет о себе.</p>`;
+  World.map(pathMap,{sb,modules,courseId:courseId[selectedCourse],slug:dash.slug,userId:dash.userId,status:dash.status,onOpen:id=>{openLesson(id);phoneJump()}});lessonIn()}
+// Лавка мастера: потратить шестерёнки (после покупки обновляется панель наград и украшения транспорта)
+function openShop(){if(!window.Shop)return;flushSave();closeChat();stopEpisode();dash.current=null;++openToken;
+  document.querySelectorAll('.side-item,.side-pin,.rail-btn').forEach(x=>x.classList.toggle('active',x.dataset.id==='shop'));sideNow.textContent='Лавка мастера';
+  lessonArea.innerHTML='<div id="shopBox"></div>';
+  Shop.open(shopBox,{sb,userId:dash.userId,onChange:async()=>{const st=await Path.bar(dashBar,{sb,userId:dash.userId,onGears:()=>openShop()}).catch(()=>null);if(st)dash.status=st}});lessonIn()}
 // ---------- Телефон: программа курса сворачивается в кнопку над модулем ----------
 const DASH_MQ=matchMedia('(max-width:900px)');
 function toggleProgram(force){const open=dashSide.classList.toggle('open',force);sideToggle.setAttribute('aria-expanded',open)}
@@ -1406,7 +1474,7 @@ function buildAccordion(){sideAccordion.innerHTML='';
   updateProgress()}
 function splitStages(sorts){const out=[[],[],[],[]];sorts.forEach((s,i)=>out[Math.min(3,Math.floor(i*4/sorts.length))].push(s));return out}
 function updateProgress(){const mine=dash.lessons.filter(isOwned),total=mine.length,done=mine.filter(l=>lessonStatus(l)==='approved').length;
-  const pct=total?Math.round(done*100/total):0;dashProgressBar.style.width=pct+'%';dashProgressText.textContent=pct+'% пройдено';sidePct.textContent=pct+'%';
+  const pct=total?Math.round(done*100/total):0;dashProgressBar.style.width=pct+'%';dashProgressText.textContent=pct+'% пройдено';sidePct.textContent=pct+'%';railPct.textContent=pct+'%';
   const stages=COURSE_STAGES[dash.slug]||splitStages(dash.modules.map(m=>m.sort));
   const steps=document.querySelectorAll('#dashTimeline .step');let activeSet=false;
   stages.forEach((sorts,k)=>{const st=steps[k];if(!st)return;
@@ -1449,8 +1517,9 @@ function flipEpisode(on){const card=document.getElementById('epCard');if(!card)r
 function startEpisode(ep){const box=document.getElementById('epBox');if(!box||!window.Episode)return;stopEpisode();
   const lessonId=dash.current&&dash.current.id;
   // ответы ребёнка в серии уходят преподавателю (админка → «Ответы в сериях»)
-  const onAnswer=r=>sb.from('episode_answers').insert({lesson_id:lessonId,episode:ep,run_id:r.run,node:r.node,question:r.question,answer:r.answer,heard:r.heard,via:r.via})
-    .then(({error})=>{if(error)console.warn('Ответ серии не сохранился:',error.message)});
+  // tag — куда серия повела после ответа; в ответ база пишет начисленные очки героя (deltas)
+  const onAnswer=r=>sb.from('episode_answers').insert({lesson_id:lessonId,episode:ep,run_id:r.run,node:r.node,question:r.question,answer:r.answer,heard:r.heard,via:r.via,tag:r.tag||null}).select('deltas').single()
+    .then(({data,error})=>{if(error){console.warn('Ответ серии не сохранился:',error.message);return null}return data})
   epPlayer=Episode.mount(box,{id:ep,sb,onMeet:()=>flipEpisode(true),onAnswer})}
 function stopEpisode(){if(epPlayer){epPlayer.destroy();epPlayer=null}}
 // Материалы: ссылка открывается как есть, файл — по временной ссылке из закрытого хранилища.
@@ -1463,7 +1532,7 @@ function materialLinks(list){const a=m=>m.kind==='link'
 // PDF и картинки открываются в просмотрщике на странице: без кнопок «скачать» и «печать»,
 // с почтой ученика поверх страниц. Остальные файлы — как раньше, по временной ссылке.
 const VIEW_EXT=/\.(pdf|png|jpe?g|webp|gif)$/i;
-async function openMaterialFile(id){const item=dash.materials.find(x=>x.id===id),view=!!item&&VIEW_EXT.test(item.storage_path||'');
+async function openMaterialFile(id){const item=dash.materials.find(x=>x.id===id)||cabMats.find(x=>x.id===id),view=!!item&&VIEW_EXT.test(item.storage_path||'');
   const w=view?null:window.open('','_blank');
   const{data:m}=await sb.from('materials').select('title,storage_path').eq('id',id).maybeSingle();
   const{data,error}=m?await sb.storage.from('materials').createSignedUrl(m.storage_path,60):{error:true};
@@ -1496,7 +1565,7 @@ document.addEventListener('keydown',e=>{if(!docViewer)return;if(e.key==='Escape'
   else if((e.ctrlKey||e.metaKey)&&(e.code==='KeyS'||e.code==='KeyP'))e.preventDefault()});
 // Вкладка «Материалы»: всё из открытых тем, по заголовкам тем
 function openMaterials(){flushSave();closeChat();stopEpisode();dash.current=null;++openToken;
-  document.querySelectorAll('.side-item,.side-pin').forEach(x=>x.classList.toggle('active',x.dataset.id==='materials'));sideNow.textContent='Материалы';
+  document.querySelectorAll('.side-item,.side-pin,.rail-btn').forEach(x=>x.classList.toggle('active',x.dataset.id==='materials'));sideNow.textContent='Материалы';
   const groups=dash.lessons.filter(isUnlocked).map(l=>({l,list:dash.materials.filter(m=>m.lesson_id===l.id)})).filter(g=>g.list.length);
   lessonArea.innerHTML=`<h2>Материалы</h2><p>Материалы всех открытых модулей. Новые появляются здесь по мере прохождения курса.</p>`+
     (groups.length?groups.map(g=>`<div class="materials"><h3>${escapeHtml(g.l.title)}</h3>${materialLinks(g.list)}</div>`).join('')
@@ -1506,11 +1575,12 @@ function statusHtml(l){const p=dash.progress[l.id],c=p&&p.teacher_comment?`<p cl
   if(p&&p.status==='submitted')return `<p>⏳ Модуль отправлен на проверку. Преподаватель посмотрит его и откроет следующий модуль.</p>${c}`;
   return `<p class="note">Изучите модуль${l.research_task?' и заполните исследование':''}, затем отправьте его преподавателю на проверку.</p><button class="btn primary" onclick="submitLesson()">Отправить на проверку</button><p class="note" id="submitMsg"></p>`}
 async function openLesson(id){flushSave();closeChat();stopEpisode();const l=dash.lessons.find(x=>x.id===id);if(!l)return;dash.current=l;const token=++openToken;
-  document.querySelectorAll('.side-item,.side-pin').forEach(x=>x.classList.toggle('active',x.dataset.id===String(id)));sideNow.textContent=l.title;
+  document.querySelectorAll('.side-item,.side-pin,.rail-btn').forEach(x=>x.classList.toggle('active',x.dataset.id===String(id)));sideNow.textContent=l.title;
   const item=document.querySelector(`.side-item[data-id="${id}"]`);if(item)item.closest('.side-group').classList.add('open');
   const title=escapeHtml(l.title),task=l.research_task?escapeHtml(l.research_task):'';
-  if(!isOwned(l)){lessonArea.innerHTML=`<h2>${title}</h2><p>Этот модуль не входит в оплаченные. Можно докупить его отдельно, целым блоком или весь курс с набором для исследований — уже оплаченное вычитается из его стоимости.</p><button class="btn primary" onclick="goPayment()">Докупить модули или весь курс</button>`;return}
-  if(!isUnlocked(l)){lessonArea.innerHTML=`<h2>${title}</h2><p class="note">Модуль откроется, когда преподаватель подтвердит предыдущие модули.</p>`+(task?`<div class="research-card"><h4>🔬 Исследование</h4><p class="research-q">${task}</p></div>`:'');return}
+  const back=window.Path?'<button class="btn path-back" type="button" onclick="openMap()">← Карта курса</button>':'';
+  if(!isOwned(l)){lessonArea.innerHTML=`${back}<h2>${title}</h2><p>Этот модуль не входит в оплаченные. Можно докупить его отдельно, целым блоком или весь курс с набором для исследований — уже оплаченное вычитается из его стоимости.</p><button class="btn primary" onclick="goPayment()">Докупить модули или весь курс</button>`;return}
+  if(!isUnlocked(l)){lessonArea.innerHTML=`${back}<h2>${title}</h2><p class="note">Модуль откроется, когда преподаватель подтвердит предыдущие модули.</p>`+(task?`<div class="research-card"><h4>🔬 Исследование</h4><p class="research-q">${task}</p></div>`:'');return}
   lessonArea.innerHTML=`<h2>${title}</h2><p class="note">Загружаем модуль…</p>`;
   const plan=l.research_plan&&l.research_plan.tables?l.research_plan:null;
   const ansQ=f=>sb.from('research_answers').select('hypothesis,method,result,conclusion'+f).eq('user_id',dash.userId).eq('lesson_id',id).maybeSingle();
@@ -1520,7 +1590,7 @@ async function openLesson(id){flushSave();closeChat();stopEpisode();const l=dash
   // серия-мультфильм занятия: lesson_content.video_url = 'episode:<серия>'
   const ep=/^episode:([a-z0-9-]+)$/.exec((content&&content.video_url)||'');
   // порядок: видеосвязь → чат → материалы → исследование → проверка модуля
-  let html=`<h2>${title}</h2>${ep?episodeHtml(l,ep[1]):callHtml(l)}`+chatHtml();
+  let html=`${back}<h2>${title}</h2>${ep?episodeHtml(l,ep[1]):callHtml(l)}`+chatHtml();
   const mats=dash.materials.filter(m=>m.lesson_id===l.id);
   // Занятие назначено, а записи (личного материала) ещё нет — показываем, что она появится
   const waitRecording=dash.calls[l.id]&&!mats.some(m=>m.user_id)?'<p class="note">🎥 Запись занятия появится здесь, когда преподаватель её загрузит.</p>':'';

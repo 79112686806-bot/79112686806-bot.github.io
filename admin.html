@@ -141,6 +141,7 @@ label.filebtn{display:inline-block;border:1px solid var(--accent);color:var(--ac
   <a href="#episodes" data-tab="episodes"><span class="ic">🎬</span>Ответы в сериях<span class="navcount" id="eCount" hidden></span></a>
   <a href="#support" data-tab="support"><span class="ic">❓</span>Вопросы с сайта<span class="navcount" id="sCount" hidden></span></a>
   <a href="#leads" data-tab="leads"><span class="ic">📝</span>Заявки<span class="navcount" id="lCount" hidden></span></a>
+  <a href="#shop" data-tab="shop"><span class="ic">🎁</span>Лавка и призы<span class="navcount" id="pCount" hidden></span></a>
   <h4>Курсы</h4>
   <a href="#materials" data-tab="materials"><span class="ic">📚</span>Материалы курса</a>
   <h4>Сайт</h4>
@@ -161,6 +162,7 @@ label.filebtn{display:inline-block;border:1px solid var(--accent);color:var(--ac
 <script src="home-blocks.js"></script>
 <script src="research.js"></script>
 <script src="episode.js"></script>
+<script src="hero.js"></script>
 <script src="/igra/memo-data.js"></script>
 <script>
 const sb=makeSupabase();
@@ -216,7 +218,8 @@ const HINTS={
   support:'Вопросы из чата «Вопрос нам» на сайте — от гостей и учеников. Ответ сразу появится у человека в окне чата.',
   notify:'Пуш-уведомления на этом телефоне или компьютере обо всём, что видно в админ-панели.',
   leads:'Заявки с сайта на консультацию. Свяжитесь с человеком и отметьте, что заявка обработана.',
-  materials:'Программа курсов: файлы и ссылки, которые видят все ученики в открытых темах.'};
+  materials:'Программа курсов: файлы и ссылки, которые видят все ученики в открытых темах.',
+  shop:'Ученики тратят шестерёнки в «Лавке мастера» в курсе. Купленные призы — здесь: вручите и отметьте «Вручён» или отмените (шестерёнки вернутся). Ниже — товары и цены.'};
 function route(){closeAdminChat();matView=null;const h=location.hash.slice(1)||'queue';const[tab,arg,cid,lid]=h.split('/');
   const key=tab==='student'?'students':tab;document.body.classList.remove('menu-open');
   document.querySelectorAll('.side a').forEach(a=>{const on=a.dataset.tab===key;a.classList.toggle('active',on);if(on)navNow.textContent=a.childNodes[1].textContent.trim()});
@@ -227,6 +230,7 @@ function route(){closeAdminChat();matView=null;const h=location.hash.slice(1)||'
   if(tab==='materials')return showMaterials(arg?+arg:undefined);
   if(tab==='calls')return showCalls();
   if(tab==='leads')return showLeads();
+  if(tab==='shop')return showShop();
   if(tab==='support')return showSupport(arg);
   if(tab==='notify')return showNotify();
   if(tab==='reviews')return showReviews();
@@ -240,19 +244,19 @@ async function loadQueueData(){const[{data:threads},{data:subs}]=await Promise.a
     sb.from('lesson_progress').select('user_id,lesson_id,submitted_at,lessons(title,modules(course_id))').eq('status','submitted').order('submitted_at')]);
   return{threads:threads||[],subs:subs||[]}}
 function setQueueCount(n){const el=document.getElementById('qCount');el.hidden=!n;el.textContent=n;document.title=(n?'('+n+') ':'')+'Админ-панель — Инженерный клуб'}
-async function refreshQueueCount(){const[{threads,subs},calls,leads,revs,runs,sup]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads(),countPendingReviews(),countNewRuns(),countSupportUnread()]);
-  setQueueCount(threads.filter(t=>t.unread>0).length+subs.length+leads+revs+runs+sup);setBadge('sCount',sup);setBadge('eCount',runs);setBadge('cCount',todayCalls(calls.calls).length);setBadge('lCount',leads);setBadge('rCount',revs)}
+async function refreshQueueCount(){const[{threads,subs},calls,leads,revs,runs,sup,prz]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads(),countPendingReviews(),countNewRuns(),countSupportUnread(),countPrizes()]);
+  setQueueCount(threads.filter(t=>t.unread>0).length+subs.length+leads+revs+runs+sup+prz);setBadge('pCount',prz);setBadge('sCount',sup);setBadge('eCount',runs);setBadge('cCount',todayCalls(calls.calls).length);setBadge('lCount',leads);setBadge('rCount',revs)}
 async function countPendingReviews(){const{count}=await sb.from('reviews').select('id',{count:'exact',head:true}).eq('status','pending');return count||0}
 function setBadge(id,n){const el=document.getElementById(id);el.hidden=!n;el.textContent=n}
 async function countNewLeads(){const{count}=await sb.from('leads').select('id',{count:'exact',head:true}).eq('status','new');return count||0}
 function threadPreview(t){if(t.last_deleted)return 'Сообщение удалено';return (t.last_from_student?'':'Вы: ')+((t.last_body||'').slice(0,140)||(t.last_has_files?'📎 Вложение':''))}
 async function showQueue(){if(!app.querySelector('#queueView'))app.innerHTML='<p class="muted">Загрузка очереди…</p>';
-  const[{threads,subs},cd,newLeads,pendRev,newRuns,newIdeas,newSup]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads(),countPendingReviews(),countNewRuns(),countNewIdeas(),countSupportUnread()]);const unread=threads.filter(t=>t.unread>0);
-  const today=todayCalls(cd.calls);setQueueCount(unread.length+subs.length+newLeads+pendRev+newRuns+newSup);setBadge('sCount',newSup);setBadge('cCount',today.length);setBadge('lCount',newLeads);setBadge('rCount',pendRev);setBadge('eCount',newRuns);
+  const[{threads,subs},cd,newLeads,pendRev,newRuns,newIdeas,newSup,prizes]=await Promise.all([loadQueueData(),loadCalls(),countNewLeads(),countPendingReviews(),countNewRuns(),countNewIdeas(),countSupportUnread(),countPrizes()]);const unread=threads.filter(t=>t.unread>0);
+  const today=todayCalls(cd.calls);setQueueCount(unread.length+subs.length+newLeads+pendRev+newRuns+newSup+prizes);setBadge('pCount',prizes);setBadge('sCount',newSup);setBadge('cCount',today.length);setBadge('lCount',newLeads);setBadge('rCount',pendRev);setBadge('eCount',newRuns);
   // плитка: число и подпись; ноль — зелёная «✓», дел нет
   // to: раздел (#…) или «@id» — список ниже на этой же странице
   const tile=(n,label,to,doneText)=>`<a class="tile ${n?'todo':'done'}" href="${to[0]==='@'?'#queue':to}"${to[0]==='@'?` onclick="document.getElementById('${to.slice(1)}').scrollIntoView({behavior:'smooth'});return false"`:''}><b>${n||'✓'}</b><span>${n?label:doneText}</span></a>`;
-  const tiles=`<div class="tiles">${tile(unread.length,'новых сообщений','@msgs','сообщения прочитаны')}${tile(subs.length,'тем на проверке','@subs','темы проверены')}${tile(today.length,'занятий сегодня','#calls','сегодня занятий нет')}${tile(newRuns,'новых просмотров серий','#episodes','ответы просмотрены')}${tile(newSup,'вопросов с сайта','#support','вопросы отвечены')}${tile(newLeads,'новых заявок','#leads','заявки разобраны')}${tile(pendRev,'отзывов на проверке','#reviews','отзывы проверены')}${tile(newIdeas,'идей для карточек','#memo','идеи разобраны')}</div>`;
+  const tiles=`<div class="tiles">${tile(unread.length,'новых сообщений','@msgs','сообщения прочитаны')}${tile(subs.length,'тем на проверке','@subs','темы проверены')}${tile(today.length,'занятий сегодня','#calls','сегодня занятий нет')}${tile(newRuns,'новых просмотров серий','#episodes','ответы просмотрены')}${tile(newSup,'вопросов с сайта','#support','вопросы отвечены')}${tile(prizes,'призов вручить','#shop','призы вручены')}${tile(newLeads,'новых заявок','#leads','заявки разобраны')}${tile(pendRev,'отзывов на проверке','#reviews','отзывы проверены')}${tile(newIdeas,'идей для карточек','#memo','идеи разобраны')}</div>`;
   if((location.hash.slice(1)||'queue').split('/')[0]!=='queue')return;
   const link=(sid,cid,lid)=>`#student/${sid}/${cid}/${lid}`;
   app.innerHTML=`<div id="queueView"><h1>Главная</h1>${tiles}
@@ -308,7 +312,8 @@ async function showStudent(id,courseId,lessonId){app.innerHTML='<p class="muted"
       <span class="small muted">с ${fmtDate(c.since)}</span></div>`).join(''):'<p class="muted">Не записан ни на один курс.</p>'}
     ${canEnroll.length?`<div class="row" style="margin-top:10px"><select id="enrollSel">${canEnroll.map(c=>`<option value="${c.id}">${esc(c.title)}</option>`).join('')}</select>
       <button onclick="enroll('${s.id}')">Открыть курс вручную</button><span class="small muted">например, при оплате не через сайт</span></div>`:''}
-  </div><div id="courseBox"></div>`;
+  </div><div id="heroBox"></div><div id="courseBox"></div>`;
+  if(window.Hero)Hero.adminCard(document.getElementById('heroBox'),{sb,userId:s.id}).catch(e=>console.warn('Герой:',e));
   if(courseId)await loadCourse(s,courseId);
   if(lessonId&&document.getElementById('chat-'+lessonId))toggleChat(lessonId)}
 async function saveProfile(id){const{error}=await sb.from('profiles').update({student_name:fStudent.value.trim()||null,parent_name:fParent.value.trim()||null,contact:fContact.value.trim()||null}).eq('id',id);
@@ -364,7 +369,7 @@ function lessonRow(l){const p=card.progress[l.id],st=p?.status,a=card.answers[l.
     :'<div class="muted small">Ученик ещё ничего не написал.</div>'}</div>`:'';
   const actions=st==='approved'
     ?`${p.teacher_comment?`<div class="small">Ваш комментарий: ${esc(p.teacher_comment)}</div>`:''}<button class="link small" onclick="revoke(${l.id},this)">Отменить подтверждение</button>`
-    :open?`<div class="row"><input id="cm${l.id}" placeholder="Комментарий ученику (необязательно)" style="flex:1;min-width:220px"><button class="primary" onclick="approve(${l.id})">Подтвердить тему</button></div>`:'';
+    :open?`<details class="small"><summary>Оценка героя за тему (необязательно)</summary>${window.Hero?Hero.gradeHtml('hg'+l.id):''}</details><div class="row"><input id="cm${l.id}" placeholder="Комментарий ученику (необязательно)" style="flex:1;min-width:220px"><button class="primary" onclick="approve(${l.id})">Подтвердить тему</button></div>`:'';
   const nRec=card.personal.filter(m=>m.lesson_id===l.id).length,c=card.calls[l.id];
   const lp=open||st?`<button style="margin-top:8px" onclick="toggleLessonPanel(${l.id})">📞 Занятие и видеозапись${c?` · ${callState(c)==='ended'?'завершено':c.starts_at?fmtDate(c.starts_at):'назначено'}`:''}${nRec?` · 🎥 ${nRec}`:''}</button> `:'';
   const chat=open||st?`${lp}<button id="cb-${l.id}" style="margin-top:8px" onclick="toggleChat(${l.id})">${chatLabel(l.id)}</button><div id="lp-${l.id}"></div><div id="chat-${l.id}"></div>`:'';
@@ -642,6 +647,50 @@ async function setLeadStatus(id,status){const{error}=await sb.from('leads').upda
   if(error)return toast('Ошибка: '+error.message);toast('Статус: '+LEAD_RU[status]);refreshQueueCount();
   const row=document.querySelector(`select[onchange="setLeadStatus(${id},this.value)"]`)?.closest('tr');if(row)row.style.background=status==='new'?'#fffaf0':''}
 
+// ---------- Лавка и призы (shop.js в курсе, миграция 20261026000029_shop.sql) ----------
+async function countPrizes(){const{count,error}=await sb.from('shop_orders').select('id',{count:'exact',head:true}).eq('status','new');return error?0:count||0}
+const SHOP_KIND={prize:'Настоящий приз',ride:'Украшение транспорта',freeze:'Заморозка серии'};
+async function showShop(){app.innerHTML='<p class="muted">Загрузка лавки…</p>';if(!students.length)await loadStudents();
+  const[{data:orders,error},{data:items}]=await Promise.all([
+    sb.from('shop_orders').select('*').order('created_at',{ascending:false}).limit(300),
+    sb.from('shop_items').select('*').order('sort').order('id')]);
+  if(error){app.innerHTML='<p>Лавки ещё нет: выполните в Supabase миграцию 20261026000029_shop.sql.</p><p class="small muted">'+esc(error.message)+'</p>';return}
+  const prizes=(orders||[]).filter(o=>o.kind==='prize'),wait=prizes.filter(o=>o.status==='new'),rest=prizes.filter(o=>o.status!=='new');setBadge('pCount',wait.length);
+  const row=o=>`<tr style="cursor:default${o.status==='new'?';background:#fffaf0':''}"><td class="small">${fmtDate(o.created_at)}</td><td><a href="#student/${o.user_id}">${esc(studentName(o.user_id))}</a></td><td><b>${esc(o.title)}</b>${o.note?`<div class="small" style="white-space:pre-wrap">«${esc(o.note)}»</div>`:''}</td><td>${o.price} ⚙</td>
+    <td>${o.status==='new'?`<button class="primary" onclick="setPrize(${o.id},'done')">Вручён</button> <button class="link small" onclick="setPrize(${o.id},'cancelled')">Отменить</button>`:o.status==='done'?`<span class="badge b-ok">вручён ${fmtDate(o.done_at)}</span>`:'<span class="badge b-mute">отменён, шестерёнки вернулись</span>'}</td></tr>`;
+  const head='<thead><tr><th>Дата</th><th>Ученик</th><th>Приз</th><th>Цена</th><th></th></tr></thead>';
+  const it=i=>`<tr style="cursor:default" data-item="${i.id}"><td><input name="icon" value="${esc(i.icon||'')}" maxlength="16" style="width:52px;font-size:20px;text-align:center"></td>
+    <td><input name="title" value="${esc(i.title)}" maxlength="120" style="width:100%"><textarea name="about" maxlength="400" rows="2" style="width:100%;margin-top:4px">${esc(i.about||'')}</textarea><div class="small muted">${SHOP_KIND[i.kind]||i.kind}${i.kind==='ride'?' — рисунок на карте, текст можно менять':''}</div></td>
+    <td><input name="price" type="number" min="1" value="${i.price}" style="width:80px"> ⚙</td>
+    <td>${i.kind==='prize'?`<input name="stock" type="number" min="0" value="${i.stock??''}" placeholder="∞" style="width:70px">`:'<span class="muted">—</span>'}</td>
+    <td>${i.kind==='prize'?`<input name="per_user" type="number" min="1" value="${i.per_user??''}" placeholder="∞" style="width:60px">`:'<span class="muted">—</span>'}</td>
+    <td><label class="small"><input name="active" type="checkbox" ${i.active?'checked':''}> в лавке</label></td>
+    <td><button class="primary" onclick="saveShopItem(${i.id})">Сохранить</button></td></tr>`;
+  const bought=(orders||[]).filter(o=>o.status!=='cancelled'),sum=bought.reduce((a,o)=>a+o.price,0);
+  app.innerHTML=`<h1>Лавка и призы</h1>
+    <h2>🎁 Вручить ${wait.length?`<span class="badge b-warn">${wait.length}</span>`:''}</h2>
+    ${wait.length?`<table>${head}<tbody>${wait.map(row).join('')}</tbody></table>`:'<p class="muted">Все купленные призы вручены.</p>'}
+    <h2>Товары и цены</h2>
+    <p class="small muted">Пустое «Осталось» — без ограничения; «На ученика» — сколько раз один ученик может взять приз. Снимите «в лавке», чтобы спрятать товар. Всего потрачено шестерёнок: ${sum} (покупок: ${bought.length}).</p>
+    <table><thead><tr><th></th><th>Название и описание</th><th>Цена</th><th>Осталось</th><th>На ученика</th><th></th><th></th></tr></thead><tbody>${(items||[]).map(it).join('')}</tbody></table>
+    <details class="card" style="margin-top:12px"><summary><b>+ Добавить приз</b></summary><div style="display:grid;gap:8px;max-width:520px;margin-top:10px">
+      <input id="npIcon" placeholder="Значок (эмодзи), например 🎁" maxlength="16"><input id="npTitle" placeholder="Название приза" maxlength="120">
+      <textarea id="npAbout" placeholder="Описание: что это и как вручим" maxlength="400" rows="2"></textarea>
+      <input id="npPrice" type="number" min="1" placeholder="Цена в шестерёнках"><input id="npStock" type="number" min="0" placeholder="Сколько штук (пусто — без ограничения)">
+      <button class="primary" onclick="addPrize()">Добавить в лавку</button></div></details>
+    ${rest.length?`<h2>История призов</h2><table>${head}<tbody>${rest.map(row).join('')}</tbody></table>`:''}`}
+async function setPrize(id,status){if(status==='cancelled'&&!confirm('Отменить покупку? Шестерёнки вернутся ученику.'))return;
+  const{error}=await sb.rpc('shop_order_set',{p_id:id,p_status:status});if(error)return toast('Ошибка: '+error.message);
+  toast(status==='done'?'Отмечено: приз вручён':'Покупка отменена, шестерёнки вернулись');refreshQueueCount();showShop()}
+async function saveShopItem(id){const r=document.querySelector(`tr[data-item="${id}"]`),v=n=>r.querySelector(`[name=${n}]`),num=n=>v(n).value===''?null:+v(n).value;
+  const upd={icon:v('icon').value.trim()||null,title:v('title').value.trim(),about:v('about').value.trim()||null,price:+v('price').value,active:v('active').checked};
+  if(v('stock'))upd.stock=num('stock');if(v('per_user'))upd.per_user=num('per_user');
+  if(!upd.title||!(upd.price>0))return toast('Нужны название и цена больше нуля');
+  const{error}=await sb.from('shop_items').update(upd).eq('id',id);toast(error?'Ошибка: '+error.message:'Сохранено')}
+async function addPrize(){const title=npTitle.value.trim(),price=+npPrice.value;if(!title||!(price>0))return toast('Нужны название и цена больше нуля');
+  const{error}=await sb.from('shop_items').insert({kind:'prize',icon:npIcon.value.trim()||'🎁',title,about:npAbout.value.trim()||null,price,stock:npStock.value===''?null:+npStock.value,sort:100});
+  if(error)return toast('Ошибка: '+error.message);toast('Приз добавлен в лавку');showShop()}
+
 // ---------- Чат с учеником по теме (модуль chat.js) ----------
 let adminChat=null,adminChatLesson=null;
 function chatLabel(id){const n=card&&card.unread[id];return n?`💬 Чат · ${n} нов.`:card&&card.hasThread[id]?'💬 Чат':'💬 Написать ученику'}
@@ -755,7 +804,12 @@ function toggleChat(lessonId){const was=adminChatLesson;closeAdminChat();if(was=
   document.getElementById('lesson-'+lessonId).scrollIntoView({block:'start',behavior:'smooth'})}
 async function approve(lessonId){const comment=(document.getElementById('cm'+lessonId)?.value||'').trim()||null;
   const{error}=await sb.rpc('approve_lesson',{p_user_id:card.student.id,p_lesson_id:lessonId,p_comment:comment});
-  if(error)return toast('Ошибка: '+error.message);toast('Тема подтверждена — следующая открыта');await loadStudents();loadCourse(card.student,card.courseId)}
+  if(error)return toast('Ошибка: '+error.message);
+  // оценка героя за тему: ученик увидит её при следующем входе в кабинет
+  const grade=window.Hero?Hero.gradeRead('hg'+lessonId):{};
+  if(Object.keys(grade).length){const{error:e2}=await sb.rpc('hero_grade',{p_user:card.student.id,p_deltas:grade,p_note:comment,p_lesson:lessonId});if(e2)toast('Тема подтверждена, но оценка не сохранилась: '+e2.message)}
+  if(window.Hero)Hero.adminCard(document.getElementById('heroBox'),{sb,userId:card.student.id}).catch(()=>{});
+  toast('Тема подтверждена — следующая открыта');await loadStudents();loadCourse(card.student,card.courseId)}
 async function revoke(lessonId,b){if(!document.getElementById('rv'+lessonId)){ // подтверждение действия без confirm()
     b.insertAdjacentHTML('afterend',` <span id="rv${lessonId}" class="small">Точно? Темы после неё снова закроются. <button class="link" onclick="doRevoke(${lessonId})">Да, отменить</button></span>`);return}}
 async function doRevoke(lessonId){const{error}=await sb.rpc('revoke_lesson',{p_user_id:card.student.id,p_lesson_id:lessonId});

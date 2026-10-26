@@ -9,8 +9,9 @@
 // Обращения по имени — отдельные короткие записи (<серия>/names/<имя>-hi.mp3 …), плеер включает их поверх ролика
 // (если имя длиннее места в ролике, кадр ждёт, пока оно прозвучит).
 // Episode.mount(el, { id, sb, onMeet, onAnswer }) → { pause, resume, destroy }; onMeet — кнопка «Встреча с преподавателем»,
-// onAnswer({ run, node, question, answer, heard, via }) — ответ на вопрос серии (run — один просмотр,
-// via: voice | text | button | mixed | skip | timeout, heard — что дословно распознал микрофон).
+// onAnswer({ run, node, question, answer, heard, via, tag }) — ответ на вопрос серии (run — один просмотр,
+// via: voice | text | button | mixed | skip | timeout, heard — что дословно распознал микрофон, tag — следующий узел).
+// Если onAnswer вернёт обещание с { deltas } (очки героя), плеер покажет их поверх кадра (Hero.pop из hero.js).
 (function () {
   const has = (t, ...w) => w.some((x) => t.includes(x));
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -289,8 +290,13 @@
           waiting = true;
           show(n + '-wait'); overlays([...(g.show || []), ...(g.showAfter || [])]);
           askQ(g.ask).then((r) => {
-            if (onAnswer) try { onAnswer({ run, node: n, question: g.ask.q, answer: r.answer || '', heard: r.heard || null, via: r.via }); } catch (e) { console.error(e); }
-            Promise.resolve(g.ask.kind === 'name' ? loadNameVoice() : null).finally(() => go(g.next(r.val)));
+            const nx = g.next(r.val);
+            if (onAnswer) try {
+              const q = Array.isArray(g.ask.q) ? g.ask.q.join(' / ') : g.ask.q;
+              Promise.resolve(onAnswer({ run, node: n, question: q, answer: r.answer || '', heard: r.heard || null, via: r.via, tag: nx || null }))
+                .then((x) => { if (x && x.deltas && window.Hero && !dead) Hero.pop(stage, x.deltas); }).catch(() => {});
+            } catch (e) { console.error(e); }
+            Promise.resolve(g.ask.kind === 'name' ? loadNameVoice() : null).finally(() => go(nx));
           });
         }
         else go(g.next());
