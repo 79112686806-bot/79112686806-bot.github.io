@@ -180,6 +180,12 @@ async function main() {
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT);
   for (const f of FILES) copyFileSync(f, `${OUT}/${f}`);
+  // серии мультфильмов (episodes/<серия>.js): плеер грузит их сам, метки версий — внутрь episode.js
+  if (existsSync('episodes')) {
+    cpSync('episodes', `${OUT}/episodes`, { recursive: true });
+    const epv = Object.fromEntries(readdirSync('episodes').filter((f) => f.endsWith('.js')).map((f) => [f.slice(0, -3), createHash('sha1').update(readFileSync(`episodes/${f}`)).digest('hex').slice(0, 8)]));
+    writeFileSync(`${OUT}/episode.js`, readFileSync(`${OUT}/episode.js`, 'utf8').replace('{/*EPV*/}', JSON.stringify(epv)));
+  }
   if (existsSync('assets')) cpSync('assets', `${OUT}/assets`, { recursive: true });
   cpSync('vendor', `${OUT}/vendor`, { recursive: true });   // supabase-js со своего сайта, без внешнего CDN
   writeFileSync(`${OUT}/config.js`, `window.APP_CONFIG=${JSON.stringify({ supabaseUrl: url, supabaseKey: key, siteEmail: INFO.email || '' })};\n`);

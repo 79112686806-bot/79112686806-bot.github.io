@@ -12,6 +12,8 @@
 // onAnswer({ run, node, question, answer, heard, via, tag }) — ответ на вопрос серии (run — один просмотр,
 // via: voice | text | button | mixed | skip | timeout, heard — что дословно распознал микрофон, tag — следующий узел).
 // Если onAnswer вернёт обещание с { deltas } (очки героя), плеер покажет их поверх кадра (Hero.pop из hero.js).
+// Серия 1 описана здесь; остальные — в episodes/<серия>.js (Episode.define), плеер подгружает файл, когда серию открывают.
+// nameFrom: 'ep1' — имя ребёнка берётся из его ответа в серии 1; names: 'ep1' — записи обращений по имени из серии 1.
 (function () {
   const has = (t, ...w) => w.some((x) => t.includes(x));
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -28,6 +30,9 @@
   // ---------- Сценарии серий ----------
   // ask: вопрос после ролика; kind: name | choice | free | ideas | any | pick (выбор своей идеи) | checks (вопросы «да / пока нет»);
   // next(ответ) → следующий узел
+  // названия всех серий (нужны карточке занятия и админке до загрузки самой серии)
+  const TITLES = { ep2: 'Серия 2. Как придумали колесо' };
+  const EPV = {/*EPV*/};   // метки версий файлов episodes/*.js — подставляет сборка
   const EPISODES = {
     ep1: {
       title: 'Серия 1. Как мыслит инженер',   // обложка — /assets/episodes/<серия>-cover.webp (video/ep1/cover.mjs)
@@ -135,9 +140,25 @@
     meet: svg('<path d="M6.6 10.8a15.2 15.2 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/>'),
   };
 
-  function mount(root, { id, sb, onMeet, onAnswer }) {
+  // серия из отдельного файла: сначала загрузить его, потом показать плеер (pause/resume/destroy работают и до загрузки)
+  const loading = {};
+  function load(id) {
+    return (loading[id] ??= new Promise((ok, fail) => {
+      const sc = document.createElement('script'); sc.src = `/episodes/${id}.js${EPV[id] ? '?v=' + EPV[id] : ''}`;
+      sc.onload = () => (EPISODES[id] ? ok() : fail()); sc.onerror = () => { delete loading[id]; fail(); };
+      document.head.append(sc);
+    }));
+  }
+  function mount(root, opts) {
+    if (EPISODES[opts.id]) return mountNow(root, opts);
+    if (!TITLES[opts.id]) { root.textContent = 'Серия не найдена'; return null; }
+    root.innerHTML = '<p class="note" style="text-align:center;padding:40px 0">Загружаем мультфильм…</p>';
+    let real = null, gone = false;
+    load(opts.id).then(() => { if (!gone) real = mountNow(root, opts); }).catch(() => { if (!gone) root.textContent = 'Не удалось загрузить серию. Обновите страницу.'; });
+    return { pause: () => real && real.pause(), resume: () => real && real.resume(), destroy: () => { gone = true; if (real) real.destroy(); } };
+  }
+  function mountNow(root, { id, sb, onMeet, onAnswer }) {
     const E = EPISODES[id];
-    if (!E) { root.textContent = 'Серия не найдена'; return null; }
     const blank = () => ({ name: '', problem: '', react: '', ideas: [], idea: '', fb: '', good: '', fix: '', checks: [] });
     const S = blank();
     const G = E.graph(S, E);
@@ -178,13 +199,13 @@
 
     const newRun = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16)));
     let run = newRun();
-    let urls = {}, onScreen = null, paused = false, dead = false, started = false, micOk = !!SR, rec = null, cancelAsk = null, waiting = false;
+    let urls = {}, onScreen = null, paused = false, dead = false, started = false, micOk = !!SR, netErr = 0, relisten = null, rec = null, cancelAsk = null, waiting = false;
     const vids = {}, resumeQ = [];
     let pausedAt = 0, pausedTotal = 0;
     const clock = () => Date.now() - pausedTotal;
     // пройденный путь: узлы по порядку (hist) и какой из них идёт сейчас (cur); при перемотке назад путь сохраняется,
     // и дальше ролики идут по нему без повторных вопросов. reached — до какого места (с) уже досмотрели
-    let hist = [], cur = 0, reached = 0, drag = null;
+    let hist = [], cur = 0, reached = 0, drag = null, knownName = '';
     let vol = Math.min(1, Math.max(0, +(store.get('ep-volume') ?? 1))), muted = false;
 
     // ---------- Видео: по элементу на ролик, следующие заранее подгружаются ----------
@@ -258,7 +279,7 @@
     async function loadNameVoice() {
       const n = NAME_MAP[norm(S.name.split(' ')[0] || '')];
       const want = Object.values(E.voice).map((x) => x.slot);
-      const paths = want.map((s) => `${id}/names/${n ? slug(n) : '_'}-${s}.mp3`);
+      const paths = want.map((s) => `${E.names || id}/names/${n ? slug(n) : '_'}-${s}.mp3`);
       const { data } = await sb.storage.from('episodes').createSignedUrls(paths, 4 * 3600).catch(() => ({}));
       want.forEach((s, i) => { const u = data && data[i] && data[i].signedUrl; if (u) voiceUrls[s] = u; else if (n) voiceUrls[s] = voiceUrls['_' + s]; });
       primeVoice(Object.keys(E.voice)[0]);
@@ -429,23 +450,29 @@
       if (!micOk) return null;
       const r = new SR(); r.lang = 'ru-RU'; r.interimResults = true; r.continuous = continuous; r.maxAlternatives = 1;
       r.onresult = (e) => {
+        netErr = 0;
         for (let i = e.resultIndex; i < e.results.length; i++) {
           const txt = e.results[i][0].transcript.trim();
           if (e.results[i].isFinal) onFinal && onFinal(txt); else onText && onText(txt);
         }
       };
-      r.onerror = (e) => { if (['not-allowed', 'service-not-allowed', 'network'].includes(e.error)) { micOk = false; micState(false); } };
+      // нет разрешения — сразу на кнопки; сбой связи с сервисом распознавания — пробуем снова, на кнопки только после трёх сбоев подряд
+      r.onerror = (e) => {
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed' || (e.error === 'network' && ++netErr >= 3)) { micOk = false; micState(false); }
+      };
       r.onend = () => onEnd && onEnd();
       try { r.start(); } catch (e) {}
       return r;
     }
+    // «включить снова»: микрофон снова слушает текущий вопрос
+    $('.ep-say').addEventListener('click', () => { if (micOk || !SR) return; micOk = true; netErr = 0; micState(true); relisten && relisten(); });
     function micState(on) {
       askEl.classList.toggle('no-mic', !on);
-      $('.ep-say').innerHTML = on ? '<b>Скажи ответ вслух</b> — я слушаю' : 'Микрофон недоступен — ответь кнопкой или напиши';
+      $('.ep-say').innerHTML = on ? '<b>Скажи ответ вслух</b> — я слушаю' : SR ? 'Микрофон недоступен — ответь кнопкой или напиши (<u>включить снова</u>)' : 'Микрофон недоступен — ответь кнопкой или напиши';
       $('.ep-or').textContent = on ? 'или' : '';
     }
     // слушаем по кругу, пока вопрос открыт; на паузе — ждём продолжения
-    const loopListen = (isDone, o) => { const loop = () => { if (isDone() || dead) return; if (paused) { resumeQ.push(loop); return; } rec = listen({ ...o, onEnd: () => setTimeout(loop, 200) }); }; loop(); };
+    const loopListen = (isDone, o) => { const loop = () => { if (isDone() || dead) return; if (paused) { resumeQ.push(loop); return; } rec = listen({ ...o, onEnd: () => setTimeout(loop, 200) }); }; relisten = loop; loop(); };
     // текстовые места на доске и отметки проверки (✓ — да, ? — пока нет)
     function paintSlots() {
       for (const k of ['problem', 'idea', 'good', 'fix']) slot[k].textContent = S[k] || '';
@@ -602,6 +629,7 @@
       if (micOk && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => s.getTracks().forEach((t) => t.stop())).catch(() => { micOk = false; });
       applyVol(); setPaused(false); wrap.focus({ preventScroll: true });
       reset();
+      if (!saved && knownName && !S.name) { S.name = knownName; slot.name.textContent = S.name; loadNameVoice(); }
       if (!saved) { store.del(KEY); play(E.start); return; }
       // продолжить: восстановить ответы и путь, начать за пару секунд до места остановки
       Object.assign(S, saved.S || {}); run = saved.run || run; hist = saved.hist; cur = saved.cur;
@@ -646,7 +674,10 @@
     // ---------- Подготовка: временные ссылки на все ролики серии и запасные обращения ----------
     (async () => {
       const names = Object.keys(G).flatMap((n) => (G[n].ask ? [n, n + '-wait'] : [n]));
-      const fallbacks = Object.values(E.voice).map((x) => `${id}/names/_-${x.slot}.mp3`);
+      const fallbacks = Object.values(E.voice).map((x) => `${E.names || id}/names/_-${x.slot}.mp3`);
+      // имя ребёнка из прошлой серии (nameFrom) — чтобы герои обращались к нему по имени
+      if (E.nameFrom) sb.auth.getUser().then(({ data: u }) => u && u.user && sb.from('episode_answers').select('answer').eq('user_id', u.user.id).eq('episode', E.nameFrom).eq('node', 'n01').neq('answer', '')
+        .order('created_at', { ascending: false }).limit(1)).then((r) => { const a = r && r.data && r.data[0]; if (a) knownName = a.answer.trim().split(/\s+/)[0].slice(0, 24); }).catch(() => {});
       const { data, error } = await sb.storage.from('episodes').createSignedUrls([...names.map((n) => `${id}/${n}.mp4`), ...fallbacks], 4 * 3600);
       if (dead) return;
       const b = $('.ep-start .btn');
@@ -673,5 +704,7 @@
     };
   }
 
-  window.Episode = { mount, titles: Object.fromEntries(Object.entries(EPISODES).map(([k, v]) => [k, v.title])) };
+  // Episode.define(id, серия) — из файлов episodes/*.js; util — общие помощники для их графов
+  const define = (id, e) => { EPISODES[id] = e; };
+  window.Episode = { mount, define, util: { has, norm, cap }, titles: { ...TITLES, ...Object.fromEntries(Object.entries(EPISODES).map(([k, v]) => [k, v.title])) } };
 })();

@@ -466,9 +466,11 @@ let matView=null;
 async function showMaterials(courseId,keep){card=null;
   const{data:allCourses}=await sb.from('courses').select('id,title,status,sort').order('sort');
   courseId=courseId||(allCourses||[])[0]?.id;
-  const[{data:course},{data:mats}]=await Promise.all([
+  const[{data:course},{data:mats},{data:meets},{data:notes}]=await Promise.all([
     sb.from('courses').select('title,modules(id,sort,title,lessons(id,sort,title))').eq('id',courseId).single(),
-    sb.from('materials').select('id,lesson_id,title,kind,url,storage_path,sort').is('user_id',null).order('sort').order('id')]);
+    sb.from('materials').select('id,lesson_id,title,kind,url,storage_path,sort').is('user_id',null).order('sort').order('id'),
+    sb.from('lesson_content').select('lesson_id,meet'),sb.from('lesson_notes').select('lesson_id,notes')]);
+  const meetOf=id=>(meets||[]).find(x=>x.lesson_id===id)?.meet||'',noteOf=id=>(notes||[]).find(x=>x.lesson_id===id)?.notes||'';
   matView={courseId};matCache={};(mats||[]).forEach(m=>matCache[m.id]=m);
   const modules=(course?.modules||[]).sort((a,b)=>a.sort-b.sort);
   const scroll=keep?window.scrollY:0;
@@ -477,11 +479,20 @@ async function showMaterials(courseId,keep){card=null;
     <div class="row" style="margin-bottom:12px">${(allCourses||[]).map(c=>`<a class="btn ${c.id===courseId?'primary':''}" style="${c.id===courseId?'background:var(--accent);color:#fff':''};text-decoration:none" href="#materials/${c.id}">${esc(c.title)}${c.status==='draft'?' (в разработке)':''}</a>`).join('')}</div>
     ${modules.length?modules.map(m=>`<h2>${esc(m.title)}</h2>${m.lessons.sort((a,b)=>a.sort-b.sort).map(l=>{const list=(mats||[]).filter(x=>x.lesson_id===l.id);
       return `<div class="card"><b>${esc(l.title)}</b><div style="margin:8px 0">${list.length?list.map(matRow).join(''):'<p class="small muted">Материалов пока нет.</p>'}</div>
+        <details style="margin:0 0 10px"${meetOf(l.id)||noteOf(l.id)?' open':''}><summary class="small"><b>🚩 Встреча с преподавателем</b> — темы для ученика и заметки для себя</summary>
+          <label class="small">На занятии обсуждаем (видит ученик, по строке на тему)<textarea id="meet-${l.id}" rows="3" style="width:100%">${esc(meetOf(l.id))}</textarea></label>
+          <label class="small">Заметки преподавателя (ученик не видит)<textarea id="note-${l.id}" rows="4" style="width:100%">${esc(noteOf(l.id))}</textarea></label>
+          <button class="primary" onclick="saveMeet(${l.id})">Сохранить</button></details>
         <div class="row"><input id="mt-${l.id}" placeholder="Название (для файла можно не указывать)" style="min-width:220px;flex:1">
         <input id="mu-${l.id}" placeholder="Ссылка https://…" style="min-width:200px;flex:1"><button onclick="addMaterial(${l.id},false)">Добавить ссылку</button>
         <label class="filebtn">Загрузить файл<input type="file" hidden onchange="uploadMaterial(${l.id},false,this)"></label></div></div>`}).join('')}`).join('')
       :'<p class="muted">В этом курсе пока нет тем.</p>'}`;
   if(keep)window.scrollTo(0,scroll)}
+
+// темы встречи (lesson_content.meet) и заметки преподавателя (lesson_notes)
+async function saveMeet(id){const meet=document.getElementById('meet-'+id).value.trim()||null,notes=document.getElementById('note-'+id).value.trim()||null;
+  const[a,b]=await Promise.all([sb.from('lesson_content').upsert({lesson_id:id,meet},{onConflict:'lesson_id'}),sb.from('lesson_notes').upsert({lesson_id:id,notes,updated_at:new Date().toISOString()},{onConflict:'lesson_id'})]);
+  const e=a.error||b.error;toast(e?'Ошибка: '+e.message+(/meet|lesson_notes/.test(e.message)?' — выполните миграцию 20261026000030':''):'Сохранено')}
 
 // ---------- «Занятия»: расписание и занятия без видеозаписи ----------
 async function loadCalls(){const[{data:calls},{data:recs}]=await Promise.all([

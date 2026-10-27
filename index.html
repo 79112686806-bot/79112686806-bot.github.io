@@ -258,6 +258,10 @@ table.research th{font-family:"Cormorant Garamond",Georgia,serif;font-size:16px;
 table.research input::placeholder{color:rgba(58,35,19,.4)}
 table.research input:focus{background:rgba(154,58,27,.07)}
 .research-wrap{border-radius:3px}
+/* темы встречи с преподавателем */
+.meet-box{margin:14px 0 0;padding:14px 18px;border:1.5px solid var(--line);border-left:5px solid var(--sanguine);border-radius:4px;background:rgba(255,248,230,.6);text-align:left}
+.meet-box h4{margin:0 0 6px;font:700 21px/1.15 "Cormorant Garamond",Georgia,serif;color:var(--sanguine)}
+.meet-box ol{margin:0;padding-left:22px;display:grid;gap:4px}.meet-box p{margin:0}.meet-box .note{margin-top:8px}
 /* серия-мультфильм в занятии (episode.js): карточка-перевёртыш — спереди серия, на обороте встреча с преподавателем */
 .ep-card{perspective:1800px;margin:20px 0}
 .ep-flip{display:grid;transition:transform .8s cubic-bezier(.3,.7,.2,1);transform-style:preserve-3d}
@@ -363,9 +367,9 @@ table.research input:focus{background:rgba(154,58,27,.07)}
 .ep-say{font-size:1.05em;text-align:left}
 .ep-ask.no-mic .ep-mic{display:none}.ep-ask.no-mic .ep-say{color:var(--ink-soft)}
 .ep-or{font-size:.85em;color:var(--ink-soft);margin:2px 0 6px}.ep-or:empty{display:none}
-.ep-input{display:flex;gap:6px;flex:1 1 260px;max-width:420px}
+.ep-input{display:flex;gap:6px;flex:1 1 100%;max-width:420px}
 .ep-input input{flex:1;min-width:0!important}
-.ep-opts .ep-send{flex:none;padding:0 14px}
+.ep-opts .ep-send{flex:none;aspect-ratio:1;min-width:2.7em;padding:0;border-radius:6px}
 .ep-heard{min-height:1.5em;margin:4px 0;font-style:italic;color:var(--ink-soft)}
 .ep-opts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .ep-opts .btn{font-size:inherit}
@@ -1504,12 +1508,15 @@ let epPlayer=null;
 function epTurnHtml(l){const c=dash.calls[l.id],st=callState(c);
   const when=st==='planned'&&c.starts_at?new Date(c.starts_at).toLocaleString('ru-RU',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}):'';
   return `${st==='planned'?'<i class="ep-dot"></i>':''}📞 Встреча с преподавателем${when?` <small>· ${escapeHtml(when)}</small>`:''}`}
-function episodeHtml(l,ep){const title=(window.Episode&&Episode.titles[ep])||'Мультфильм';
+// «🚩 На занятии обсуждаем»: темы встречи с преподавателем (lesson_content.meet, по строке на тему)
+function meetHtml(t){const items=String(t||'').split('\n').map(x=>x.trim()).filter(Boolean);if(!items.length)return '';
+  return `<div class="meet-box"><h4>🚩 На занятии обсуждаем</h4>${items.length>1?`<ol>${items.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ol>`:`<p>${escapeHtml(items[0])}</p>`}<p class="note">Подумай над этим заранее — так встреча пройдёт интереснее.</p></div>`}
+function episodeHtml(l,ep,meet=''){const title=(window.Episode&&Episode.titles[ep])||'Мультфильм';
   return `<div class="ep-card" id="epCard"><div class="ep-flip">
     <div class="ep-face ep-front"><div id="epBox"><button type="button" class="ep-cover" onclick="startEpisode('${ep}')" aria-label="Смотреть: ${escapeHtml(title)}">
       <img src="/assets/episodes/${ep}-cover.webp" alt="" width="1280" height="720"><span class="video-play">▶</span></button></div>
       <div class="ep-row"><button type="button" class="ep-turn" id="epTurn" onclick="flipEpisode(true)">${epTurnHtml(l)}</button></div></div>
-    <div class="ep-face ep-back" inert>${callHtml(l)}<div class="ep-row"><button type="button" class="ep-turn" onclick="flipEpisode(false)">◀ Вернуться к мультфильму</button></div></div>
+    <div class="ep-face ep-back" inert>${callHtml(l)}${meet}<div class="ep-row"><button type="button" class="ep-turn" onclick="flipEpisode(false)">◀ Вернуться к мультфильму</button></div></div>
   </div></div>`}
 function flipEpisode(on){const card=document.getElementById('epCard');if(!card)return;
   card.classList.toggle('flipped',on);card.querySelector('.ep-front').inert=on;card.querySelector('.ep-back').inert=!on;
@@ -1585,12 +1592,13 @@ async function openLesson(id){flushSave();closeChat();stopEpisode();const l=dash
   const plan=l.research_plan&&l.research_plan.tables?l.research_plan:null;
   const ansQ=f=>sb.from('research_answers').select('hypothesis,method,result,conclusion'+f).eq('user_id',dash.userId).eq('lesson_id',id).maybeSingle();
   const[{data:answer},{data:content}]=await Promise.all([task?(plan?ansQ(',data').then(res=>res.error?ansQ(''):res):ansQ('')):{data:null},
-    sb.from('lesson_content').select('video_url').eq('lesson_id',id).maybeSingle()]);
+    sb.from('lesson_content').select('video_url,meet').eq('lesson_id',id).maybeSingle().then(r=>r.error?sb.from('lesson_content').select('video_url').eq('lesson_id',id).maybeSingle():r)]);
   if(token!==openToken)return;
   // серия-мультфильм занятия: lesson_content.video_url = 'episode:<серия>'
   const ep=/^episode:([a-z0-9-]+)$/.exec((content&&content.video_url)||'');
   // порядок: видеосвязь → чат → материалы → исследование → проверка модуля
-  let html=`${back}<h2>${title}</h2>${ep?episodeHtml(l,ep[1]):callHtml(l)}`+chatHtml();
+  const meet=meetHtml(content&&content.meet);
+  let html=`${back}<h2>${title}</h2>${ep?episodeHtml(l,ep[1],meet):callHtml(l)+meet}`+chatHtml();
   const mats=dash.materials.filter(m=>m.lesson_id===l.id);
   // Занятие назначено, а записи (личного материала) ещё нет — показываем, что она появится
   const waitRecording=dash.calls[l.id]&&!mats.some(m=>m.user_id)?'<p class="note">🎥 Запись занятия появится здесь, когда преподаватель её загрузит.</p>':'';
