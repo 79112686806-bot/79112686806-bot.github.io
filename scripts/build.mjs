@@ -239,6 +239,18 @@ async function main() {
       description: 'Ответы для родителей: как записаться на пробное занятие, где взять логин и пароль, почему тема закрыта, как попасть на встречу с преподавателем.',
       jsonld: [breadcrumbs([['Главная', '/'], ['Помощь', '/pomoshch/']])],
     },
+    gorod: {
+      path: '/gorod/',
+      title: 'Город изобретателя — бесплатная игра для детей — Инженерный клуб',
+      description: 'Бесплатная игра для детей 9–14 лет: задачки на смекалку и Мемо приносят шестерёнки, на них строится свой город — от каменного века до города будущего.',
+      jsonld: [breadcrumbs([['Главная', '/'], ['Город изобретателя', '/gorod/']]), {
+        '@context': 'https://schema.org', '@type': 'VideoGame', name: 'Город изобретателя', genre: ['Educational', 'City building'],
+        description: 'Бесплатная развивающая игра для детей 9–14 лет: задачки на смекалку, игра на память и свой город изобретателя.',
+        inLanguage: 'ru', isAccessibleForFree: true, playMode: 'SinglePlayer', gamePlatform: 'Web browser', applicationCategory: 'Game',
+        audience: { '@type': 'PeopleAudience', suggestedMinAge: 9, suggestedMaxAge: 14 },
+        ...(abs('/gorod/') ? { url: abs('/gorod/') } : {}),
+      }],
+    },
   };
 
   // Страница «Такой страницы нет»: GitHub Pages отдаёт 404.html на любой неизвестный адрес
@@ -298,7 +310,7 @@ async function main() {
     : `User-agent: *\nAllow: /\nDisallow: /admin.html\n${SITE_URL ? `\nSitemap: ${SITE_URL}/sitemap.xml\n` : ''}`);
   if (SITE_URL && !NOINDEX) {
     const today = new Date().toISOString().slice(0, 10);
-    const urls = [['/', '1.0', 'weekly'], ['/programmy/', '0.9', 'weekly'], ['/kak-prohodyat-zanyatiya/', '0.7', 'monthly'], ['/pomoshch/', '0.5', 'monthly'], ['/kontakty/', '0.5', 'monthly'], ...memoPaths,
+    const urls = [['/', '1.0', 'weekly'], ['/programmy/', '0.9', 'weekly'], ['/kak-prohodyat-zanyatiya/', '0.7', 'monthly'], ['/pomoshch/', '0.5', 'monthly'], ['/gorod/', '0.7', 'weekly'], ['/kontakty/', '0.5', 'monthly'], ...memoPaths,
       ...courses.filter((c) => coursePageStats(c).lessons).map((c) => [`/kursy/${c.slug}/`, c.status === 'available' ? '0.8' : '0.5', 'weekly'])];
     writeFileSync(`${OUT}/sitemap.xml`, `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([p, pr, cf]) => `  <url><loc>${SITE_URL}${p}</loc><lastmod>${today}</lastmod><changefreq>${cf}</changefreq><priority>${pr}</priority></url>`).join('\n')}\n</urlset>\n`);
   }
@@ -336,25 +348,26 @@ function buildMemo(memoVideos) {
       itemListElement: cards.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.title, ...(abs(`/igra/${c.slug}/`) ? { url: abs(`/igra/${c.slug}/`) } : {}) })),
     }],
   }), `<main>${crumbs([['Главная', '/'], ['Игра «Мемо»']])}
-<p class="eyebrow">Играй и узнавай</p>
 <h1>Мемо «Инженерия»</h1>
-<p class="lead">Найди пары — открой истории изобретений. Набирай очки, звания и призы, играй с другом.</p>
-<div class="memo-profile" id="memoProfile" hidden><span class="mp-ico" id="mpIco">${Memo.ico('nut')}</span><div class="mp-info"><b id="mpRank">Новичок</b><div class="mp-xp"><i id="mpXpBar"></i><span id="mpXpText"></span></div></div><span class="mp-streak" id="mpStreak" title="Дней подряд"></span><button type="button" class="mp-btn" id="mpHint" title="Подсказка: показать все карточки">${Memo.ico('bulb')} <b id="mpHints">0</b></button><button type="button" class="mp-btn" id="mpPrizes" title="Призы и достижения">${Memo.ico('trophy')}</button><button type="button" class="mp-btn mp-sound" id="mpSound" title="Звук">${Memo.ico('sound')}</button></div>
+<p class="lead">Найди пары — открой истории изобретений. Победы приносят шестерёнки для твоего города.</p>
+<div class="memo-profile" id="memoProfile" hidden><span class="mp-ico" id="mpIco">${Memo.ico('nut')}</span><div class="mp-info"><b id="mpRank">Новичок</b><div class="mp-xp"><i id="mpXpBar"></i><span id="mpXpText"></span></div></div><span class="mp-streak" id="mpStreak" title="Дней подряд"></span><a class="mp-btn mp-gears" href="/gorod/" title="Шестерёнки: за победы в игре «Один». На них строят свой город">${Memo.ico('gear')} <b id="memoGearsN">0</b><span class="mp-l">в город</span></a><a class="mp-btn" href="#kollekciya" title="Найденные карточки и их истории">${Memo.ico('book')} <b id="memoCollN">0</b>/${cards.length}<span class="mp-l">коллекция</span></a><button type="button" class="mp-btn" id="mpHint" title="Подсказка: на пару секунд показать все карточки">${Memo.ico('bulb')} <b id="mpHints">0</b><span class="mp-l">подсказки</span></button><button type="button" class="mp-btn" id="mpPrizes" title="Призы и достижения">${Memo.ico('trophy')}<span class="mp-l">призы</span></button><button type="button" class="mp-btn mp-sound" id="mpSound" title="Звук">${Memo.ico('sound')}</button></div>
 <div class="memo-quests" id="memoQuests" hidden></div>
 <div class="memo-bar"><div class="memo-levels" role="group" aria-label="Режим"><button type="button" data-mode="solo">Один</button><button type="button" data-mode="duel">Вдвоём</button></div>
-<div class="memo-levels" role="group" aria-label="Сложность"><button type="button" data-level="easy">6 пар</button><button type="button" data-level="mid">10 пар</button><button type="button" data-level="hard">15 пар</button></div>
-<button type="button" class="btn" data-memo-again>${Memo.ico('refresh')} Заново</button></div>
+<div class="memo-levels" role="group" aria-label="Сложность"><button type="button" data-level="easy">6 пар<small>+4</small></button><button type="button" data-level="mid">10 пар<small>+8</small></button><button type="button" data-level="hard">15 пар<small>+14</small></button></div>
+<button type="button" class="btn memo-again" data-memo-again title="Новая раздача">${Memo.ico('refresh')}<span> Заново</span></button></div>
 <div class="memo-score" id="memoSolo" aria-live="polite"><span class="ms-points" title="Очки">${Memo.ico('star', 'fill')} <b id="memoPoints">0</b></span><span class="ms-combo" id="memoComboWrap" title="Комбо"><b id="memoCombo">×1</b></span><span class="ms-pairs" title="Найдено пар">${Memo.ico('cards')} <b id="memoPairs">0</b>/<b id="memoTotal">6</b></span><span class="ms-lives" id="memoMiss" title="Промахи"></span><span class="ms-time" id="memoTimeWrap" title="Время">${Memo.ico('hourglass')} <b id="memoTime">0:00</b></span><span hidden><b id="memoMoves">0</b><span id="memoMissWrap"></span></span></div>
 <div class="memo-duel" id="memoDuel" hidden aria-live="polite"><div class="pl" data-p="0"><input value="Игрок 1" maxlength="16" aria-label="Имя первого игрока"><b data-pairs>0</b></div><span class="vs">VS</span><div class="pl" data-p="1"><input value="Игрок 2" maxlength="16" aria-label="Имя второго игрока"><b data-pairs>0</b></div></div>
+<p class="memo-tip" id="memoTip">${Memo.ico('arrow')} <span><b>Нажми на любую карточку</b>, потом найди ей пару — вторую такую же.</span></p>
 <p class="memo-note" id="memoNote" role="status"></p>
 <div class="memo-stage"><div class="memo-burst" id="memoBurst" aria-live="polite"></div><div class="memo-win" id="memoWin" hidden></div><div class="memo-board" id="memoBoard"><noscript>Для игры включите JavaScript. Истории карточек можно прочитать ниже.</noscript></div></div>
+<section class="memo-coll" id="kollekciya"><div class="mc-head"><h2>Твоя коллекция: <span id="memoCount">0</span> из ${cards.length}</h2><p class="coll-hint" id="memoCollHint">Каждая найденная пара попадает сюда. Нажми на открытую карточку — прочитаешь её историю: видео, факты и опыты.</p></div>
+${grid}</section>
 <h2>Как играть</h2>
-<ul class="how-play"><li>Открывай по две карточки и ищи одинаковые. Каждая найденная пара открывает историю изобретения или изобретателя — с видео, фактами и опытами.</li>
-<li>Находи пары подряд без промаха — будет комбо и больше очков. За звёзды, задания дня и игру несколько дней подряд получай опыт, звания, сундуки с наградами и новые рубашки карточек.</li>
-<li>Играй один на время или вдвоём с другом и собери все ${cards.length} карточек в коллекцию.</li></ul>
-<h2>Твоя коллекция: <span id="memoCount">0</span> из ${cards.length}</h2>
-<p class="coll-hint" id="memoCollHint">Найди пару — карточка и её история появятся здесь.</p>
-${grid}
+<ol class="memo-how"><li>${Memo.ico('cards')}<b>Открывай по две карточки</b><span>Ищи одинаковые. Пары подряд без промаха — комбо и больше очков.</span></li>
+<li>${Memo.ico('book')}<b>Пара — история</b><span>Каждая пара открывает историю изобретения: с видео, фактами и опытами.</span></li>
+<li>${Memo.ico('gear')}<b>Победа — шестерёнки</b><span>В игре «Один»: 6 пар — 4, 10 пар — 8, 15 пар — 14 шестерёнок.</span></li>
+<li>${Memo.ico('duo')}<b>Вдвоём с другом</b><span>На одном экране, по очереди: кто найдёт больше пар. Собери все ${cards.length} карточек.</span></li></ol>
+<div class="memo-city"><span class="mc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20.5h18"/><path d="M4.5 20.5v-8l4-3.5 4 3.5v8"/><path d="M12.5 20.5V9.5L17 6l3 2.5v12"/><path d="M7.3 20.5v-3.5h2.4v3.5M15 11h1.6M15 14h1.6M7.5 13.5h1.8"/></svg></span><div><b>Построй свой город</b><p>На шестерёнки из Мемо и <a href="/gorod/?razminka">Разминки ума</a> строят город изобретателя: поля, мельницы, мастерские, мосты. Новые эпохи открываются на <a href="/programmy/">курсах</a>.</p></div><a class="btn primary" href="/gorod/">В мой город</a></div>
 <h2>Придумал свою карточку?</h2>
 <p>Предложи идею для следующего набора. Если идея нам понравится — пришлём подарок, а карточка может попасть в новую игру.</p>
 <p><a class="btn primary" href="/igra/ideya/">Предложить свою идею</a></p>
@@ -362,7 +375,7 @@ ${grid}
 <dialog class="memo-prizes" id="memoPrizes" aria-labelledby="memoPrizesTitle"><div class="story-scroll"><form method="dialog"><button class="story-close" aria-label="Закрыть">✕</button></form><div class="prizes-body"></div></div></dialog>
 <div class="memo-toasts" id="memoToasts" aria-live="polite"></div>
 <dialog class="memo-story" id="memoStory" aria-labelledby="memoStoryTitle"><div class="story-scroll"><form method="dialog"><button class="story-close" aria-label="Закрыть">✕</button></form><div class="story-body"></div><form method="dialog" class="story-cta"><button class="btn primary">Играть дальше</button></form></div></dialog>`,
-  '<script src="/igra/memo-data.js"></script>\n'));
+  '<script src="/igra/memo-data.js"></script>\n<script src="/vendor/supabase.js"></script>\n<script src="/sb-client.js"></script>\n'));
 
   // Истории карточек
   for (const [i, c] of cards.entries()) {

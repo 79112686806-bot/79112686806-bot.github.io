@@ -5,7 +5,9 @@
 // приносят доход (монетки над постройками). Реки, дороги и леса ставятся подряд, мост — только на реку, водяная мельница — у реки;
 // землю можно докупить. Управление как в градостроителях: карту тянуть и приближать (колёсико, два пальца), постройка-«призрак»
 // с ✓ / ✕, перетаскивание. Всё решает сервер: city_state, city_place, city_move, city_sell, city_collect, city_expand.
-// City.open(el, { sb, onChange }) — onChange() после трат и сбора (обновить панель наград). Нужны hero.js (окна, звук) и path.js.
+// City.open(el, { sb, onChange, onEarn, guest }) — onChange() после трат и сбора (обновить панель наград); onEarn {memo, brain} — где заработать,
+// если шестерёнок не хватает; guest — играет без курса (страница /gorod/): вместо «пройди блок» — «эпохи открываются на курсе».
+// Нужны hero.js (окна, звук) и path.js.
 (function () {
   const H = () => window.Hero;
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -267,7 +269,7 @@
   const thumb = (code, era) => `<svg class="ct-th" viewBox="-38 -70 76 90" aria-hidden="true">${flat(0.9, ERAS[era].ground[0], ' opacity=".8"')}${ART[code] ? ART[code](era, 0.3, () => (code === 'bridge' ? 'water' : code === 'road' ? 'road' : null)) : ''}</svg>`;
   const coin = `<circle r="11" fill="#e3b341" stroke="${INK}" stroke-width="1.6"/><circle r="7" fill="none" stroke="#8a6d1f" stroke-width="3" stroke-dasharray="2.2 2.2"/><circle r="2.4" fill="#8a6d1f"/>`;
 
-  async function open(el, { sb, onChange }) {
+  async function open(el, { sb, onChange, onEarn, guest }) {
     style();
     let S = null, mode = null, cat = 'home', fresh = null, cam = null, busy = false, touched = false;
     const rpc = async (fn, args) => { const { data, error } = await sb.rpc(fn, args); if (error) throw new Error(error.message || 'Ошибка'); return data; };
@@ -423,7 +425,8 @@
       const pop = (S.tiles || []).reduce((a, t) => a + (item(t.c).pop || 0) + (t.c === 'house' && near(t) ? 1 : 0), 0) + 4;
       $('cwEra').textContent = E.name; $('cwPop').textContent = pop; $('cwGears').textContent = S.gears;
       const land = $('cwLand'); land.hidden = !S.expand_price; land.innerHTML = `＋ Земля · ${S.expand_price} ⚙`;
-      $('cwNext').innerHTML = nx ? `⏳<span>Новая эпоха — <b>${esc(nx.name)}</b>: ${S.next_hint ? 'пройди ' + esc(S.next_hint) : 'пройди следующий блок курса'}. Город вырастет и перестроится.</span>${S.next_total ? `<span class="bar" style="--p:${Math.round((100 * S.next_done) / S.next_total)}%"><i></i></span>` : ''}` : '🏆<span>Ты построил <b>город будущего</b>! Украшай его дальше.</span>';
+      $('cwNext').innerHTML = guest && nx ? `🔒<span>Новая эпоха — <b>${esc(nx.name)}</b> — открывается на курсе: каждый пройденный блок перестраивает город. <a href="/programmy/">Выбрать курс →</a></span>`
+        : nx ? `⏳<span>Новая эпоха — <b>${esc(nx.name)}</b>: ${S.next_hint ? 'пройди ' + esc(S.next_hint) : 'пройди следующий блок курса'}. Город вырастет и перестроится.</span>${S.next_total ? `<span class="bar" style="--p:${Math.round((100 * S.next_done) / S.next_total)}%"><i></i></span>` : ''}` : '🏆<span>Ты построил <b>город будущего</b>! Украшай его дальше.</span>';
     }
     function drawCards() {
       el.querySelectorAll('#cwTabs button').forEach((b) => b.classList.toggle('on', b.dataset.cat === cat));
@@ -461,6 +464,11 @@
     }
     function redraw() { drawWorld(); drawGhost(); drawHud(); placeAct(); }
 
+    // не хватает шестерёнок — сразу предлагаем, где заработать (мемо и задачки — без ограничений)
+    const poor = (html) => {
+      const o = H().overlay(`<div class="city-sheet">${html}<div class="hero-btns" style="justify-content:center">${onEarn ? '<button type="button" class="hero-b main" data-earn="memo">🃏 Сыграть в Мемо</button><button type="button" class="hero-b" data-earn="brain">🧠 Задачки</button>' : ''}<button type="button" class="hero-b" data-earn="">Позже</button></div></div>`);
+      o.box.addEventListener('click', (e) => { const b = e.target.closest('[data-earn]'); if (!b) return; o.close(); if (b.dataset.earn && onEarn) onEarn[b.dataset.earn](); });
+    };
     const toast = (html) => { const o = H().overlay(`<div class="city-sheet">${html}<div class="hero-btns" style="justify-content:center"><button type="button" class="hero-b main">Хорошо</button></div></div>`); o.box.querySelector('.hero-b').onclick = o.close; };
     // действие на сервере: сразу показываем результат, при ошибке — возвращаем как было
     async function act(fn, args, local) {
@@ -480,7 +488,7 @@
       const it = item(code);
       if (!it.unlocked) return;
       if (it.once && built(code)) { const t = S.tiles.find((q) => q.c === code); mode = { kind: 'sel', x: t.x, y: t.y, code }; tip('Особое здание — в городе может быть только одно. Его можно переставить.'); redraw(); drawCards(); return; }
-      if (!it.free && it.price > S.gears) return toast(`${thumb(code, S.era)}<h3>${esc(it.title)}</h3><p>Нужно ${it.price} ⚙, а у тебя ${S.gears}. Шестерёнки дают за разминку ума, задания дня и доход города.</p>`);
+      if (!it.free && it.price > S.gears) return poor(`${thumb(code, S.era)}<h3>${esc(it.title)}</h3><p>Нужно ${it.price} ⚙, а у тебя ${S.gears} — не хватает ${it.price - S.gears}. Заработай их прямо сейчас: победа в Мемо — до 14 ⚙, задачка — 2 ⚙.</p>`);
       if (mode && mode.kind === 'build' && mode.code === code) return cancel();
       if (PAINT.has(code)) { mode = { kind: 'build', code, paint: true }; tip(it.merge || code === 'house' ? `Нажимай на клетки рядом друг с другом — «${it.title}» срастётся и даст больше` : `Нажимай на зелёные клетки — «${it.title}» строится сразу`); }
       else { const [x, y] = bestCell(code); mode = { kind: 'build', code, x, y }; tip(NEED[it.need] ? NEED[it.need] + '. Перетащи постройку или нажми на клетку, потом ✓' : 'Перетащи постройку или нажми на клетку, потом ✓'); }
@@ -528,6 +536,7 @@
     }
     function expand() {
       if (!S.expand_price) return;
+      if (S.gears < S.expand_price) return poor(`<h3>Больше земли</h3><p>Новый ряд клеток стоит <b>${S.expand_price} ⚙</b>, а у тебя ${S.gears}. Заработай шестерёнки: победа в Мемо — до 14 ⚙, задачка — 2 ⚙.</p>`);
       const o = H().overlay(`<div class="city-sheet"><h3>Больше земли</h3><p>Город станет шире на один ряд клеток со всех сторон. Стоит <b>${S.expand_price} ⚙</b>, у тебя ${S.gears} ⚙.</p><div class="hero-btns" style="justify-content:center"><button type="button" class="hero-b main" data-a="y"${S.gears < S.expand_price ? ' disabled' : ''}>Расширить</button><button type="button" class="hero-b" data-a="n">Не сейчас</button></div></div>`);
       o.box.addEventListener('click', async (e) => {
         const b = e.target.closest('[data-a]'); if (!b) return; o.close();
@@ -568,7 +577,7 @@
       if (hit && hit.closest('[data-sign]') && !mode) return expand();
       if (mode && mode.kind === 'build' && mode.paint) {
         if (!canPlace(mode.code, x, y)[0]) return tip(canPlace(mode.code, x, y)[1] + '. Выбери зелёную клетку.');
-        const it = item(mode.code); if (!it.free && it.price > S.gears) { cancel(); return toast(`<h3>Шестерёнки закончились</h3><p>Нужно ${it.price} ⚙. Их дают за разминку ума и доход города.</p>`); }
+        const it = item(mode.code); if (!it.free && it.price > S.gears) { cancel(); return poor(`<h3>Шестерёнки закончились</h3><p>Нужно ${it.price} ⚙. Заработай их прямо сейчас: победа в Мемо — до 14 ⚙, задачка — 2 ⚙.</p>`); }
         fresh = key(x, y); return place(mode.code, x, y);
       }
       if (mode && (mode.kind === 'build' || mode.kind === 'move')) { mode.x = x; mode.y = y; drawGhost(); placeAct(); return; }

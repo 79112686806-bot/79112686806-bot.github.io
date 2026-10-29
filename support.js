@@ -56,7 +56,7 @@
   const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const tm = (d) => new Date(d).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-  let guestClient = null, box = null, back = null, chan = null, ctx = null, hasThread = false, from = '';
+  let box = null, back = null, chan = null, ctx = null, hasThread = false, from = '';
 
   // кто пишет: вошедший ученик — своим аккаунтом, иначе гость (анонимный вход создаётся при первом сообщении)
   async function who() {
@@ -65,7 +65,7 @@
       const { data: { session } } = await main.auth.getSession().catch(() => ({ data: {} }));
       if (session && !session.user.is_anonymous) return { c: main, user: session.user, guest: false };
     }
-    if (!guestClient) guestClient = makeSupabase({ storageKey: 'sb-support' });
+    const guestClient = guestSupabase();   // общий с играми (sb-client.js)
     const { data: { session } } = await guestClient.auth.getSession().catch(() => ({ data: {} }));
     return { c: guestClient, user: session ? session.user : null, guest: true };
   }

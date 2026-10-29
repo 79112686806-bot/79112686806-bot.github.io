@@ -3,7 +3,10 @@
 // печать «Верно!», подсказка — записка от руки.
 // Задачки выбирает и проверяет сервер (brain_today, brain_answer — ответы в браузер не попадают), он же начисляет шестерёнки
 // и очки героя (событие quiz — засчитывается в серию дней и задания дня). Две попытки: после первой ошибки — подсказка.
-// Brain.open(el, { sb, onChange, onCity }) — onChange() после ответа (обновить панель наград), onCity() — кнопка «В мой город».
+// После трёх задачек дня — «Ещё задачки» без ограничений (brain_more / brain_extra_answer, миграция 20261029000036_gears_games.sql):
+// 2 ⚙ за задачку, которую ребёнок ещё не решал; в серию дней не идут.
+// Brain.open(el, { sb, onChange, onCity, onMemo }) — onChange() после ответа (обновить панель наград), onCity() — «В мой город»,
+// onMemo() — «Сыграть в Мемо».
 (function () {
   const H = () => window.Hero;
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -173,25 +176,43 @@
   };
   const laurel = `<svg class="laurel" viewBox="0 0 160 110" aria-hidden="true">${[-1, 1].map((s) => `<g transform="translate(80 0) scale(${s} 1)">${[0, 1, 2, 3, 4, 5].map((k) => { const a = 200 - k * 22, r = 46, x = r * Math.cos((a * Math.PI) / 180) * -1, y = 60 - r * Math.sin((a * Math.PI) / 180); return `<path d="M${f1(x)} ${f1(y)}c-10-4-14-12-12-20 9 3 14 10 12 20z" fill="#a3b47f" ${st(1.3)}/>`; }).join('')}<path d="M-6 100c-30-10-44-40-40-74" fill="none" ${st(1.6)}/></g>`).join('')}<g transform="translate(80 54)">${gearShape(24, 12, '#e3b341')}</g></svg>`;
 
-  async function open(el, { sb, onChange, onCity }) {
+  async function open(el, { sb, onChange, onCity, onMemo }) {
     style();
     const rpc = async (fn, args) => { const { data, error } = await sb.rpc(fn, args); if (error) throw new Error(error.message || 'Ошибка'); return data; };
     el.innerHTML = '<p class="note" style="text-align:center;padding:40px 0">Готовим задачки…</p>';
     let T;
     try { T = await rpc('brain_today'); } catch (e) { el.innerHTML = `<p class="note">Разминка пока не открылась: ${esc(e.message)}</p>`; return; }
-    const list = T.puzzles || [];
+    let list = T.puzzles || [], extra = null;   // extra — режим «Ещё задачки»: { left } — сколько нерешённых в банке
     const left = () => list.findIndex((p) => p.state === 'new' || p.state === 'retry');
     let cur = left();
 
     function head() {
+      if (extra) return `<div class="bz-head"><h2><em>Тетрадь изобретателя</em>Ещё задачки<small>Сколько хочешь · за верный ответ 2 ⚙ · в банке осталось ${extra.left} ${plural(extra.left, 'новая', 'новые', 'новых')}</small></h2></div>`;
       return `<div class="bz-head"><h2><em>Тетрадь изобретателя</em>Разминка ума<small>${list.length} ${plural(list.length, 'задачка', 'задачки', 'задачек')} на сегодня · за верный ответ до 5 ⚙ и очки героя</small></h2>`
         + `<div class="bz-medals">${list.map((p, i) => medal(i, p, i === cur)).join('')}</div></div>`;
     }
     function done() {
       const ok = list.filter((p) => p.state === 'ok').length, g = list.reduce((a, p) => a + (p.gears || 0), 0);
       el.innerHTML = `<div class="bz">${head()}<div class="bz-card bz-done">${laurel}<h3>${ok === list.length ? 'Всё верно — ты молодец!' : 'Разминка пройдена!'}</h3><p>Верно: ${ok} из ${list.length}${g ? ` · заработано <b>${g} ⚙</b>` : ''}. Завтра — новые задачки. Не пропусти, чтобы не прервать серию 🔥</p>`
-        + `<div class="hero-btns" style="justify-content:center">${onCity ? '<button type="button" class="hero-b main" data-city>Потратить в моём городе</button>' : ''}</div></div></div>`;
+        + `<div class="hero-btns" style="justify-content:center"><button type="button" class="hero-b main" data-more>Ещё задачки · 2 ⚙</button>${onMemo ? '<button type="button" class="hero-b" data-memo>🃏 Мемо · до 14 ⚙</button>' : ''}${onCity ? '<button type="button" class="hero-b" data-city>В мой город</button>' : ''}</div></div></div>`;
+      bind();
+    }
+    function bind() {
       const c = el.querySelector('[data-city]'); if (c) c.onclick = onCity;
+      const m = el.querySelector('[data-memo]'); if (m) m.onclick = onMemo;
+      const x = el.querySelector('[data-more]'); if (x) x.onclick = more;
+    }
+    // «Ещё задачки»: следующая из банка (решённые раньше не повторяются)
+    async function more() {
+      el.innerHTML = '<p class="note" style="text-align:center;padding:40px 0">Ищем задачку…</p>';
+      let r; try { r = await rpc('brain_more'); } catch (e) { el.innerHTML = `<p class="note">Задачки не открылись: ${esc(e.message)}</p>`; return; }
+      extra = { left: r.left || 0 };
+      if (!r.puzzle) {
+        el.innerHTML = `<div class="bz">${head()}<div class="bz-card bz-done">${laurel}<h3>Ты решил все задачки!</h3><p>Новые появятся позже, а шестерёнки можно заработать в Мемо.</p>`
+          + `<div class="hero-btns" style="justify-content:center">${onMemo ? '<button type="button" class="hero-b main" data-memo>🃏 Сыграть в Мемо</button>' : ''}${onCity ? '<button type="button" class="hero-b" data-city>В мой город</button>' : ''}</div></div></div>`;
+        return bind();
+      }
+      list = [r.puzzle]; cur = 0; show(); el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     function show() {
       if (cur < 0) return done();
@@ -205,10 +226,10 @@
     async function answer(p, Q, btn) {
       const all = [...el.querySelectorAll('.bz-opt')]; all.forEach((b) => (b.disabled = true));
       let r;
-      try { r = await rpc('brain_answer', { p_id: p.id, p_answer: btn.dataset.v }); }
+      try { r = await rpc(extra ? 'brain_extra_answer' : 'brain_answer', { p_id: p.id, p_answer: btn.dataset.v }); }
       catch (e) { all.forEach((b) => (b.disabled = false)); el.querySelector('.bz-out').innerHTML = `<div class="bz-why"><b>Не получилось отправить</b>${esc(e.message)}</div>`; return; }
       const out = el.querySelector('.bz-out'), card = el.querySelector('.bz-card'), memo = card.querySelector('.bz-memo');
-      const next = () => `<div class="bz-next"><button type="button" class="btn primary">${left() < 0 ? 'Готово' : 'Следующая задачка →'}</button></div>`;
+      const next = () => `<div class="bz-next">${extra && onCity ? '<button type="button" class="btn" data-city style="margin-right:auto">В мой город</button>' : ''}<button type="button" class="btn primary" data-go>${extra || left() >= 0 ? 'Следующая задачка →' : 'Готово'}</button></div>`;
       if (r.ok) {
         p.state = 'ok'; p.gears = r.gears || 0; btn.classList.add('ok'); all.forEach((b) => b !== btn && b.classList.add('dim')); H() && H().ding(true);
         if (memo) memo.remove();
@@ -228,9 +249,11 @@
         el.querySelector('.bz-stage').innerHTML = Q.pic(true);
         out.innerHTML = `<div class="bz-why"><b>Ничего страшного — разберёмся</b>${esc(r.explain || '')}</div>${next()}`;
       }
-      el.querySelector('.bz-medals').outerHTML = `<div class="bz-medals">${list.map((q, i) => medal(i, q, false)).join('')}</div>`;
+      if (extra) extra.left = Math.max(0, extra.left - 1);
+      else el.querySelector('.bz-medals').outerHTML = `<div class="bz-medals">${list.map((q, i) => medal(i, q, false)).join('')}</div>`;
       onChange && onChange();
-      out.querySelector('.btn').onclick = () => { cur = left(); show(); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+      bind();
+      out.querySelector('[data-go]').onclick = () => { if (extra) return more(); cur = left(); show(); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
     }
     show();
   }

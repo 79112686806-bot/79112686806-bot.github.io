@@ -1,7 +1,7 @@
 // Лавка мастера: на что потратить шестерёнки — заморозки серии, украшения транспорта на карте и настоящие призы.
 // Данные — таблицы shop_items / shop_orders и rpc shop_buy (миграция 20261026000029_shop.sql); списывает шестерёнки только сервер.
 // Настоящие призы — с условиями (need_streak — рекорд серии, need_blocks — пройдено блоков) и не чаще раза в 30 дней:
-// shop_prize_info (миграция 20261029000035_city_merge_prizes.sql), проверяет их снова shop_buy.
+// shop_prize_info (миграция 20261029000035_city_merge_prizes.sql), проверяет их снова shop_buy; гостям (без курса) — «для учеников клуба» (миграция 20261029000037).
 // Нужны hero.js (окна, звук) и path.js (стили, значок шестерёнки).
 // Shop.open(el, { sb, userId, onChange }) — onChange(status) после покупки (обновить панель наград).
 (function () {
@@ -56,21 +56,22 @@
     const taken = (it) => my.filter((o) => o.item_id === it.id && o.status !== 'cancelled').length;
     const P = pi || { best_streak: st.best_streak || 0, blocks: 0 }, wait = P.next_on && new Date(P.next_on) > new Date() ? new Date(P.next_on) : null;
     // условия настоящего приза: [выполнено, текст]
-    const conds = (it) => [it.need_streak && [P.best_streak >= it.need_streak, `🔥 серия ${it.need_streak} ${plural(it.need_streak, 'день', 'дня', 'дней')} подряд <em>(рекорд ${P.best_streak})</em>`],
+    const conds = (it) => [P.student === false && [false, '🎓 для учеников клуба — <a href="/programmy/">выбрать курс</a>'], it.need_streak && [P.best_streak >= it.need_streak, `🔥 серия ${it.need_streak} ${plural(it.need_streak, 'день', 'дня', 'дней')} подряд <em>(рекорд ${P.best_streak})</em>`],
       it.need_blocks && [P.blocks >= it.need_blocks, `📘 пройдено ${it.need_blocks} ${plural(it.need_blocks, 'блок', 'блока', 'блоков')} курса <em>(сейчас ${P.blocks})</em>`]].filter(Boolean);
     const card = (it) => {
       const own = it.kind === 'ride' && my.some((o) => o.code === it.code && o.status !== 'cancelled');
       const limit = it.per_user && it.kind === 'prize' && taken(it) >= it.per_user, out = it.stock === 0, fullFreeze = it.kind === 'freeze' && st.freezes >= 2;
       const cs = it.kind === 'prize' ? conds(it) : [], miss = cs.some(([ok]) => !ok), later = it.kind === 'prize' && wait;
-      const need = it.price - gears, why = own ? '✓ уже есть' : limit ? '✓ уже взят' : out ? 'закончился' : fullFreeze ? 'заморозок уже 2' : miss ? '🔒 выполни условия'
+      const need = it.price - gears, why = own ? '✓ уже есть' : limit ? '✓ уже взят' : out ? 'закончился' : fullFreeze ? 'заморозок уже 2' : it.kind === 'prize' && P.student === false ? '🎓 для учеников клуба' : miss ? '🔒 выполни условия'
         : later ? `можно с ${wait.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}` : need > 0 ? `ещё ${need} ${gear(15)}` : '';
       return `<div class="shop-it${own || limit ? ' own' : ''}">${it.stock != null && it.stock > 0 && it.stock <= 10 ? `<span class="left">осталось ${it.stock}</span>` : ''}<span class="ic">${esc(it.icon || '🎁')}</span><b>${esc(it.title)}</b><p>${esc(it.about || '')}</p>`
         + (cs.length ? `<ul class="shop-cond">${cs.map(([ok, t]) => `<li class="${ok ? 'ok' : ''}">${ok ? '✓' : '○'} ${t}</li>`).join('')}</ul>` : '')
         + `<div>${need > 0 && !why.startsWith('✓') && !out && !fullFreeze ? `<div class="shop-need"><i style="--p:${Math.round((gears * 100) / it.price)}%"></i></div>` : ''}`
         + `<button type="button" class="shop-buy" data-id="${it.id}" ${why ? 'disabled' : ''}>${why || `Купить за ${it.price} ${gear(16)}`}</button></div></div>`;
     };
-    const fun = (items || []).filter((i) => i.kind !== 'prize'), real = (items || []).filter((i) => i.kind === 'prize');
-    el.innerHTML = `<div class="shop"><div class="shop-head"><h2>Лавка мастера<small>Шестерёнки дают за сундуки, задания дня и серию дней. Здесь их можно потратить.</small></h2>`
+    // украшения транспорта — для карты курса; без курса карты нет
+    const fun = (items || []).filter((i) => i.kind !== 'prize' && !(i.kind === 'ride' && P.student === false)), real = (items || []).filter((i) => i.kind === 'prize');
+    el.innerHTML = `<div class="shop"><div class="shop-head"><h2>Лавка мастера<small>Шестерёнки дают за задачки, победы в Мемо, сундуки и серию дней. Здесь их можно потратить.</small></h2>`
       + `<div class="shop-bal">${gear(30)}<span><b>${gears}</b><br><small>${plural(gears, 'шестерёнка', 'шестерёнки', 'шестерёнок')}${st.freezes ? ` · ❄️ ×${st.freezes}` : ''}</small></span></div></div>`
       + (fun.length ? `<h3>Для путешествия</h3><div class="shop-grid">${fun.map(card).join('')}</div>` : '')
       + (real.length ? `<h3>Настоящие призы</h3><p class="shop-how">Их нужно заслужить: накопить шестерёнки и выполнить условия. Настоящий приз можно взять раз в 30 дней — вручит преподаватель, на занятии или по почте. Если что-то не получится, шестерёнки вернутся.</p><div class="shop-grid" style="margin-top:10px">${real.map(card).join('')}</div>` : '')

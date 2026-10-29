@@ -116,8 +116,11 @@
     });
     const n = document.getElementById('memoCount');
     if (n) n.textContent = s.size;
+    const nb = document.getElementById('memoCollN');
+    if (nb) nb.textContent = s.size;
     const hint = document.getElementById('memoCollHint');
-    if (hint) hint.innerHTML = s.size ? `${ico('book')} Нажми на карточку — откроется её история.` : 'Найди пару — карточка и её история появятся здесь.';
+    if (hint) hint.innerHTML = s.size ? `${ico('book')} <span><b>Нажми на открытую карточку</b> — прочитаешь её историю. Закрытые откроются, когда найдёшь их пару в игре.</span>`
+      : `${ico('book')} <span>Каждая найденная пара попадает сюда. Нажми на открытую карточку — прочитаешь её историю: видео, факты и опыты.</span>`;
   }
 
   // ---------- Игра на пары ----------
@@ -182,9 +185,22 @@
   const saveProfile = (p) => { try { localStorage.setItem(PKEY, JSON.stringify(p)); } catch (e) {} };
   const rankOf = (xp) => { let i = 0; RANKS.forEach((r, k) => { if (xp >= r[0]) i = k; }); return i; };
 
+  // ---------- Шестерёнки за победы (для города, /gorod/) ----------
+  // Партию начинает и засчитывает сервер (memo_start / memo_finish, миграция 20261029000036): ученик играет своим входом,
+  // остальные — гостем (анонимный вход, Play.ensure из sb-client.js; миграция 20261029000037). Вход создаётся
+  // при первом ходе в игре «Один», не при открытии страницы.
+  let mainSb = null;
+  const play = () => (root.Play ? root.Play.ensure(mainSb || (mainSb = root.makeSupabase())) : Promise.reject(new Error('Шестерёнки сейчас недоступны')));
+
   function initGame() {
     const board = document.getElementById('memoBoard');
     if (!board || !root.MEMO_CARDS) return;
+    // сколько шестерёнок уже есть (если человек уже играл или учится)
+    const bal = document.getElementById('memoGearsN');
+    const showBal = (n) => { if (bal && n != null) { bal.textContent = n; bal.parentElement.classList.add('has'); } };
+    if (bal && root.Play) root.Play.who(mainSb || (mainSb = root.makeSupabase())).then((w) => w.user && w.c.from('hero').select('gears').eq('user_id', w.user.id).maybeSingle())
+      .then((r) => r && r.data && showBal(r.data.gears)).catch(() => {});
+    let round = null;
     const cards = root.MEMO_CARDS;
     const $ = (id) => document.getElementById(id);
     const note = $('memoNote'), win = $('memoWin'), toasts = $('memoToasts');
@@ -390,6 +406,7 @@
       const pick = reshuffle === true ? shuffle([...cards]).slice(0, n)
         : [...shuffle(cards.filter((c) => !have.has(c.slug))), ...shuffle(cards.filter((c) => have.has(c.slug)))].slice(0, n);
       const deck = shuffle([...pick, ...pick]);
+      if (reshuffle !== true) round = null;   // новая партия на сервере начнётся с первого хода
       if (reshuffle !== true) { moves = 0; points = 0; missesTotal = 0; reshuffles = 0; note.textContent = ''; turn = 0; duel = [{ pairs: 0 }, { pairs: 0 }]; clearInterval(timerId); timerId = 0; elapsed = 0; renderTime(); }
       first = null; lock = false; pairs = 0; misses = 0; combo = 0;
       board.dataset.size = n;
@@ -400,6 +417,7 @@
       document.querySelectorAll('[data-level]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.level === level));
       document.querySelectorAll('[data-mode]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === mode));
       $('memoSolo').hidden = mode !== 'solo';
+      document.body.classList.toggle('memo-duel-on', mode === 'duel');   // вдвоём шестерёнок нет — метки у уровней прячем
       $('memoDuel').hidden = mode !== 'duel';
       win.hidden = true; board.parentElement.style.minHeight = '';
       board.classList.remove('dealt'); void board.offsetWidth; board.classList.add('dealt');
@@ -430,6 +448,11 @@
       const card = cards.find((c) => c.slug === b.dataset.slug);
       b.classList.add('open'); b.setAttribute('aria-label', card.title);
       startTimer(); sfx('flip');
+      const tip = $('memoTip'); if (tip && !tip.hidden) tip.hidden = true;   // подсказка «с чего начать» больше не нужна
+      if (!round && mode === 'solo') {
+        round = play().then((w) => w.c.rpc('memo_start', { p_level: level }).then(({ data, error }) => { if (error) throw error; return { c: w.c, id: data.id, guest: w.guest }; }))
+          .catch((e) => { console.warn('Мемо:', e.message); return null; });
+      }
       // на телефоне открытая карточка ненадолго немного увеличивается, не закрывая соседей
       if (ZOOM.matches) {
         const cols = getComputedStyle(board).gridTemplateColumns.split(' ').length, i = [...board.children].indexOf(b);
@@ -545,6 +568,18 @@
         ${goals.length ? `<p class="win-next">${goals.map((g) => `<span>${g}</span>`).join('')}</p>` : ''}
         <div class="win-btns"><button type="button" class="btn primary" data-memo-again>${ico('play')} Ещё</button>${next ? `<button type="button" class="btn" data-next="${next}">${ico('up')} ${LEVELS[next].pairs} пар</button>` : ''}</div></div>`;
       win.querySelector('[data-next]')?.addEventListener('click', (e) => { level = e.target.dataset.next; try { localStorage.setItem('memoLevel', level); } catch (x) {} deal(); });
+      if (round) {
+        win.querySelector('.win-stars').insertAdjacentHTML('afterend', '<div class="win-gears wait" data-gears>⚙ считаем шестерёнки…</div>');
+        const box = win.querySelector('[data-gears]'), r0 = round; round = null;
+        r0.then((r) => (r ? r.c.rpc('memo_finish', { p_id: r.id }).then(({ data, error }) => { if (error) throw error; return { ...data, guest: r.guest }; })
+          : Promise.reject(new Error('Шестерёнки не засчитаны — проверь интернет и сыграй ещё раз'))))
+          .then((r) => {
+            box.className = 'win-gears';
+            box.innerHTML = `+${r.gears} ⚙ <a href="/gorod/">${r.guest ? 'Построить свой город →' : 'В мой город →'}</a>`;
+            showBal(r.total);
+          })
+          .catch((e) => { box.className = 'win-gears err'; box.textContent = e.message; });
+      }
       $('memoBurst').className = 'memo-burst';   // вспышка не должна лечь поверх итога
       showWin();
       board.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });

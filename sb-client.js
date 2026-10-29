@@ -69,4 +69,38 @@
     window.addEventListener('pageshow', (e) => { if (e.persisted) onVis(); });   // возврат «назад» из кэша Safari
     return client;
   };
+
+  // Гостевой вход (анонимный) — один на вкладку, общий для чата «Написать нам» и игр (Мемо, город, разминка ума)
+  let guest = null;
+  window.guestSupabase = () => guest || (guest = window.makeSupabase({ storageKey: 'sb-support' }));
+
+  // Кто играет: ученик — своим входом (main — клиент страницы), иначе гость.
+  // Play.who(main) → { c, user, guest } (user = null, если гость ещё не входил);
+  // Play.ensure(main) — то же, но гостю сразу создаёт анонимный вход, а профиль заводит play_start (миграция 20261029000037)
+  // → { c, user, guest, student }
+  let started = null;
+  async function who(main) {
+    if (main) {
+      const { data: { session } } = await main.auth.getSession().catch(() => ({ data: {} }));
+      if (session && !session.user.is_anonymous) return { c: main, user: session.user, guest: false };
+    }
+    const c = window.guestSupabase();
+    const { data: { session } } = await c.auth.getSession().catch(() => ({ data: {} }));
+    return { c, user: session ? session.user : null, guest: true };
+  }
+  async function ensure(main) {
+    const w = await who(main);
+    if (!w.user) {
+      const { data, error } = await w.c.auth.signInAnonymously();
+      if (error) throw error;
+      w.user = data.user;
+    }
+    if (!started || started.id !== w.user.id) {
+      const id = w.user.id;
+      started = { id, p: w.c.rpc('play_start').then(({ data, error }) => { if (error) { started = null; throw error; } return data || {}; }) };
+    }
+    const r = await started.p;
+    return { ...w, guest: !!w.user.is_anonymous, student: !!r.student };
+  }
+  window.Play = { who, ensure };
 })();

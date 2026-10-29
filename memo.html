@@ -315,14 +315,55 @@ dialog.memo-story[open]{animation:pop .45s cubic-bezier(.2,.9,.3,1.2)}
 @media (max-width:700px){.idea-gifts{grid-template-columns:1fr}.idea-row{grid-template-columns:1fr}}
 .nav-links{align-items:center}.nav-txt{font-family:"PT Serif",Georgia,serif;font-weight:700;font-size:15px;color:var(--ink,#3a2313);text-decoration:none;padding:6px 4px;border-bottom:2px solid transparent}.nav-txt:hover{color:var(--sanguine,#9a3a1b);border-bottom-color:currentColor}
 @media(max-width:760px){.nav-wide{display:none}.nav-txt{font-size:14px}}
-</style>
+.win-gears{display:inline-flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 12px;margin:4px auto 8px;padding:6px 16px;border-radius:20px;background:#e3b341;border:2px solid #8a6d1f;color:#3a2313;font-weight:700;font-size:18px;box-shadow:0 3px 0 #8a6d1f}
+.win-gears a{font-size:15px;color:#3a2313}
+.win-gears.wait{background:#f3e4c2;font-weight:400;font-size:15px}.win-gears.err{background:#f6e0d6;border-color:#a65435;box-shadow:none;font-size:14px;font-weight:400}
+.mp-gears{text-decoration:none;color:var(--sanguine)}.mp-gears .ic{color:#c9a227}
+.memo-levels button small{margin-left:5px;padding:1px 6px;border-radius:10px;background:#f3e1a6;color:#6e4b2c;font-size:12px;vertical-align:1px}
+.memo-levels button small::after{content:" ⚙"}
+.memo-levels button[aria-pressed=true] small{background:rgba(255,248,230,.25);color:var(--paper-light)}
+body.memo-duel-on .memo-levels button small{display:none}
+.memo-how{list-style:none;margin:6px 0 26px;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.memo-how li{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:start;padding:12px 14px;border:1.5px solid var(--line);border-radius:14px;background:rgba(255,248,230,.5)}
+.memo-how .ic{grid-row:span 2;font-size:26px;color:var(--sanguine);margin-top:2px}
+.memo-how b{font-family:"Cormorant Garamond",Georgia,serif;font-size:19px;line-height:1.15}
+.memo-how span{font-size:14.5px;line-height:1.4;color:var(--ink-soft)}
+.memo-city{display:flex;align-items:center;gap:14px 18px;margin:0 0 30px;padding:16px 18px;border:1.5px dashed rgba(154,58,27,.45);border-radius:14px;background:rgba(255,248,230,.55)}
+.mc-ic{flex:none;display:grid;place-items:center;width:52px;height:52px;border-radius:50%;border:1.5px solid var(--sanguine);color:var(--sanguine);background:var(--paper-light)}.mc-ic svg{width:28px;height:28px}
+.memo-city b{font-family:"Cormorant Garamond",Georgia,serif;font-size:22px}.memo-city p{margin:2px 0 0;font-size:15.5px}.memo-city .btn{margin-left:auto;flex:none}
+.mp-l{margin-left:3px;font:400 13px "PT Serif",Georgia,serif}
+.memo-tip{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:8px 14px;border-radius:30px;background:#fff6d8;border:1.5px solid #c9a227;font-size:15.5px;width:fit-content;max-width:100%}
+.memo-tip .ic{color:var(--sanguine);font-size:20px;transform:rotate(90deg);animation:tipNudge 1.4s ease-in-out infinite}
+.memo-tip[hidden]{display:none}
+@keyframes tipNudge{50%{transform:rotate(90deg) translateX(4px)}}
+@media(prefers-reduced-motion:reduce){.memo-tip .ic{animation:none}}
+.memo-coll{margin:26px 0 30px;padding:18px 20px 22px;border:1.5px solid var(--line);border-radius:16px;background:rgba(255,248,230,.45);scroll-margin-top:70px}
+.memo-coll h2{margin:0 0 6px}.memo-coll .coll-hint{margin:0 0 14px;align-items:flex-start}.memo-coll .coll-hint .ic{margin-top:3px;flex:none}
+.memo-coll .memo-grid{margin:0;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}.memo-coll .memo-grid a{font-size:13px}
+.memo-coll .memo-grid a.locked::after{width:26px;height:26px;background-size:14px}
+a.mp-btn{text-decoration:none}
+.coll-hint b{color:var(--ink)}
+@media(max-width:1000px){.mp-l{display:none}}
+@media(max-width:900px){.memo-how{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){
+  .memo-how{grid-template-columns:1fr;gap:6px}.memo-how li{padding:9px 12px}
+  .memo-city{flex-wrap:wrap}.memo-city .btn{margin-left:0;width:100%;text-align:center}
+  .memo-bar{flex-wrap:nowrap;gap:5px}.memo-bar .memo-levels{flex-wrap:nowrap;gap:3px}.memo-levels button{padding:6px 8px;font-size:13.5px}
+  .memo-levels button small{display:none}.memo-again span{display:none}.memo-levels button{white-space:nowrap;padding:6px 8px}
+  .mp-gears{gap:3px}.memo-profile{flex-wrap:wrap;row-gap:6px}.mp-info{flex:1 1 calc(100% - 44px)}.memo-profile .mp-btn:first-of-type{margin-left:auto}.memo-coll .memo-grid{grid-template-columns:repeat(5,1fr);gap:6px}.memo-coll .memo-grid a{font-size:11.5px}.memo-coll .memo-grid a.locked::after{width:22px;height:22px;background-size:12px}.memo-tip{font-size:14px;padding:7px 12px;border-radius:12px}.memo-coll{padding:14px 12px 16px;margin:18px -4px 24px}.mp-info b{font-size:18px}.memo-bar>.btn.memo-again{padding:6px 10px;margin-left:auto}
+  .memo-quests{padding:6px 8px}.mq-head{font-size:14px}.mq-head b{font-size:18px}
+  .memo-quests ul{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(64%,1fr);overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding-bottom:2px}
+  .memo-quests ul::-webkit-scrollbar{display:none}.memo-quests li{scroll-snap-align:start}
+  .mp-gears{padding:6px 9px}
+}
+</style></style>
 </head>
 <body>
 <div class="wrap">
 <nav><a class="brand" href="/"><span class="logo"><i></i></span>ИНЖЕНЕРНЫЙ КЛУБ</a>
-<span class="nav-links"><a class="nav-txt" href="/programmy/">Программы</a><a class="nav-txt nav-wide" href="/kak-prohodyat-zanyatiya/">Как проходят занятия</a><a class="nav-txt" href="/igra/">Игра «Мемо»</a><a class="nav-txt nav-wide" href="/kontakty/">Контакты</a><a class="btn" href="/?kabinet">Войти в кабинет</a></span></nav>
+<span class="nav-links"><a class="nav-txt" href="/programmy/">Программы</a><a class="nav-txt nav-wide" href="/kak-prohodyat-zanyatiya/">Как проходят занятия</a><a class="nav-txt" href="/gorod/">Игры</a><a class="nav-txt nav-wide" href="/kontakty/">Контакты</a><a class="btn" href="/?kabinet">Войти в кабинет</a></span></nav>
 <!--memo-main-->
-<footer><span>Инженерный клуб — занятия и проекты для школьников 9–14 лет.</span><a href="/">Главная</a><a href="/igra/">Игра «Мемо»</a><a href="/igra/ideya/">Предложить идею</a><a href="/kak-prohodyat-zanyatiya/">Как проходят занятия</a><a href="/kontakty/">Контакты</a><a href="/pomoshch/">Помощь</a><a href="/?kabinet">Войти в кабинет</a><a href="/dokumenty/politika-konfidencialnosti/">Политика ПДн</a></footer>
+<footer><span>Инженерный клуб — занятия и проекты для школьников 9–14 лет.</span><a href="/">Главная</a><a href="/igra/">Игра «Мемо»</a><a href="/gorod/">Город изобретателя</a><a href="/igra/ideya/">Предложить идею</a><a href="/kak-prohodyat-zanyatiya/">Как проходят занятия</a><a href="/kontakty/">Контакты</a><a href="/pomoshch/">Помощь</a><a href="/?kabinet">Войти в кабинет</a><a href="/dokumenty/politika-konfidencialnosti/">Политика ПДн</a></footer>
 </div>
 <!--memo-scripts-->
 </body>
