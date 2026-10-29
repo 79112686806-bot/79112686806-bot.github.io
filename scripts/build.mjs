@@ -72,6 +72,9 @@ const NOINDEX = process.env.NOINDEX === '1';
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const abs = (path) => (SITE_URL ? SITE_URL + path : null);
 const cut = (t, n) => (t.length <= n ? t : t.slice(0, n - 1).replace(/\s+\S*$/, '') + '…');
+// поисковики показывают ~60 знаков заголовка и ~160 знаков описания — длиннее обрезают на полуслове
+const TITLE_MAX = 65, DESC_MAX = 160;
+const fitTitle = (...variants) => variants.find((t) => t.length <= TITLE_MAX) || variants[variants.length - 1];
 
 // ---------- Курсы из базы (публичные данные каталога) ----------
 async function loadCourses() {
@@ -212,13 +215,13 @@ async function main() {
     home: {
       path: '/',
       title: 'Инженерный клуб — онлайн-занятия по инженерии для детей 9–14 лет',
-      description: 'Онлайн-курсы инженерного мышления для школьников 9–14 лет: исследования, опыты и собственные проекты с преподавателем. 10 программ — от колеса до роботов. Пробное занятие со скидкой 50%.',
+      description: 'Онлайн-курсы инженерного мышления для детей 9–14 лет: опыты, исследования и свои проекты с преподавателем. 10 программ — от колеса до роботов. Пробное −50%.',
       jsonld: [organization, faqJsonLd(template), ...videoLd].filter(Boolean),
     },
     courses: {
       path: '/programmy/',
-      title: '10 программ инженерного клуба для детей 9–14 лет — Инженерный клуб',
-      description: 'Колесо, телефон, корабли, оптика, автомобиль, самолёт, интернет, роботы, биоинженерия и мозг человека — выберите программу инженерного клуба для ребёнка 9–14 лет.',
+      title: '10 инженерных программ для детей 9–14 лет — Инженерный клуб',
+      description: 'Колесо, телефон, корабли, оптика, автомобиль, самолёт, интернет, роботы, биоинженерия и мозг человека — программы инженерного клуба для детей 9–14 лет.',
       jsonld: [breadcrumbs([['Главная', '/'], ['Программы', '/programmy/']]), {
         '@context': 'https://schema.org', '@type': 'ItemList', name: 'Программы инженерного клуба',
         itemListElement: courses.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.title, ...(abs(`/kursy/${c.slug}/`) ? { url: abs(`/kursy/${c.slug}/`) } : {}) })),
@@ -227,19 +230,19 @@ async function main() {
     how: {
       path: '/kak-prohodyat-zanyatiya/',
       title: 'Как проходят онлайн-занятия для детей 9–14 лет — Инженерный клуб',
-      description: 'Онлайн-курс для школьников 9–14 лет как маршрут: самостоятельные видеоуроки, материалы и задания, встречи с преподавателем на ключевых этапах, свой проект и чат поддержки.',
+      description: 'Как устроен онлайн-курс для детей 9–14 лет: видеоуроки, задания и материалы, встречи с преподавателем на ключевых этапах, свой проект и чат поддержки.',
       jsonld: [breadcrumbs([['Главная', '/'], ['Как проходят занятия', '/kak-prohodyat-zanyatiya/']])],
     },
     help: {
       path: '/pomoshch/',
-      title: 'Помощь родителям: запись, вход в кабинет, занятия — Инженерный клуб',
-      description: 'Ответы для родителей: как записаться на пробное занятие, где взять логин и пароль, почему тема закрыта, как подключиться к встрече с преподавателем и как вернуть деньги.',
+      title: 'Помощь родителям: запись, вход, занятия — Инженерный клуб',
+      description: 'Ответы для родителей: как записаться на пробное занятие, где взять логин и пароль, почему тема закрыта, как попасть на встречу с преподавателем.',
       jsonld: [breadcrumbs([['Главная', '/'], ['Помощь', '/pomoshch/']])],
     },
   };
 
   // Страница «Такой страницы нет»: GitHub Pages отдаёт 404.html на любой неизвестный адрес
-  writeFileSync(`${OUT}/404.html`, pageHtml(template, { head: seoHead({ title: `Такой страницы нет — ${SITE_NAME}`, description: 'Страница не найдена.', path: '/404.html', hide: true }), show: 'notFound' }));
+  writeFileSync(`${OUT}/404.html`, pageHtml(template, { head: seoHead({ title: `Такой страницы нет — ${SITE_NAME}`, description: 'Такой страницы нет. Перейдите на главную или в каталог программ инженерного клуба для детей 9–14 лет.', path: '/404.html', hide: true }), show: 'notFound' }));
 
   // Данные для смены title/description при переходах без перезагрузки
   const seoPages = {};
@@ -253,8 +256,8 @@ async function main() {
     // курс без программы — малоценная страница: не индексируем, пока программа не появится
     const thin = !st.lessons;
     const path = `/kursy/${c.slug}/`;
-    const title = `Курс «${c.title}» для детей 9–14 лет онлайн — ${SITE_NAME}`;
-    const description = cut(`${c.description} Онлайн-курс для школьников 9–14 лет${st.lessons ? `: ${st.lessons} модулей, исследования и собственный проект` : ''}. Пробное занятие — ${Number(c.price_trial || 1500).toLocaleString('ru-RU')} ₽, весь курс с набором для исследований — ${Number(c.price || 29750).toLocaleString('ru-RU')} ₽.`, 200);
+    const title = fitTitle(`Курс «${c.title}» для детей 9–14 лет онлайн — ${SITE_NAME}`, `Курс «${c.title}» для детей 9–14 лет — ${SITE_NAME}`, `Курс «${c.title}» для детей 9–14 лет онлайн`);
+    const description = cut(`${c.description} Онлайн-курс для школьников 9–14 лет${st.lessons ? `: ${st.lessons} модулей, исследования и собственный проект` : ''}. Пробное занятие — ${Number(c.price_trial || 1500).toLocaleString('ru-RU')} ₽, весь курс с набором для исследований — ${Number(c.price || 29750).toLocaleString('ru-RU')} ₽.`, DESC_MAX);
     const course = {
       '@context': 'https://schema.org', '@type': 'Course', name: `Курс «${c.title}»`, description: `${c.subtitle}. ${c.description}`,
       inLanguage: 'ru', provider: { '@type': 'Organization', name: SITE_NAME, ...(SITE_URL ? { sameAs: SITE_URL + '/' } : {}) },
@@ -325,8 +328,8 @@ function buildMemo(memoVideos) {
 
   // Игра
   write('/igra/', page(seoHead({
-    title: 'Мемо «Инженерия» — онлайн-игра на пары для детей — Инженерный клуб',
-    description: 'Найди пары карточек и узнай 25 историй великих изобретений и изобретателей: от колеса до квантовых технологий. Бесплатная игра на память с видео и опытами для детей 9–14 лет.',
+    title: 'Мемо «Инженерия» — игра на пары для детей — Инженерный клуб',
+    description: 'Найди пары карточек и узнай 25 историй великих изобретений: от колеса до квантовых технологий. Бесплатная игра на память для детей 9–14 лет.',
     path: '/igra/',
     jsonld: [breadcrumbs([['Главная', '/'], ['Игра «Мемо»', '/igra/']]), {
       '@context': 'https://schema.org', '@type': 'ItemList', name: 'Истории карточек мемо «Инженерия»',
@@ -367,8 +370,8 @@ ${grid}
     const short = (c.sections.find((s) => s.key === 'short') || {}).text || c.hook;
     const prev = cards[(i + cards.length - 1) % cards.length], next = cards[(i + 1) % cards.length];
     write(path, page(seoHead({
-      title: `${c.title}${c.years ? ` (${c.years})` : ''} — история для детей | Мемо «Инженерия»`,
-      description: cut(`${c.hook} ${short}`, 200), path,
+      title: fitTitle(`${c.title}${c.years ? ` (${c.years})` : ''} — история для детей | Мемо «Инженерия»`, `${c.title}${c.years ? ` (${c.years})` : ''} — история для детей`, `${c.title} — история для детей`),
+      description: cut(`${c.hook} ${short}`, DESC_MAX), path,
       jsonld: [breadcrumbs([['Главная', '/'], ['Игра «Мемо»', '/igra/'], [c.title, path]]), {
         '@context': 'https://schema.org', '@type': 'Article', headline: c.title, description: cut(short, 200), inLanguage: 'ru',
         audience: { '@type': 'EducationalAudience', educationalRole: 'student', audienceType: 'Дети 9–14 лет' },
@@ -417,9 +420,11 @@ function stampVersions() {
   const ver = (file) => (hashes[file] ??= existsSync(file) ? createHash('sha1').update(readFileSync(file)).digest('hex').slice(0, 8) : null);
   const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? walk(`${dir}/${d.name}`) : d.name.endsWith('.html') ? [`${dir}/${d.name}`] : []));
   let n = 0;
+  // модули кабинета страница грузит сама (need в index.html) — их метки версий кладём в JSV
+  const jsv = JSON.stringify(Object.fromEntries(['hero', 'path', 'world', 'chat', 'research', 'episode', 'city', 'brain', 'shop'].map((m) => [m, ver(`${OUT}/${m}.js`)])));
   for (const page of walk(OUT)) {
     const html = readFileSync(page, 'utf8');
-    const out = html.replace(/(<(?:script|link)\b[^>]*?\s(?:src|href)=")(\/?[\w./-]+\.(?:js|css))(")/g, (m, a, url, b) => {
+    const out = html.replace('{/*JSV*/}', jsv).replace(/(<(?:script|link)\b[^>]*?\s(?:src|href)=")(\/?[\w./-]+\.(?:js|css))(")/g, (m, a, url, b) => {
       const file = url.startsWith('/') ? OUT + url : page.slice(0, page.lastIndexOf('/') + 1) + url;
       const v = ver(file); if (!v) return m; n++;
       return a + url + '?v=' + v + b;

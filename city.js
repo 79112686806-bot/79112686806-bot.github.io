@@ -184,9 +184,11 @@
 .city-next{display:flex;gap:10px;align-items:center;margin:0 0 10px;padding:9px 14px;border:1.5px dashed var(--sanguine,#9a3a1b);border-radius:6px;font-size:14.5px;background:rgba(255,248,230,.4)}
 .city-next b{color:var(--sanguine,#9a3a1b)}
 .city-next .bar{flex:0 0 120px;height:8px;border-radius:4px;background:rgba(74,44,20,.14);overflow:hidden}.city-next .bar i{display:block;height:100%;background:linear-gradient(90deg,#c9a227,#e0661b);width:var(--p)}
-.city-wrap{position:relative;height:min(64vh,620px);min-height:360px;border:1.5px solid var(--line,rgba(74,44,20,.3));border-bottom-width:4px;border-radius:10px;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,#fbf1dc 0,#ead8b0 75%);touch-action:none;user-select:none;-webkit-user-select:none}
-.city-wrap>svg{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
+.city-wrap{position:relative;contain:layout paint;isolation:isolate;height:min(64vh,620px);min-height:360px;border:1.5px solid var(--line,rgba(74,44,20,.3));border-bottom-width:4px;border-radius:10px;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,#fbf1dc 0,#ead8b0 75%);touch-action:none;user-select:none;-webkit-user-select:none}
+.city-wrap>svg{position:absolute;inset:0;width:100%;height:100%;cursor:grab;will-change:transform;contain:strict}
+.city-card .ct-th *{animation:none!important}
 .city-wrap.panning>svg{cursor:grabbing}
+.city-wrap.panning svg *,.city-wrap.off svg *{animation-play-state:paused!important}
 .cw-fly svg,.cw-chip svg{display:block}
 .cw-hud{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;pointer-events:none;z-index:3}
 .cw-chip{display:flex;align-items:center;gap:7px;padding:6px 12px 6px 7px;border-radius:22px;background:rgba(255,250,238,.94);border:1.5px solid rgba(74,44,20,.3);box-shadow:0 3px 0 rgba(74,44,20,.18);font-size:13px;pointer-events:auto}
@@ -338,35 +340,77 @@
     }
 
     // ---------- отрисовка города ----------
+    // Неподвижное (земля, дома, деревья, туман) рисуется готовыми картинками — по одной на ряд клеток, чтобы передние постройки
+    // закрывали задние; живыми остаются только мелкие движущиеся части (мельницы, дым, огонь, вода, жители), выбранная и новая
+    // постройка, монетки и табличка. Иначе телефон пересчитывает весь город на каждом кадре анимации.
+    const ANIM = '.ct-spin,.ct-smoke,.ct-flame,.ct-float,.ct-blink,.ct-jet,.ct-water,.ct-ripple,.ct-walk';
+    let shown = [], drawN = 0;
+    function layer(body, B, urls) { // → неподвижная картинка + живые части
+      if (!body) return '';
+      const root = new DOMParser().parseFromString(`<svg>${body}</svg>`, 'text/html').querySelector('svg');
+      let live = '';
+      for (const el of [...root.querySelectorAll(ANIM)]) {
+        if (!root.contains(el)) continue;
+        const tr = []; for (let q = el.parentElement; q && q !== root; q = q.parentElement) { const t = q.getAttribute('transform'); if (t) tr.unshift(t); }
+        live += `<g transform="${tr.join(' ')}">${el.outerHTML}</g>`; el.remove();
+      }
+      root.setAttribute('xmlns', 'http://www.w3.org/2000/svg'); root.setAttribute('viewBox', B.join(' ')); root.setAttribute('width', B[2]); root.setAttribute('height', B[3]);
+      const u = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(root)], { type: 'image/svg+xml' })); urls.push(u);
+      return `<image href="${u}" x="${B[0]}" y="${B[1]}" width="${B[2]}" height="${B[3]}" preserveAspectRatio="none"/>` + live;
+    }
     function drawWorld() {
       index();
-      const era = S.era, E = ERAS[era], R = S.radius, cells = [];
-      for (let y = -R - 1; y <= R + 1; y++) for (let x = -R - 1; x <= R + 1; x++) cells.push([x, y]);
+      const era = S.era, E = ERAS[era], R = S.radius, cells = [], N = R + 1;
+      for (let y = -N; y <= N; y++) for (let x = -N; x <= N; x++) cells.push([x, y]);
       cells.sort((a, b) => a[0] + a[1] - (b[0] + b[1]) || a[0] - b[0]);
-      let ground = '', things = '', fog = '', bubbles = '';
+      let ground = '', groundLive = '', fog = '', bubbles = '';
+      const rows = {}, rowLive = {};
       const okMark = mode && (mode.kind === 'build' || mode.kind === 'move') ? mode.code : null;
       for (const [x, y] of cells) {
-        const [sx, sy] = scr(x, y), rr = rnd(x * 73856093 ^ y * 19349663);
+        const [sx, sy] = scr(x, y), rr = rnd(x * 73856093 ^ y * 19349663), d = x + y;
+        rows[d] ??= ''; rowLive[d] ??= '';
         if (!inside(x, y)) {
           ground += `<g transform="translate(${sx} ${sy})">${flat(1, E.wild, ' stroke-width=".5" opacity=".85"')}</g>`;
-          if (rr() > 0.45) things += `<g transform="translate(${sx + Math.round(rr() * 10 - 5)} ${sy})" opacity=".85">${ART.tree(era, rr())}</g>`;
+          if (rr() > 0.45) rows[d] += `<g transform="translate(${sx + Math.round(rr() * 10 - 5)} ${sy})" opacity=".85">${ART.tree(era, rr())}</g>`;
           fog += `<ellipse cx="${sx}" cy="${sy - 6}" rx="40" ry="20" fill="#f5ead2" opacity=".55"/>`;
           continue;
         }
         const code = codeAt(x, y), nb = (dx, dy) => codeAt(x + dx, y + dy);
         ground += `<g transform="translate(${sx} ${sy})">${flat(1, (x + y) & 1 ? E.ground[0] : E.ground[1], ' stroke-width=".5" stroke-opacity=".3"')}`
           + (!code && rr() > 0.7 ? `<path d="M${Math.round(rr() * 20 - 10)} 2c0-4-2-6-3-7M${Math.round(rr() * 20 - 10)} 4c0-5 1-8 2-9" fill="none" stroke="${INK2}" stroke-width=".9" opacity=".55"/>` : '')
-          + (okMark && canPlace(okMark, x, y, mode.from)[0] ? '<path class="ct-ok" d="M-30 0L0 15L30 0L0-15z"/>' : '') + '</g>';
+          + (okMark && canPlace(okMark, x, y, mode.from)[0] ? '<path d="M-30 0L0 15L30 0L0-15z" fill="#7eaa62" fill-opacity=".22" stroke="#3f6a32" stroke-opacity=".5" stroke-width="1"/>' : '') + '</g>';
         if (!code || !ART[code]) continue;
         const k = key(x, y), sel = mode && mode.kind === 'sel' && mode.x === x && mode.y === y, hide = mode && mode.kind === 'move' && mode.from.x === x && mode.from.y === y;
         const g = `<g class="ct-b${fresh === k ? ' new' : ''}${sel ? ' sel' : ''}${hide ? ' hide' : ''}" data-x="${x}" data-y="${y}" transform="translate(${sx} ${sy})"><g class="ct-in">${ART[code](era, rr(), nb, grp[k] && { n: grp[k].n, front: grp[k].front === k })}</g>${code === 'house' || code === 'hall' ? walkers(code === 'hall' ? 2 : 1, rr) : ''}${fresh === k ? `<g class="ct-puff">${[[-20, -4], [20, -4], [-12, 8], [14, 8]].map(([dx, dy]) => `<circle r="5" style="--x:${dx}px;--y:${dy}px"/>`).join('')}</g>` : ''}</g>`;
-        if (FLAT.has(code)) ground += g; else things += g;
+        const live = sel || hide || fresh === k;
+        if (FLAT.has(code)) { if (live) groundLive += g; else ground += g; } else if (live) rowLive[d] += g; else rows[d] += g;
         if (S.ready > 0 && occ[k] && income(occ[k])) bubbles += `<g class="ct-bub" data-bub="1" transform="translate(${sx} ${sy - 62})"><g>${coin}<path d="M0 11l-4 6h8z" fill="#e3b341" stroke="${INK}" stroke-width="1.2"/></g></g>`;
       }
       // табличка на краю тумана: здесь можно расширить город
-      const sign = S.expand_price ? (() => { const [sx, sy] = scr(R + 1, R + 1); return `<g class="ct-sign" data-sign="1" transform="translate(${sx} ${sy - 4})"><path d="M0 0v-30" stroke="${INK}" stroke-width="2.4"/><path d="M-30-52h60v22h-60z" fill="#eef6e6" stroke="#3f6a32" stroke-width="1.6"/><text y="-37" text-anchor="middle" font-family="PT Serif,Georgia,serif" font-weight="700" font-size="11" fill="#2f5f2a">+ земля</text></g>`; })() : '';
-      world.innerHTML = ground + things + `<g pointer-events="none">${fog}</g>` + sign + bubbles;
+      const sign = S.expand_price ? (() => { const [sx, sy] = scr(N, N); return `<g class="ct-sign" data-sign="1" transform="translate(${sx} ${sy - 4})"><path d="M0 0v-30" stroke="${INK}" stroke-width="2.4"/><path d="M-30-52h60v22h-60z" fill="#eef6e6" stroke="#3f6a32" stroke-width="1.6"/><text y="-37" text-anchor="middle" font-family="PT Serif,Georgia,serif" font-weight="700" font-size="11" fill="#2f5f2a">+ земля</text></g>`; })() : '';
+      // рамка картинок: весь город с туманом и самыми высокими постройками
+      const B = [-(2 * N + 2) * 32, -(2 * N + 1) * 16 - 120, (2 * N + 2) * 64, (4 * N + 2) * 16 + 160];
+      const urls = [], my = ++drawN;
+      const html = layer(ground, B, urls) + groundLive
+        + Object.keys(rows).map(Number).sort((a, b) => a - b).map((d) => layer(rows[d], B, urls) + rowLive[d]).join('')
+        + `<g pointer-events="none">${layer(fog, B, urls)}</g>` + sign + bubbles;
       fresh = null;
+      // картинки готовим заранее — город меняется без мигания
+      Promise.all(urls.map((u) => { const im = new Image(); im.src = u; return im.decode().catch(() => {}); })).then(() => {
+        if (my !== drawN) { urls.forEach(URL.revokeObjectURL); return; }
+        world.innerHTML = html; const old = shown; shown = urls; setTimeout(() => old.forEach(URL.revokeObjectURL), 1000);
+      });
+    }
+    // что под пальцем: постройки нарисованы картинкой, поэтому ищем по клеткам — сначала передние (их крыши заходят на задние клетки)
+    function pick(cx, cy) {
+      const [wx, wy] = toWorld(cx, cy), [x, y] = cellAt(cx, cy), cand = [];
+      for (let i = 0; i <= 2; i++) for (let j = 0; j <= 2; j++) cand.push([x + i, y + j]);
+      cand.sort((a, b) => b[0] + b[1] - (a[0] + a[1]));
+      for (const [qx, qy] of cand) {
+        const c = codeAt(qx, qy); if (!c || FLAT.has(c)) continue;
+        const [sx, sy] = scr(qx, qy); if (Math.abs(wx - sx) < 26 && wy > sy - (c === 'hall' ? 90 : 66) && wy < sy + 14) return [qx, qy];
+      }
+      return [x, y];
     }
     function drawGhost() {
       if (!mode || (mode.kind !== 'build' && mode.kind !== 'move') || mode.x == null) { ghost.innerHTML = ''; return; }
@@ -402,8 +446,9 @@
       if (mode && mode.paint) { if (box.dataset.m !== 'paint') { box.dataset.m = 'paint'; box.innerHTML = '<div class="cw-act cw-done"><button type="button" class="ok" data-a="cancel" style="font-size:15px">✓ Готово</button></div>'; } return; }
       if (!mode || mode.x == null) { box.innerHTML = ''; box.dataset.m = ''; return; }
       const [sx, sy] = scr(mode.x, mode.y), [px, py] = toScreen(sx, sy - (FLAT.has(mode.code) ? 24 : 70));
-      if (!box.firstChild || box.dataset.m !== mode.kind + mode.code) {
-        box.dataset.m = mode.kind + mode.code;
+      const mk = mode.kind + mode.code + (mode.kind === 'sel' ? mode.x + ':' + mode.y : '');
+      if (!box.firstChild || box.dataset.m !== mk) {
+        box.dataset.m = mk;
         if (mode.kind === 'sel') {
           const it = item(mode.code), t = occ[key(mode.x, mode.y)] || {}, g = grp[key(mode.x, mode.y)];
           const gi = g && g.n > 1 ? (S.tiles || []).filter((q) => grp[key(q.x, q.y)] === g).reduce((a, q) => a + income(q), 0) : income(t);
@@ -527,7 +572,7 @@
         fresh = key(x, y); return place(mode.code, x, y);
       }
       if (mode && (mode.kind === 'build' || mode.kind === 'move')) { mode.x = x; mode.y = y; drawGhost(); placeAct(); return; }
-      const b = hit && hit.closest('.ct-b'), bx = b ? +b.dataset.x : x, by = b ? +b.dataset.y : y, code = codeAt(bx, by);
+      const b = hit && hit.closest('.ct-b'), [bx, by] = b ? [+b.dataset.x, +b.dataset.y] : pick(cx, cy), code = codeAt(bx, by);
       if (code === 'hall') { mode = null; redraw(); return toast(`${thumb('hall', S.era)}<h3>Сердце города</h3><p>Оно меняется с каждой новой эпохой. Пройди следующий блок курса — и увидишь!</p>`); }
       if (code) { mode = { kind: 'sel', x: bx, y: by, code }; tip(''); redraw(); return; }
       if (mode) { mode = null; redraw(); }
@@ -551,6 +596,8 @@
     });
     document.addEventListener('keydown', function onKey(e) { if (!el.isConnected) return document.removeEventListener('keydown', onKey); if (e.key === 'Escape' && mode) cancel(); });
     // пока ребёнок сам не двигал карту — город целиком по размеру окна (и после поворота телефона)
+    // город за экраном — анимации спят
+    new IntersectionObserver((es) => wrap.classList.toggle('off', !es[0].isIntersecting)).observe(wrap);
     new ResizeObserver(() => { if (!wrap.clientWidth) return; if (!touched) fit(); applyCam(); }).observe(wrap);
 
     fit(); applyCam(); redraw(); drawCards();

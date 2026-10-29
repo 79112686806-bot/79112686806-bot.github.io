@@ -51,7 +51,7 @@
 .pb-chip b{font:700 26px/1 "Cormorant Garamond",Georgia,serif}
 .pb-chip small{display:block;font-size:12.5px;color:var(--ink-soft,#6e4b2c);line-height:1.25}
 .pb-fire{color:#b7aa98}.pb-fire.on{color:#e0661b;animation:pbFlick 2.4s ease-in-out infinite}
-.pb-gear{color:#8a6d1f}.pb-gear svg{animation:pbSpin 12s linear infinite}
+.pb-gear{color:#8a6d1f}.pb-gear:hover svg{animation:pbSpin 2.4s linear infinite}
 .pb-q{padding:12px 16px;border:1.5px solid var(--line,rgba(74,44,20,.26));border-bottom-width:4px;border-radius:6px;background:rgba(255,248,230,.55);display:grid;grid-template-columns:1fr auto;gap:6px 14px;align-items:center}
 .pb-q h4{margin:0;font:700 19px/1.1 "Cormorant Garamond",Georgia,serif;display:flex;gap:6px;align-items:center}
 .pb-q ul{grid-column:1;list-style:none;margin:0;padding:0;display:grid;gap:6px}

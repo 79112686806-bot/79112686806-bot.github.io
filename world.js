@@ -41,12 +41,11 @@
 
   // ---------- Ориентиры: неподвижная часть (s) + движущиеся детали (a: центр, размер, рисунок, вид движения) ----------
   const gearSvg = (r, teeth, fill) => `<circle r="${r}" fill="${fill}" stroke="${INK}" stroke-width="${r * 0.42}" stroke-dasharray="${f1((2 * Math.PI * r) / teeth / 2)} ${f1((2 * Math.PI * r) / teeth / 2)}"/><circle r="${f1(r * 0.78)}" fill="${fill}" ${st}/><circle r="${f1(r * 0.25)}" fill="${INK}"/>`;
-  const puffs = (fill) => `<g fill="${fill}"><circle class="pf" cx="0" cy="10" r="5"/><circle class="pf" cx="3" cy="0" r="6"/><circle class="pf" cx="1" cy="-12" r="7"/></g>`;
   const L = {
     cave: (x, y) => ({ s: G(x, y, 1, `<path d="M-46 0c4-26 20-42 46-42s40 18 44 42z" fill="#bfae8e" ${st}/><path d="M8-42c18 2 32 18 36 42H20z" fill="#a8977a"/><path d="M-16 0c0-14 7-22 16-22s16 8 16 22z" fill="#3a2414"/><path d="M-36-10l8-6M24-30l8 4M30-12l8-4M-24-28l6 2" stroke="${INK2}" stroke-width=".9"/><path d="M-6-14l3-4 3 4M2-10l2-3 2 3" fill="none" stroke="#e0b56a" stroke-width=".9"/>`) }),
     fire: (x, y) => ({ s: G(x, y, 1, `<path d="M-12 0l24-6M-12-6l24 6" stroke="#6b4420" stroke-width="3.5" stroke-linecap="round"/>${[-16, 15].map((dx) => `<path d="M${dx - 4} 1l4-5 4 5z" fill="#cbb999" ${st}/>`).join('')}`),
       a: [{ x, y: y - 14, z: 28, k: 'flame', svg: `<path d="M0 10c-8-4-7-12-2-18 0 5 3 6 4 6 0-4 2-8 5-10-1 6 6 9 1 22z" fill="#e0661b"/><path d="M1 10c-3-2-3-6 0-9 0 2 1 3 2 3 1 2 1 4-2 6z" fill="#ffd36b"/>` },
-        { x: x + 3, y: y - 50, z: 36, k: 'smoke', svg: puffs('#b8a98e') }] }),
+        { x: x + 3, y: y - 50, z: 36, k: 'smoke', fill: '#b8a98e' }] }),
     stones: (x, y) => ({ s: G(x, y, 1, [-30, -14, 2, 18, 34].map((dx, i) => `<path d="M${dx - 5} 0v-${18 + (i % 2) * 6}h10V0z" fill="#c9b79a" ${st}/><path d="M${dx + 1} 0v-${18 + (i % 2) * 6}h4V0z" fill="#b5a385"/>`).join('') + `<path d="M-35-26h26M3-26h26" stroke="${INK}" stroke-width="4"/>`) }),
     mill: (x, y) => ({ s: G(x, y, 1, `<path d="M-30 0v-30h34V0z" fill="#ead6ad" ${st}/><path d="M-8 0v-30H4V0z" fill="#d9c196"/><path d="M-34-29l19-17 23 17z" fill="#b45f3d" ${st}/><rect x="-22" y="-22" width="7" height="7" fill="#8fb2c4" ${st}/><path d="M2-14h16" stroke="${INK}" stroke-width="2.4"/>`),
       a: [{ x: x + 18, y: y - 14, z: 36, k: 'spin', svg: `<circle r="15" fill="none" stroke="${INK}" stroke-width="2.2"/>${Array.from({ length: 8 }, (_, i) => { const a = (i * Math.PI) / 4, cx = 15 * Math.cos(a), cy = 15 * Math.sin(a); return `<path d="M0 0L${f1(cx)} ${f1(cy)}" stroke="${INK}" stroke-width="1.6"/><rect x="${f1(cx - 3)}" y="${f1(cy - 3)}" width="6" height="6" fill="#a06a33" ${st}/>`; }).join('')}<circle r="3.2" fill="#6b4420"/>` }] }),
@@ -56,7 +55,7 @@
       a: [{ x: x + 34, y: y - 22, z: 34, k: 'spin slow', svg: gearSvg(12, 12, '#d9b25a') }] }),
     wings: (x, y) => ({ a: [{ x, y, z: 84, k: 'float', svg: `<path d="M0 0c-12-10-26-12-38-6 10 0 18 4 24 10M0 0c12-10 26-12 38-6-10 0-18 4-24 10" fill="#fff8ea" ${st}/><path d="M-30-5l6 6M-20-8l4 8M20-8l-4 8M30-5l-6 6" stroke="${INK2}" stroke-width=".8"/><path d="M-3 2h6l-3 8z" fill="#a06a33" ${st}/>` }] }),
     factory: (x, y) => ({ s: G(x, y, 1, `<path d="M-40 0v-26l14-10v10l14-10v10l14-10v36z" fill="#c9a98a" ${st}/><path d="M2 0v-58h10V0z" fill="#a8664a" ${st}/><path d="M8 0v-58h4V0z" fill="#8e5038"/><path d="M-34-12h8M-20-12h8M-6-12h8" stroke="#f3d27a" stroke-width="4"/>`),
-      a: [{ x: x + 9, y: y - 80, z: 40, k: 'smoke', svg: puffs('#a99c88') }] }),
+      a: [{ x: x + 9, y: y - 80, z: 40, k: 'smoke', fill: '#a99c88' }] }),
     city: (x, y) => ({ s: G(x, y, 1, [[-44, 46], [-30, 70], [-14, 54], [2, 86], [18, 60], [34, 74]].map(([dx, h], i) => `<path d="M${dx} 0v-${h}h15V0z" fill="${i % 2 ? '#bccdd3' : '#cfdde0'}" ${st}/><path d="M${dx + 10} 0v-${h}h5V0z" fill="#a9bcc3"/>${Array.from({ length: Math.floor(h / 12) }, (_, k) => `<path d="M${dx + 3}-${8 + k * 11}h3M${dx + 8}-${8 + k * 11}h2" stroke="#5f7f8f" stroke-width="2.4"/>`).join('')}`).join('') + `<path d="M9-86v-12" stroke="${INK}" stroke-width="1.2"/><circle cx="9" cy="-99" r="2.2" fill="#e0661b"/>`) }),
     turbine: (x, y) => ({ s: G(x, y, 1, `<path d="M-2 0l1-52h2l1 52z" fill="#eef3f4" ${st}/>`),
       a: [{ x, y: y - 52, z: 60, k: 'spin', svg: [0, 120, 240].map((a) => `<path transform="rotate(${a})" d="M0 0c-2-8-1-20 0-26 1 6 2 18 0 26z" fill="#fff" ${st}/>`).join('') + `<circle r="2.6" fill="${INK}"/>` }] }),
@@ -239,7 +238,9 @@
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 ${y0} ${W} ${h}" width="${W * 2}" height="${h * 2}">${g}</svg>`;
   }
   // движущиеся детали земли — маленькие отдельные элементы
-  const piece = (a, H) => `<div class="wm-a ${a.k}" style="left:${f1(((a.x - a.z / 2) / W) * 100)}%;top:${f1(((a.y - a.z / 2) / H) * 1000) / 10}%;width:${f1((a.z / W) * 100)}%"><svg viewBox="${-a.z / 2} ${-a.z / 2} ${a.z} ${a.z}">${a.svg}</svg></div>`;
+  // дым — три отдельных клуба: каждый движется целиком (это делает видеокарта, без перерисовки картинки)
+  const piece = (a, H) => a.k === 'smoke' ? [[0, 10, 5], [3, 0, 6], [1, -12, 7]].map(([dx, dy, r], i) => piece({ x: a.x + dx, y: a.y + dy, z: r * 2 + 2, k: 'smoke p' + (i + 1), svg: `<circle r="${r}" fill="${a.fill}"/>` }, H)).join('')
+    : `<div class="wm-a ${a.k}" style="left:${f1(((a.x - a.z / 2) / W) * 100)}%;top:${f1(((a.y - a.z / 2) / H) * 1000) / 10}%;width:${f1((a.z / W) * 100)}%"><svg viewBox="${-a.z / 2} ${-a.z / 2} ${a.z} ${a.z}">${a.svg}</svg></div>`;
   const CLOUD = `<path d="M-40 10c-3-12 12-18 20-10 5-12 26-10 28 3 10-3 16 8 8 13h-52c-8 0-8-6-4-6z" fill="#fffaf0" stroke="rgba(110,75,44,.4)" stroke-width="1.2"/>`;
   const BIRDS = `<path d="M-20 4q4-5 8 0q4-5 8 0M6-4q3-4 6 0q3-4 6 0" fill="none" stroke="${INK}" stroke-width="1.4"/>`;
 
@@ -253,15 +254,15 @@
 .wm-a svg{display:block;width:100%;height:100%;overflow:visible}
 .wm-a.spin{animation:wmSpin 7s linear infinite}.wm-a.slow{animation-duration:14s}
 .wm-a.flame{transform-origin:50% 80%;animation:wmFlame .9s ease-in-out infinite alternate}
-.wm-a.smoke .pf{animation:wmSmoke 4s ease-out infinite;transform-box:fill-box;transform-origin:center;opacity:0}
-.wm-a.smoke .pf:nth-child(2){animation-delay:1.3s}.wm-a.smoke .pf:nth-child(3){animation-delay:2.6s}
+.wm-a.smoke{animation:wmSmoke 4s ease-out infinite;opacity:0}
+.wm-a.smoke.p2{animation-delay:1.3s}.wm-a.smoke.p3{animation-delay:2.6s}
 .wm-a.float{animation:wmFloat 5s ease-in-out infinite}
 .wm-a.wave{transform-origin:0 50%;animation:wmWave 1.6s ease-in-out infinite alternate}
 .wm-a.cloud{animation:wmCloud 80s linear infinite;opacity:.9}.wm-a.birds{animation:wmBird 24s linear infinite}
 .wm-r:not(.live) .wm-a,.wm-r:not(.live) .wm-a *{animation-play-state:paused}
 @keyframes wmSpin{to{transform:rotate(360deg)}}
 @keyframes wmFlame{from{transform:scale(1,1)}to{transform:scale(.86,1.14)}}
-@keyframes wmSmoke{0%{opacity:0;transform:translateY(8px) scale(.5)}30%{opacity:.55}100%{opacity:0;transform:translateY(-16px) scale(1.4)}}
+@keyframes wmSmoke{0%{opacity:0;transform:translateY(60%) scale(.5)}30%{opacity:.55}100%{opacity:0;transform:translateY(-120%) scale(1.4)}}
 @keyframes wmFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(14%,-8%)}}
 @keyframes wmCloud{from{transform:translateX(-120%)}to{transform:translateX(900%)}}
 @keyframes wmBird{from{transform:translate(-150%,0)}to{transform:translate(1100%,-60%)}}
@@ -269,7 +270,7 @@
 /* транспорт */
 .wm-ride{position:absolute;left:0;top:0;width:calc(var(--u)*150);aspect-ratio:150/100;z-index:3;cursor:pointer;will-change:transform;-webkit-tap-highlight-color:transparent}
 .wm-ride svg{display:block;width:100%;height:100%;overflow:visible}
-.wm-ride .bob{animation:wmBob 2.6s ease-in-out infinite}.wm-ride.go .bob{animation-duration:.32s}
+.wm-ride .bob{width:100%;height:100%;animation:wmBob 2.6s ease-in-out infinite;will-change:transform}.wm-ride.go .bob{animation-duration:.32s}
 .wm-ride .wm-wh{transform-box:fill-box;transform-origin:center}
 .wm-ride.go .wm-wh{animation:wmSpin .7s linear infinite}
 .wm-ride.flip svg{transform:scaleX(-1)}
@@ -397,7 +398,7 @@
     const owned = new Set((status && status.owned) || []);
     const pen = owned.has('pennant') ? `<path d="M-38-28V-84" stroke="${INK}" stroke-width="2.2" stroke-linecap="round"/><circle cx="-38" cy="-85" r="2.4" fill="#c9a227" ${st}/><path d="M-37-83c8 2 16 0 26 4-9 3-17 3-26 8z" fill="${RED}" ${st}/>` : '';
     const trail = owned.has('trail') ? `<span class="wm-trail">${Array.from({ length: 6 }, (_, i) => `<i style="--d:${(i * 0.15).toFixed(2)}s;--y:${Math.round((i % 3 - 1) * 14)}px"></i>`).join('')}</span>` : '';
-    html += `<div class="wm-ride" role="button" tabindex="0" aria-label="Мой транспорт: ${esc(ride.name)}"><svg viewBox="-75 -92 150 100">${RDEF}<g class="bob">${pen}${ride.svg}</g></svg>${trail}</div>`;
+    html += `<div class="wm-ride" role="button" tabindex="0" aria-label="Мой транспорт: ${esc(ride.name)}"><div class="bob"><svg viewBox="-75 -92 150 100">${RDEF}${pen}${ride.svg}</svg></div>${trail}</div>`;
     el.innerHTML = `<div class="wm" style="aspect-ratio:${W}/${H}">${html}</div>`;
     const wm = el.firstChild, rideEl = wm.querySelector('.wm-ride');
     let u = 1; const fit = () => { u = wm.clientWidth / W; wm.style.setProperty('--u', u + 'px'); place(cur); };

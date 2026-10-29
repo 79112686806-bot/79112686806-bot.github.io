@@ -40,6 +40,7 @@
 #howPage .how-steps{margin-top:16px;margin-bottom:28px}
 #howPage .how-formats{margin-top:0;row-gap:16px}
 @media(prefers-reduced-motion:reduce){.hero .schematic-track{animation:none}}
+.anim-off,.anim-off *{animation-play-state:paused!important}
 .modal{position:fixed;inset:0;background:rgba(8,12,20,.8);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}.modal.open{display:flex}.modal-card{width:min(680px,100%);background:var(--cream);color:var(--navy);border-radius:24px;padding:32px;position:relative}.close{position:absolute;right:18px;top:14px;border:0;background:none;font-size:28px;cursor:pointer}.modal-card h2{font-family:Unbounded;font-size:26px}.modal-card p{line-height:1.65;color:#536071}@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}@media(max-width:900px){.courses{grid-template-columns:repeat(3,1fr)}.features{grid-template-columns:1fr 1fr}.dashboard{grid-template-columns:1fr}}@media(max-width:600px){.wrap{width:min(100% - 28px,1160px)}.hero{padding:35px 0 45px}.hero p{font-size:15px}.schematic{gap:6px}.node{width:62px;height:62px;font-size:25px}.features,.courses,.options{grid-template-columns:1fr}.section{padding:45px 0}.dashboard{padding-top:10px}}
 
 /* Мультяшные персонажи-наставники */
@@ -1289,23 +1290,25 @@ body.no-fab .ask-fab{display:none}
 <div class="sticky-cta" id="stickyCta"><button type="button" class="btn primary" onclick="stickySignup()">Записаться<small id="stickyPrice">пробное занятие — 1 500 ₽</small></button></div>
 <script src="/config.js"></script>
 <script src="/sb-client.js"></script>
-<script src="/chat.js"></script>
 <script src="/support.js"></script>
-<script src="/episode.js"></script>
-<script src="/hero.js"></script>
-<script src="/path.js"></script>
-<script src="/world.js"></script>
-<script src="/shop.js"></script>
-<script src="/city.js"></script>
-<script src="/brain.js"></script>
 <script src="/course-page.js"></script>
 <script src="/home-blocks.js"></script>
-<script src="/research.js"></script>
 <script src="/seo.js"></script>
 <script>
+// Модули кабинета (герой, карта, чат, серии, город, разминка, лавка) грузятся, только когда нужны: гостям сайта они не нужны.
+// need('city') → обещание; метки версий подставляет сборка (JSV).
+const JSV={/*JSV*/},jsWait={};
+function need(...names){return Promise.all(names.map(n=>jsWait[n]??=new Promise((ok,no)=>{const s=document.createElement('script');s.src='/'+n+'.js'+(JSV[n]?'?v='+JSV[n]:'');s.async=false;
+  s.onload=ok;s.onerror=()=>{delete jsWait[n];s.remove();no(new Error('Не загрузился модуль '+n))};document.head.append(s)})))}
+const CAB_JS=['hero','path','world','chat','research'],LATER_JS=['episode','city','brain','shop'];
+// после открытия кабинета — остальное в фоне, когда браузер свободен
+const needLater=()=>(window.requestIdleCallback||setTimeout)(()=>need(...LATER_JS).catch(()=>{}),{timeout:4000});
 // Параметры ссылки из письма (invite / recovery / ошибка) — запоминаем до того, как клиент разберёт адрес
 const AUTH_LINK=Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
 const sb=makeSupabase();
+// анимации, которых не видно на экране, спят (телефону не нужно пересчитывать то, что за краем)
+addEventListener('DOMContentLoaded',()=>{const io=new IntersectionObserver(es=>es.forEach(e=>e.target.classList.toggle('anim-off',!e.isIntersecting)));
+  document.querySelectorAll('.kids-wrap,.hero .schematic').forEach(el=>io.observe(el))});
 </script>
 <script>
 const courses=[['⚙','Колесо','Первый технологический прорыв в истории человечества','Путь от изобретения колеса до современных автомобилей.'],['☎','Телефон','Как передается голос','Изучаем принцип передачи голоса. Изучаем устройство телефона и придумываем новые функции.'],['⛵','Лодки и корабли','Как держатся на воде','Изучаем плавучесть, форму корпуса и проектирование.'],['🔭','Оптические приборы','Как мы видим далекое','Изучаем свет, оптические свойства, линзы, оптические приборы.'],['🚗','Двигатель и автомобиль','Как машина едет','Энергия. Мотор. Движение. Автомобиль будущего.'],['✈','Самолёт','Как летает железная птица','Подъемная сила. Форма крыла. Летающие аппараты.'],['⌘','Интернет','Как связаны компьютеры','Сети, передача данных и идеи цифровых устройств.'],['🤖','Роботы','Машины, которые помогают','Датчики, механизмы и робот-помощник или друг.'],['🧬','Биоинженерия','Техника и живые организмы','Как инженерные идеи применяются к живым организмам.'],['🧠','Мозг человека','Самое сложное устройство','Узнаем информацию о мозге и пытаемся придумать необычные технологии.']];let selectedCourse=0;
@@ -1607,7 +1610,7 @@ async function enterCabinet(){const session=await requireLogin();if(!session)ret
   myReviewBox.hidden=!list.length;
   renderMyProfile(prof||{},session.user.email);renderMyReview(session.user.id,prof||{},list);renderMyMats(session.user.id,list,st);
   // герой-инженер: анкета родителя или уровни и новые очки
-  if(window.Hero)Hero.mountCabinet(cabHero,{sb,userId:session.user.id,name:prof&&prof.student_name}).catch(e=>console.warn('Герой:',e));
+  need('hero').then(()=>Hero.mountCabinet(cabHero,{sb,userId:session.user.id,name:prof&&prof.student_name})).catch(e=>console.warn('Герой:',e));
   if(window.Support)Support.unread().then(n=>{cabSupDot.hidden=!n}).catch(()=>{})}
 // «Мои материалы»: курс → блок → модуль; модуль появляется здесь, только когда преподаватель его одобрил
 let cabMats=[];
@@ -1649,6 +1652,7 @@ let dash={modules:[],lessons:[],progress:{},materials:[],calls:{},unread:{},scop
 let badgeChannel=null;
 let openToken=0;
 async function openCourseDashboard(i){const session=await requireLogin();if(!session)return;
+  const cabJs=need(...CAB_JS).catch(e=>console.warn(e.message));
   await ensureCourses();selectedCourse=i;const slug=courseSlug[i];const uid=session.user.id;
   dash={modules:[],lessons:[],progress:{},materials:[],calls:{},unread:{},scope:'full',access:new Set(),userId:uid,slug,current:null,eps:new Set(),watched:new Set(),researched:new Set(),status:null,resOk:new Set()};
   dashBar.innerHTML='';
@@ -1669,7 +1673,7 @@ async function openCourseDashboard(i){const session=await requireLogin();if(!ses
   (calls||[]).forEach(c=>dash.calls[c.lesson_id]=c);
   lessonArea.innerHTML='<p class="note" style="text-align:center;padding:40px 0">Загружаем карту курса…</p>';
   // всё остальное — одним заходом: непрочитанные, материалы, для карты (серии, ответы, исследования) и награды
-  const ids=dash.lessons.map(l=>l.id);
+  const ids=dash.lessons.map(l=>l.id);await cabJs;needLater();
   const[{data:unread},{data:mats},{data:lc},{data:ea},{data:ra},st]=await Promise.all([
     sb.from('lesson_messages').select('lesson_id').eq('student_id',uid).neq('author_id',uid).is('read_at',null).is('deleted_at',null),
     sb.from('materials').select('id,lesson_id,user_id,title,kind,url,storage_path,sort').in('lesson_id',ids),
@@ -1703,7 +1707,7 @@ function openMap(){flushSave();closeChat();stopEpisode();dash.current=null;++ope
   lessonArea.innerHTML=`${todayHtml()}${questNow(cur)}<div id="pathMap"></div><p class="note" style="text-align:center;margin-top:12px">Нажми на тему, чтобы открыть её. Нажми на свой транспорт — он расскажет о себе.</p>`;
   World.map(pathMap,{sb,modules,courseId:courseId[selectedCourse],slug:dash.slug,userId:dash.userId,status:dash.status,onOpen:id=>{openLesson(id);phoneJump()}});lessonIn()}
 // «Сегодня»: что можно сделать каждый день, даже пока новая тема ждёт встречи с преподавателем
-function todayHtml(){const st=dash.status||{};if(!window.Brain||!window.City)return '';
+function todayHtml(){const st=dash.status||{};if(!window.Hero)return '';
   const left=st.brain_left??3,ready=st.city_ready||0;
   return `<div class="today"><div class="today-h">Сегодня${st.streak?` <span class="today-fire">🔥 ${st.streak}</span>`:''}</div><div class="today-row">`
     +`<button type="button" class="today-t${left?' hot':' done'}" onclick="openBrain()"><span class="tt-ico">🧠</span><span class="tt-txt"><b>Разминка ума</b><small>${left?left+' '+Hero.plural(left,'задачка','задачки','задачек')+' · до '+left*5+' ⚙':'Пройдена ✓ Завтра — новые'}</small></span></button>`
@@ -1711,10 +1715,10 @@ function todayHtml(){const st=dash.status||{};if(!window.Brain||!window.City)ret
 function railMark(id,title){document.querySelectorAll('.side-item,.side-pin,.rail-btn').forEach(x=>x.classList.toggle('active',x.dataset.id===id));sideNow.textContent=title}
 async function barRefresh(){const st=await Path.bar(dashBar,{sb,userId:dash.userId,onGears:()=>openShop()}).catch(()=>null);if(st)dash.status=st}
 // Мой город (city.js): строится за шестерёнки, растёт с каждым пройденным блоком
-function openCity(){if(!window.City)return;flushSave();closeChat();stopEpisode();dash.current=null;++openToken;railMark('city','Мой город');
+function openCity(){if(!window.City)return void need('city').then(()=>window.City&&openCity(),()=>{});flushSave();closeChat();stopEpisode();dash.current=null;++openToken;railMark('city','Мой город');
   lessonArea.innerHTML='<div id="cityBox"></div>';City.open(cityBox,{sb,onChange:barRefresh});lessonIn()}
 // Разминка ума (brain.js): три задачки в день
-function openBrain(){if(!window.Brain)return;flushSave();closeChat();stopEpisode();dash.current=null;++openToken;railMark('brain','Разминка ума');
+function openBrain(){if(!window.Brain)return void need('brain').then(()=>window.Brain&&openBrain(),()=>{});flushSave();closeChat();stopEpisode();dash.current=null;++openToken;railMark('brain','Разминка ума');
   lessonArea.innerHTML='<div id="brainBox"></div>';Brain.open(brainBox,{sb,onChange:barRefresh,onCity:openCity});lessonIn()}
 // что сделать сейчас: тема и её ближайший шаг
 function questNow(cur){const l=cur||dash.lessons.find(x=>isUnlocked(x)&&lessonStatus(x)!=='approved');
@@ -1722,7 +1726,7 @@ function questNow(cur){const l=cur||dash.lessons.find(x=>isUnlocked(x)&&lessonSt
   const s=lessonStatus(l),step=dash.eps.has(l.id)&&!dash.watched.has(l.id)?['ep','Посмотри серию']:l.research_task&&!dash.researched.has(l.id)?['res','Проведи исследование']:s==='submitted'?['meet','Ждём подтверждения преподавателя']:['meet','Встреча с преподавателем'];
   return `<button type="button" class="q-now" onclick="openLesson(${l.id})"><span class="qn-ico">${Q_ICO[step[0]]}</span><span class="qn-txt"><small>Сейчас: ${escapeHtml(l.title)}</small><b>${step[1]}</b></span><span class="btn primary qn-go">${Q_ICO.play}Продолжить</span></button>`}
 // Лавка мастера: потратить шестерёнки (после покупки обновляется панель наград и украшения транспорта)
-function openShop(){if(!window.Shop)return;flushSave();closeChat();stopEpisode();dash.current=null;++openToken;
+function openShop(){if(!window.Shop)return void need('shop').then(()=>window.Shop&&openShop(),()=>{});flushSave();closeChat();stopEpisode();dash.current=null;++openToken;
   document.querySelectorAll('.side-item,.side-pin,.rail-btn').forEach(x=>x.classList.toggle('active',x.dataset.id==='shop'));sideNow.textContent='Лавка мастера';
   lessonArea.innerHTML='<div id="shopBox"></div>';
   Shop.open(shopBox,{sb,userId:dash.userId,onChange:async()=>{const st=await Path.bar(dashBar,{sb,userId:dash.userId,onGears:()=>openShop()}).catch(()=>null);if(st)dash.status=st}});lessonIn()}
@@ -1804,7 +1808,7 @@ function episodeHtml(l,ep,meet=''){const title=(window.Episode&&Episode.titles[e
 function flipEpisode(on){const card=document.getElementById('epCard');if(!card)return;
   card.classList.toggle('flipped',on);card.querySelector('.ep-front').inert=on;card.querySelector('.ep-back').inert=!on;
   if(epPlayer)on?epPlayer.pause():epPlayer.resume()}
-function startEpisode(ep){const box=document.getElementById('epBox');if(!box||!window.Episode)return;stopEpisode();
+function startEpisode(ep){const box=document.getElementById('epBox');if(!box)return;if(!window.Episode)return void need('episode').then(()=>window.Episode&&startEpisode(ep),()=>{});stopEpisode();
   const lessonId=dash.current&&dash.current.id;
   // ответы ребёнка в серии уходят преподавателю (админка → «Ответы в сериях»)
   // tag — куда серия повела после ответа; в ответ база пишет начисленные очки героя (deltas)
@@ -1897,6 +1901,7 @@ function questNav(l){const i=dash.lessons.indexOf(l),pv=dash.lessons[i-1],nx=das
   else next=`<button type="button" class="btn q-next" onclick="openMap()">К карте курса →</button>`;
   return `<nav class="q-nav" aria-label="Темы курса">${prev}${next}</nav>`}
 async function openLesson(id){flushSave();closeChat();stopEpisode();const l=dash.lessons.find(x=>x.id===id);if(!l)return;dash.current=l;const token=++openToken;
+  if(!window.Episode&&dash.eps.has(id)){await need('episode').catch(()=>{});if(token!==openToken)return}
   document.querySelectorAll('.side-item,.side-pin,.rail-btn').forEach(x=>x.classList.toggle('active',x.dataset.id===String(id)));sideNow.textContent=l.title;
   const item=document.querySelector(`.side-item[data-id="${id}"]`);if(item)item.closest('.side-group').classList.add('open');
   const title=escapeHtml(l.title),task=l.research_task?escapeHtml(l.research_task):'';
