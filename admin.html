@@ -675,6 +675,7 @@ async function showShop(){app.innerHTML='<p class="muted">Загрузка ла�
     <td><input name="price" type="number" min="1" value="${i.price}" style="width:80px"> ⚙</td>
     <td>${i.kind==='prize'?`<input name="stock" type="number" min="0" value="${i.stock??''}" placeholder="∞" style="width:70px">`:'<span class="muted">—</span>'}</td>
     <td>${i.kind==='prize'?`<input name="per_user" type="number" min="1" value="${i.per_user??''}" placeholder="∞" style="width:60px">`:'<span class="muted">—</span>'}</td>
+    <td>${i.kind==='prize'?`<div class="small" style="display:grid;gap:4px;white-space:nowrap"><label>🔥 серия <input name="need_streak" type="number" min="1" max="365" value="${i.need_streak??''}" placeholder="—" style="width:56px"> дн.</label><label>📘 блоков <input name="need_blocks" type="number" min="1" max="20" value="${i.need_blocks??''}" placeholder="—" style="width:56px"></label></div>`:'<span class="muted">—</span>'}</td>
     <td><label class="small"><input name="active" type="checkbox" ${i.active?'checked':''}> в лавке</label></td>
     <td><button class="primary" onclick="saveShopItem(${i.id})">Сохранить</button></td></tr>`;
   const bought=(orders||[]).filter(o=>o.status!=='cancelled'),sum=bought.reduce((a,o)=>a+o.price,0);
@@ -682,8 +683,8 @@ async function showShop(){app.innerHTML='<p class="muted">Загрузка ла�
     <h2>🎁 Вручить ${wait.length?`<span class="badge b-warn">${wait.length}</span>`:''}</h2>
     ${wait.length?`<table>${head}<tbody>${wait.map(row).join('')}</tbody></table>`:'<p class="muted">Все купленные призы вручены.</p>'}
     <h2>Товары и цены</h2>
-    <p class="small muted">Пустое «Осталось» — без ограничения; «На ученика» — сколько раз один ученик может взять приз. Снимите «в лавке», чтобы спрятать товар. Всего потрачено шестерёнок: ${sum} (покупок: ${bought.length}).</p>
-    <table><thead><tr><th></th><th>Название и описание</th><th>Цена</th><th>Осталось</th><th>На ученика</th><th></th><th></th></tr></thead><tbody>${(items||[]).map(it).join('')}</tbody></table>
+    <p class="small muted">Пустое «Осталось» — без ограничения; «На ученика» — сколько раз один ученик может взять приз. «Условия» — рекорд серии дней и сколько блоков курса нужно пройти; настоящий приз ученик может взять не чаще раза в 30 дней. Снимите «в лавке», чтобы спрятать товар. Всего потрачено шестерёнок: ${sum} (покупок: ${bought.length}).</p>
+    <table><thead><tr><th></th><th>Название и описание</th><th>Цена</th><th>Осталось</th><th>На ученика</th><th>Условия</th><th></th><th></th></tr></thead><tbody>${(items||[]).map(it).join('')}</tbody></table>
     <details class="card" style="margin-top:12px"><summary><b>+ Добавить приз</b></summary><div style="display:grid;gap:8px;max-width:520px;margin-top:10px">
       <input id="npIcon" placeholder="Значок (эмодзи), например 🎁" maxlength="16"><input id="npTitle" placeholder="Название приза" maxlength="120">
       <textarea id="npAbout" placeholder="Описание: что это и как вручим" maxlength="400" rows="2"></textarea>
@@ -695,7 +696,7 @@ async function setPrize(id,status){if(status==='cancelled'&&!confirm('Отмен
   toast(status==='done'?'Отмечено: приз вручён':'Покупка отменена, шестерёнки вернулись');refreshQueueCount();showShop()}
 async function saveShopItem(id){const r=document.querySelector(`tr[data-item="${id}"]`),v=n=>r.querySelector(`[name=${n}]`),num=n=>v(n).value===''?null:+v(n).value;
   const upd={icon:v('icon').value.trim()||null,title:v('title').value.trim(),about:v('about').value.trim()||null,price:+v('price').value,active:v('active').checked};
-  if(v('stock'))upd.stock=num('stock');if(v('per_user'))upd.per_user=num('per_user');
+  if(v('stock'))upd.stock=num('stock');if(v('per_user'))upd.per_user=num('per_user');if(v('need_streak'))upd.need_streak=num('need_streak');if(v('need_blocks'))upd.need_blocks=num('need_blocks');
   if(!upd.title||!(upd.price>0))return toast('Нужны название и цена больше нуля');
   const{error}=await sb.from('shop_items').update(upd).eq('id',id);toast(error?'Ошибка: '+error.message:'Сохранено')}
 async function addPrize(){const title=npTitle.value.trim(),price=+npPrice.value;if(!title||!(price>0))return toast('Нужны название и цена больше нуля');

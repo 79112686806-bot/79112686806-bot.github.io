@@ -17,7 +17,7 @@ require('../home-blocks.js');
 require('../memo.js');
 const { coursePageHtml, coursePageStats, HomeBlocks, Memo } = globalThis;
 
-const FILES = ['admin.html', 'sb-client.js', 'chat.js', 'support.js', 'hero.js', 'path.js', 'world.js', 'shop.js', 'sw.js', 'admin.webmanifest', 'course-page.js', 'episode.js', 'home-blocks.js', 'memo.js', 'research.js', 'favicon.svg'];
+const FILES = ['admin.html', 'sb-client.js', 'chat.js', 'support.js', 'hero.js', 'path.js', 'world.js', 'shop.js', 'city.js', 'brain.js', 'sw.js', 'admin.webmanifest', 'course-page.js', 'episode.js', 'home-blocks.js', 'memo.js', 'research.js', 'favicon.svg'];
 
 // Данные самозанятого (site-info.json) — для документов и подвала. Пустое поле → заметная пометка.
 const INFO = JSON.parse(readFileSync('site-info.json', 'utf8'));
@@ -230,7 +230,16 @@ async function main() {
       description: 'Онлайн-курс для школьников 9–14 лет как маршрут: самостоятельные видеоуроки, материалы и задания, встречи с преподавателем на ключевых этапах, свой проект и чат поддержки.',
       jsonld: [breadcrumbs([['Главная', '/'], ['Как проходят занятия', '/kak-prohodyat-zanyatiya/']])],
     },
+    help: {
+      path: '/pomoshch/',
+      title: 'Помощь родителям: запись, вход в кабинет, занятия — Инженерный клуб',
+      description: 'Ответы для родителей: как записаться на пробное занятие, где взять логин и пароль, почему тема закрыта, как подключиться к встрече с преподавателем и как вернуть деньги.',
+      jsonld: [breadcrumbs([['Главная', '/'], ['Помощь', '/pomoshch/']])],
+    },
   };
+
+  // Страница «Такой страницы нет»: GitHub Pages отдаёт 404.html на любой неизвестный адрес
+  writeFileSync(`${OUT}/404.html`, pageHtml(template, { head: seoHead({ title: `Такой страницы нет — ${SITE_NAME}`, description: 'Страница не найдена.', path: '/404.html', hide: true }), show: 'notFound' }));
 
   // Данные для смены title/description при переходах без перезагрузки
   const seoPages = {};
@@ -286,7 +295,7 @@ async function main() {
     : `User-agent: *\nAllow: /\nDisallow: /admin.html\n${SITE_URL ? `\nSitemap: ${SITE_URL}/sitemap.xml\n` : ''}`);
   if (SITE_URL && !NOINDEX) {
     const today = new Date().toISOString().slice(0, 10);
-    const urls = [['/', '1.0', 'weekly'], ['/programmy/', '0.9', 'weekly'], ['/kak-prohodyat-zanyatiya/', '0.7', 'monthly'], ['/kontakty/', '0.5', 'monthly'], ...memoPaths,
+    const urls = [['/', '1.0', 'weekly'], ['/programmy/', '0.9', 'weekly'], ['/kak-prohodyat-zanyatiya/', '0.7', 'monthly'], ['/pomoshch/', '0.5', 'monthly'], ['/kontakty/', '0.5', 'monthly'], ...memoPaths,
       ...courses.filter((c) => coursePageStats(c).lessons).map((c) => [`/kursy/${c.slug}/`, c.status === 'available' ? '0.8' : '0.5', 'weekly'])];
     writeFileSync(`${OUT}/sitemap.xml`, `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([p, pr, cf]) => `  <url><loc>${SITE_URL}${p}</loc><lastmod>${today}</lastmod><changefreq>${cf}</changefreq><priority>${pr}</priority></url>`).join('\n')}\n</urlset>\n`);
   }

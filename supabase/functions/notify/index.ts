@@ -162,6 +162,12 @@ async function compose(table: string, key: Record<string, unknown>): Promise<Not
       const name = await studentName(a.user_id);   // один пуш на просмотр серии, а не на каждый ответ
       return { dedupe: `ep:${a.run_id}`, title: `🎬 ${name} смотрит мультфильм`, body: cut(`${a.question} — ${a.answer || '(без ответа)'}`), url: '/admin.html#episodes' };
     }
+    case 'shop_orders': {
+      const { data: o } = await db.from('shop_orders').select('id,user_id,kind,title,price,note').eq('id', key.id).maybeSingle();
+      if (!o || o.kind !== 'prize') return null;
+      const name = await studentName(o.user_id);
+      return { dedupe: `so:${o.id}`, title: `🎁 Приз из лавки · ${name}`, body: cut(`${o.title} (${o.price} ⚙)${o.note ? ' — ' + o.note : ''}`), url: '/admin.html#shop' };
+    }
     case 'memo_ideas': {
       const { data: i } = await db.from('memo_ideas').select('id,child_name,age,idea_title').eq('id', key.id).maybeSingle();
       if (!i) return null;
