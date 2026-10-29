@@ -19,12 +19,12 @@ const { coursePageHtml, coursePageStats, HomeBlocks, Memo } = globalThis;
 
 const FILES = ['admin.html', 'sb-client.js', 'chat.js', 'support.js', 'hero.js', 'path.js', 'world.js', 'shop.js', 'city.js', 'brain.js', 'sw.js', 'admin.webmanifest', 'course-page.js', 'episode.js', 'home-blocks.js', 'memo.js', 'research.js', 'favicon.svg'];
 
-// Данные самозанятого (site-info.json) — для документов и подвала. Пустое поле → заметная пометка.
+// Данные продавца — индивидуального предпринимателя (site-info.json) — для документов и подвала. Пустое поле → заметная пометка.
 const INFO = JSON.parse(readFileSync('site-info.json', 'utf8'));
-const INFO_LABELS = { legalName: 'Фамилия Имя Отчество', legalShort: 'Фамилия И. О.', inn: 'ИНН', address: 'город или адрес для корреспонденции', email: 'электронная почта', phone: 'телефон', workHours: 'режим работы', docsDate: 'дата редакции', brand: 'название' };
-const infoValue = (k) => (k === 'npd' ? 'плательщик налога на профессиональный доход (самозанятый)' : INFO[k] ? String(INFO[k]).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]) : `<mark class="todo">[${INFO_LABELS[k] || k}]</mark>`);
+const INFO_LABELS = { legalName: 'Фамилия Имя Отчество', legalNameDat: 'Фамилии Имени Отчеству (кому)', legalShort: 'Фамилия И. О.', inn: 'ИНН', ogrnip: 'ОГРНИП', address: 'юридический адрес', email: 'электронная почта', phone: 'телефон', workHours: 'режим работы', docsDate: 'дата редакции', brand: 'название' };
+const infoValue = (k) => (k === 'status' ? 'индивидуальный предприниматель' : INFO[k] ? String(INFO[k]).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]) : `<mark class="todo">[${INFO_LABELS[k] || k}]</mark>`);
 function requisitesHtml() {
-  const rows = [['ФИО', 'legalName'], ['Статус', 'npd'], ['ИНН', 'inn'], ['Адрес', 'address'], ['Электронная почта', 'email'], ['Телефон', 'phone']];
+  const rows = [['Продавец', 'legalName'], ['Статус', 'status'], ['ИНН', 'inn'], ['ОГРНИП', 'ogrnip'], ['Юридический адрес', 'address'], ['Электронная почта', 'email'], ['Телефон', 'phone']];
   const bank = ['bankName', 'bankAccount', 'bankCorr', 'bankBik'].some((k) => INFO[k])
     ? [['Банк', 'bankName'], ['Расчётный счёт', 'bankAccount'], ['Корр. счёт', 'bankCorr'], ['БИК', 'bankBik']] : [];
   return `<table class="req-table"><tbody>${[...rows, ...bank].map(([t, k]) => `<tr><th>${t}</th><td>${infoValue(k)}</td></tr>`).join('')}</tbody></table>`;
