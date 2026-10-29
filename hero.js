@@ -209,7 +209,7 @@
       const notes = events.filter((e) => e.gears && e.note).map((e) => e.note);
       const g = overlay(`<span class="hero-bits" aria-hidden="true">${bits()}</span><button class="hero-x" aria-label="Закрыть">×</button><h3>${esc(notes[0] || 'Награда!')}</h3>`
         + `<p class="hero-big">+${gears} ${plural(gears, 'шестерёнка', 'шестерёнки', 'шестерёнок')}</p>`
-        + `<p class="hero-hint" style="text-align:center">Шестерёнки копятся — скоро на них можно будет купить вещи для героя.</p>`
+        + `<p class="hero-hint" style="text-align:center">Потрать их в своём городе или в Лавке мастера.</p>`
         + `<div class="hero-btns"><span></span><button type="button" class="hero-b main">Ура!</button></div>`, () => sb.rpc('hero_seen'));
       g.box.querySelector('.hero-x').onclick = g.close; g.box.querySelector('.hero-b.main').onclick = g.close; ding(true);
       return;
@@ -235,7 +235,7 @@
   // ---------- История начислений ----------
   const SRC = { onboarding: 'Анкета', episode: 'Мультфильм', lesson: 'Тема', research: 'Исследование', chat: 'Чат темы', teacher: 'Оценка преподавателя', bonus: 'Бонус', quiz: 'Мини-задание', streak: 'Серия дней', chest: 'Сундук' };
   const chips = (d) => Object.entries(d || {}).map(([k, v]) => S[k] ? `<span class="hero-chip${v < 0 ? ' down' : ''}" style="--c:${S[k].color}">${sign(v)} ${S[k].name}</span>` : '').join('');
-  const histHtml = (ev) => ev.length ? `<ul class="hero-hist">${ev.map((e) => `<li><b>${SRC[e.source] || ''}</b>${e.note ? ' · ' + esc(e.note) : ''}<small>${new Date(e.created_at).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</small>${chips(e.deltas)}${e.gears ? `<span class="hero-chip" style="--c:#8a6d1f">+${e.gears} ⚙</span>` : ''}</li>`).join('')}</ul>` : '<p class="hero-hint">Пока пусто.</p>';
+  const histHtml = (ev) => ev.length ? `<ul class="hero-hist">${ev.map((e) => `<li><b>${SRC[e.source] || ''}</b>${e.note ? ' · ' + esc(e.note) : ''}<small>${new Date(e.created_at).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</small>${chips(e.deltas)}${e.gears ? `<span class="hero-chip" style="--c:${e.gears > 0 ? '#8a6d1f' : '#a65435'}">${e.gears > 0 ? '+' : '−'}${Math.abs(e.gears)} ⚙</span>` : ''}</li>`).join('')}</ul>` : '<p class="hero-hint">Пока пусто.</p>';
   async function details({ sb, userId, hero }) {
     const o = overlay('<p class="hero-hint">Загрузка…</p>');
     let { data, error } = await sb.from('hero_events').select('source,deltas,gears,note,created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(40);
@@ -298,7 +298,7 @@
     style();
     const [{ data: hero }, { data: ev }] = await Promise.all([
       sb.from('hero').select('*').eq('user_id', userId).maybeSingle(),
-      sb.from('hero_events').select('source,deltas,note,created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(15)]);
+      sb.from('hero_events').select('source,deltas,gears,note,created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(15)]);
     const h = hero || {}, t = total(h), a = h.onboarding || {};
     const ans = h.onboarded_at ? `<div class="small" style="margin:8px 0">${[
       a.age && 'возраст: ' + a.age, (a.likes || []).length && 'любит: ' + a.likes.map((v) => LABEL.likes[v]).join('; '),
@@ -309,7 +309,24 @@
       + `<div class="hero-stats" style="margin-bottom:10px">${KEYS.map((k) => statRow(k, h[k] | 0, { text: `ур. ${level(h[k]).lv} · ${h[k] | 0}` })).join('')}</div>${ans}`
       + `<details><summary><b>Оценить героя</b> — плюсы или минусы по характеристикам (шаг — 10 очков)</summary>${gradeHtml('heroGradeAll')}`
       + `<div class="row"><input id="heroGradeNote" placeholder="Что увидеть ученику (необязательно)" maxlength="500" style="flex:1;min-width:220px"><button class="primary" type="button" id="heroGradeGo">Начислить</button></div></details>`
+      + `<details style="margin-top:8px" open><summary><b>Шестерёнки: ${h.gears | 0} ⚙</b> — добавить или списать</summary>`
+      + `<div class="row" style="margin-top:8px;align-items:center"><button type="button" data-gd="-10">−10</button><button type="button" data-gd="-1">−1</button>`
+      + `<input id="heroGearsN" type="number" step="1" value="10" style="width:90px;text-align:center" aria-label="Сколько шестерёнок"><button type="button" data-gd="1">+1</button><button type="button" data-gd="10">+10</button>`
+      + `<input id="heroGearsNote" placeholder="Причина — её увидит ученик (необязательно)" maxlength="500" style="flex:1;min-width:200px">`
+      + `<button class="primary" type="button" id="heroGearsAdd">Добавить</button><button type="button" id="heroGearsSub">Списать</button></div>`
+      + `<p class="small muted" style="margin:6px 0 0">Число в поле — сколько добавить или списать. Ниже нуля не списывается. Подарок ученик увидит праздничным экраном.</p></details>`
       + `<details style="margin-top:8px"><summary>История начислений</summary>${histHtml(ev || [])}</details></div>`;
+    const gn = el.querySelector('#heroGearsN');
+    el.querySelectorAll('[data-gd]').forEach((b) => (b.onclick = () => { gn.value = Math.max(1, (parseInt(gn.value, 10) || 0) + +b.dataset.gd); }));
+    const gearsGo = async (sign) => {
+      const n = Math.abs(parseInt(gn.value, 10) || 0); if (!n) return alert('Укажите, сколько шестерёнок');
+      if (sign < 0 && !confirm(`Списать ${n} ⚙ у ученика?`)) return;
+      const { error } = await sb.rpc('admin_gears', { p_user: userId, p_delta: sign * n, p_note: el.querySelector('#heroGearsNote').value });
+      if (error) return alert('Не получилось: ' + error.message);
+      adminCard(el, { sb, userId });
+    };
+    el.querySelector('#heroGearsAdd').onclick = () => gearsGo(1);
+    el.querySelector('#heroGearsSub').onclick = () => gearsGo(-1);
     el.querySelector('#heroGradeGo').onclick = async () => {
       const d = gradeRead('heroGradeAll'); if (!Object.keys(d).length) return alert('Выберите хотя бы одну характеристику');
       const { error } = await sb.rpc('hero_grade', { p_user: userId, p_deltas: d, p_note: el.querySelector('#heroGradeNote').value });
