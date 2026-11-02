@@ -359,6 +359,7 @@
     const chests = new Set((status && status.chests) || []);
     const all = modules.flatMap((m) => m.lessons), ti = all.findIndex((l) => l.state !== 'done');
     const curBlock = ti >= 0 ? modules.findIndex((m) => m.lessons.includes(all[ti])) : modules.length - 1, fogFrom = curBlock + 1;
+    const n0 = /вводн/i.test((modules[0] && modules[0].title) || '') ? 0 : 1;   // вводный блок — земля 0, дальше 1, 2, 3…
     const { lay, road, imgs } = build(modules, slug, fogFrom, ti, (lay_, road_) => {
       const st_ = lay_.pts.filter((p) => p.kind === 'st'); return ti >= 0 ? road_.knots[lay_.pts.indexOf(st_[ti])] : road_.len;
     });
@@ -381,7 +382,7 @@
     });
     lay.regions.forEach((r) => {
       const ls = r.m.lessons, done = ls.filter((l) => l.state === 'done').length;
-      html += `<div class="wm-land${r.bi >= fogFrom ? ' fog' : ''}" style="top:${f1(((r.y0 + 22) / H) * 1000) / 10}%"><small>Земля ${r.bi + 1} · ${done} из ${ls.length}${done === ls.length && ls.length ? ' ✓' : ''}</small><b>${esc(r.m.title)}</b><span>${esc(r.biome.name)}</span></div>`;
+      html += `<div class="wm-land${r.bi >= fogFrom ? ' fog' : ''}" style="top:${f1(((r.y0 + 22) / H) * 1000) / 10}%"><small>Земля ${r.bi + n0} · ${done} из ${ls.length}${done === ls.length && ls.length ? ' ✓' : ''}</small><b>${esc(r.m.title)}</b><span>${esc(r.biome.name)}</span></div>`;
       r.stations.forEach((p) => {
         const l = p.l, sub = l.state === 'current' ? (l.steps ? `шаги: ${l.done} из ${l.steps}` : '') : { done: 'пройдена', review: 'на проверке', open: 'открыта', locked: 'закрыта', buy: 'не оплачена' }[l.state];
         const pct = l.steps ? Math.round((l.done * 100) / l.steps) : 0;

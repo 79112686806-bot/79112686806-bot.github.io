@@ -12,7 +12,7 @@
 // onAnswer({ run, node, question, answer, heard, via, tag }) — ответ на вопрос серии (run — один просмотр,
 // via: voice | text | button | mixed | skip | timeout, heard — что дословно распознал микрофон, tag — следующий узел).
 // Если onAnswer вернёт обещание с { deltas } (очки героя), плеер покажет их поверх кадра (Hero.pop из hero.js).
-// Серия 1 описана здесь; остальные — в episodes/<серия>.js (Episode.define), плеер подгружает файл, когда серию открывают.
+// Серия 0 (ep1, вводное занятие) описана здесь; остальные — в episodes/<серия>.js (Episode.define), плеер подгружает файл, когда серию открывают.
 // nameFrom: 'ep1' — имя ребёнка берётся из его ответа в серии 1; names: 'ep1' — записи обращений по имени из серии 1.
 (function () {
   const has = (t, ...w) => w.some((x) => t.includes(x));
@@ -31,11 +31,11 @@
   // ask: вопрос после ролика; kind: name | choice | free | ideas | any | pick (выбор своей идеи) | checks (вопросы «да / пока нет»);
   // next(ответ) → следующий узел
   // названия всех серий (нужны карточке занятия и админке до загрузки самой серии)
-  const TITLES = { ep2: 'Серия 2. Как придумали колесо', ep3: 'Серия 3. Трение, скольжение, качение', ep4: 'Серия 4. Большие и маленькие, узкие и широкие' };
+  const TITLES = { ep2: 'Серия 1. Как придумали колесо', ep3: 'Серия 2. Трение, скольжение, качение', ep4: 'Серия 3. Большие и маленькие, узкие и широкие' };
   const EPV = {/*EPV*/};   // метки версий файлов episodes/*.js — подставляет сборка
   const EPISODES = {
     ep1: {
-      title: 'Серия 1. Как мыслит инженер',   // обложка — /assets/episodes/<серия>-cover.webp (video/ep1/cover.mjs)
+      title: 'Серия 0. Как мыслит инженер',   // обложка — /assets/episodes/<серия>-cover.webp (video/ep1/cover.mjs)
       start: 'n01',
       slots: { name: [660, 300, 600, 80], problem: [580, 222, 340, 104], ideas: [572, 400, 816, 296], idea: [580, 196, 760, 76], good: [576, 346, 358, 104], fix: [986, 346, 358, 104], checks: [1290, 493, 50, 182] },   // в пикселях кадра 1920×1080
       endText: 'Не забудь задание: найди дома три предмета, которые придумали инженеры, и подумай, как бы ты их улучшил.',
@@ -195,7 +195,7 @@
     const stage = $('.ep-stage'), askEl = $('.ep-ask'), heard = $('.ep-heard'), opts = $('.ep-opts'), big = $('.ep-big');
     const prog = $('.ep-prog'), doneEl = $('.ep-done'), reachEl = $('.ep-reach'), knob = $('.ep-knob'), tip = $('.ep-tip'), marksEl = $('.ep-marks'), volIn = $('.ep-vol input');
     const slot = { name: $('.ep-slot-name'), problem: $('.ep-slot-problem'), ideas: $('.ep-slot-ideas'), idea: $('.ep-slot-idea'), good: $('.ep-slot-good'), fix: $('.ep-slot-fix'), checks: $('.ep-slot-checks') };
-    for (const [k, [x, y, w, h]] of Object.entries(E.slots)) Object.assign(slot[k].style, { left: x / 19.2 + '%', top: y / 10.8 + '%', width: w / 19.2 + '%', height: h / 10.8 + '%' });
+    for (const [k, [x, y, w, h]] of Object.entries(E.slots || {})) Object.assign(slot[k].style, { left: x / 19.2 + '%', top: y / 10.8 + '%', width: w / 19.2 + '%', height: h / 10.8 + '%' });
 
     const newRun = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16)));
     let run = newRun();

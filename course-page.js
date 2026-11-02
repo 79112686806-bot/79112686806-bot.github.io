@@ -13,7 +13,7 @@
       .map((m) => ({ ...m, lessons: (m.lessons || []).slice().sort((a, b) => a.sort - b.sort) }));
   }
 
-  // «Занятие 1. Вводное» → ['Занятие 1', 'Вводное']; «Модуль 3. …» → ['Модуль 3', '…']
+  // «Занятие 0. Вводное» → ['Занятие 0', 'Вводное']; «Модуль 3. …» → ['Модуль 3', '…']
   const split = (t) => {
     const m = String(t || '').match(/^((?:Заняти[ея]|Модуль|Блок)\s+[\d–-]+)\.\s*(.+)$/);
     return m ? [m[1], m[2]] : ['', String(t || '')];
@@ -77,8 +77,10 @@ ${available
 <h2>Программа курса «${esc(c.title)}»</h2>
 ${modules.length
     ? `<ol class="course-road">${modules.map((m, i) => {
+      // вводный блок — 0, дальше 1, 2, 3…
+      const n0 = /вводн/i.test(modules[0].title) ? 0 : 1;
       const [kind, name] = split(m.title);
-      return `<li class="road-stop"><span class="road-mark" aria-hidden="true">${i + 1}</span><div class="road-body">${kind ? `<span class="road-kind">${esc(kind)}</span>` : ''}<h3>${esc(name)}</h3>
+      return `<li class="road-stop"><span class="road-mark" aria-hidden="true">${i + n0}</span><div class="road-body">${kind ? `<span class="road-kind">${esc(kind)}</span>` : ''}<h3>${esc(name)}</h3>
 <ul class="road-mods">${m.lessons.map((l) => {
         const [badge, title] = split(l.title);
         return `<li class="road-mod">${badge ? `<span class="road-badge">${esc(badge)}</span>` : ''}<b>${esc(title)}</b>${summaryHtml(l.summary)}${l.research_task ? `<span class="road-lab"><i>исследование</i>${esc(l.research_task)}</span>` : ''}</li>`;
