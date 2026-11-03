@@ -159,7 +159,7 @@
   }
   function mountNow(root, { id, sb, onMeet, onAnswer }) {
     const E = EPISODES[id];
-    const blank = () => ({ name: '', problem: '', react: '', ideas: [], idea: '', fb: '', good: '', fix: '', checks: [] });
+    const blank = () => ({ name: '', problem: '', react: '', ideas: [], idea: '', fb: '', good: '', fix: '', checks: [], said: '', back: '' });
     const S = blank();
     const G = E.graph(S, E);
     const KEY = 'ep-progress:' + id;
@@ -168,7 +168,7 @@
     wrap.innerHTML =
       `<div class="ep-stage">` +
         `<div class="ep-slot ep-slot-name"></div><div class="ep-slot ep-slot-problem"></div><div class="ep-slot ep-slot-ideas"></div>` +
-        `<div class="ep-slot ep-slot-idea"></div><div class="ep-slot ep-slot-good ep-slot-note"></div><div class="ep-slot ep-slot-note ep-slot-fix"></div><div class="ep-slot ep-slot-checks"></div>` +
+        `<div class="ep-slot ep-slot-idea"></div><div class="ep-slot ep-slot-good ep-slot-note"></div><div class="ep-slot ep-slot-note ep-slot-fix"></div><div class="ep-slot ep-slot-checks"></div><div class="ep-slot ep-slot-said"></div>` +
         `<div class="ep-spin" hidden></div>` +
         `<div class="ep-skip ep-skip-l"><span>${ICON.back}−10 с</span></div><div class="ep-skip ep-skip-r"><span>${ICON.fwd}+10 с</span></div>` +
         `<button type="button" class="ep-big" data-a="toggle" aria-label="Продолжить">${ICON.play}</button>` +
@@ -194,7 +194,7 @@
     const $ = (s) => wrap.querySelector(s);
     const stage = $('.ep-stage'), askEl = $('.ep-ask'), heard = $('.ep-heard'), opts = $('.ep-opts'), big = $('.ep-big');
     const prog = $('.ep-prog'), doneEl = $('.ep-done'), reachEl = $('.ep-reach'), knob = $('.ep-knob'), tip = $('.ep-tip'), marksEl = $('.ep-marks'), volIn = $('.ep-vol input');
-    const slot = { name: $('.ep-slot-name'), problem: $('.ep-slot-problem'), ideas: $('.ep-slot-ideas'), idea: $('.ep-slot-idea'), good: $('.ep-slot-good'), fix: $('.ep-slot-fix'), checks: $('.ep-slot-checks') };
+    const slot = { name: $('.ep-slot-name'), problem: $('.ep-slot-problem'), ideas: $('.ep-slot-ideas'), idea: $('.ep-slot-idea'), good: $('.ep-slot-good'), fix: $('.ep-slot-fix'), checks: $('.ep-slot-checks'), said: $('.ep-slot-said') };
     for (const [k, [x, y, w, h]] of Object.entries(E.slots || {})) Object.assign(slot[k].style, { left: x / 19.2 + '%', top: y / 10.8 + '%', width: w / 19.2 + '%', height: h / 10.8 + '%' });
 
     const newRun = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16)));
@@ -475,7 +475,7 @@
     const loopListen = (isDone, o) => { const loop = () => { if (isDone() || dead) return; if (paused) { resumeQ.push(loop); return; } rec = listen({ ...o, onEnd: () => setTimeout(loop, 200) }); }; relisten = loop; loop(); };
     // текстовые места на доске и отметки проверки (✓ — да, ? — пока нет)
     function paintSlots() {
-      for (const k of ['problem', 'idea', 'good', 'fix']) slot[k].textContent = S[k] || '';
+      for (const k of ['problem', 'idea', 'good', 'fix', 'said']) slot[k].textContent = S[k] || '';
       slot.checks.innerHTML = (S.checks || []).map((v) => `<i class="${v ? 'yes' : 'no'}">${v ? '✓' : '?'}</i>`).join('');
     }
     function ideaEl(s) { const d = document.createElement('div'); d.className = 'ep-idea'; d.textContent = s.slice(0, 60); slot.ideas.append(d); }
@@ -704,7 +704,40 @@
     };
   }
 
+  // ---------- Ответ не по теме на свободный вопрос (серии со 2-й) ----------
+  // offTopic(ответ, слова темы) → узел реакции: xOdd — шутка/бессмыслица, xFood — еда, xPet — животные, xGame — игры и телефон,
+  // xOff — про другое; null — ответ по теме, пустой или «не знаю» (тогда обычная ветка). Слова темы ищутся внутри ответа,
+  // слова групп — с начала слова (= — слово целиком). В графе: aside(S, 'n05', ответ, тема) — запоминает ответ (заметка said)
+  // и куда вернуться (n05r — тот же вопрос ещё раз); повторный ответ идёт уже по обычным веткам.
+  const OFF_NONE = /^(не знаю|незнаю|не помню|без понятия|ничего|нет|хз|забыл|забыла)([\s.,!?]|$)/;
+  const OFF_ODD = ['динозавр', 'инопланет', 'пришельц', 'зомби', 'монстр', 'привиден', 'призрак', 'дракон', 'единорог', 'вампир', 'какашк', 'какаш', 'пук', 'жоп', '=попа', 'дурак',
+    'ерунд', 'фигн', '=бла', 'бла-бла', 'хаха', 'ха-ха', '=лол', 'кринж', 'скибиди', 'туалет', 'сопл', 'бебе', 'абракадабр', 'шмяк', 'тыгыдык'];
+  const OFF_FOOD = ['пицц', 'торт', 'конфет', 'морожен', 'шоколад', 'бургер', 'гамбургер', 'чипс', 'бутерброд', 'печень', 'макарон', 'пельмен', 'сосиск', 'колбас',
+    'банан', 'арбуз', 'яблок', 'кушат', 'покушат', 'поесть', 'есть хочу', 'хочу есть','=еда', '=еду', '=еды', 'голод', 'обед', 'ужин', 'завтрак', 'вкусн', 'сладк', '=каша', '=кашу', '=суп',
+    '=блин', 'блинчик', 'пирож', 'пирог', '=сок', '=кола', 'лимонад', 'картош', 'наггетс', 'шаурм', 'суши', 'роллы'];
+  const OFF_PET = ['=кот', '=кота', '=коты', 'котик', 'котен', 'котэ', 'кошк', 'кошечк', 'собак', 'собач', 'щен', '=пес', 'песик', 'хомяк', 'попуга', 'рыбк', 'лошад', 'коров', 'слон', 'жираф',
+    'тигр', '=лев', '=львы', 'медвед', 'заяц', 'зайц', 'зайк', 'кролик', '=лиса', 'лисиц', '=волк', 'птиц', 'птичк', 'черепах', 'змея', 'змей', 'животн', 'зверь', 'звери', 'зверюш',
+    'обезьян', 'пингвин', 'крокодил', 'акул', 'дельфин', 'капибар', 'панд'];
+  const OFF_GAME = ['игр', 'поигра', 'майнкрафт', 'minecraft', 'роблокс', 'roblox', 'фортнайт', 'fortnite', 'бравл', 'brawl', 'стандофф', 'standoff', 'телефон', 'смартфон', 'планшет', 'компьютер', '=комп',
+    'мульт', 'ютуб', 'youtube', 'тикток', 'tiktok', 'приставк', 'плейстейшн', 'playstation', 'xbox', 'иксбокс', 'видео', 'футбол', '=мяч', 'гулят', 'погулят', 'телевизор', 'сериал', 'аниме', 'лего', 'lego'];
+  const words = (t) => t.split(/[^a-zа-я0-9-]+/).filter(Boolean);
+  const hasW = (t, list) => { const w = words(t); return list.some((s) => (s[0] === '=' ? w.includes(s.slice(1)) : s.includes(' ') ? t.includes(s) : w.some((x) => x.startsWith(s)))); };
+  const silly = (t) => { const l = t.replace(/[^а-яa-z]/g, ''); return l.length < 3 || !/[аеиоуыэюяaeiouy]/.test(l) || (l.length >= 5 && new Set(l).size <= 2) || /(.)\1\1/.test(l); };
+  function offTopic(text, topic) {
+    const t = norm(text || '');
+    if (!t || OFF_NONE.test(t) || has(t, ...topic)) return null;
+    if (silly(t) || hasW(t, OFF_ODD)) return 'xOdd';
+    if (hasW(t, OFF_FOOD)) return 'xFood';
+    if (hasW(t, OFF_PET)) return 'xPet';
+    if (hasW(t, OFF_GAME)) return 'xGame';
+    return 'xOff';
+  }
+  const OFF_NODES = ['xOdd', 'xFood', 'xPet', 'xGame', 'xOff'];
+  function aside(S, q, text, topic) { const k = offTopic(text, topic); if (!k) return null; S.said = cap(String(text).trim()).slice(0, 80); S.back = q + 'r'; return k; }
+  // узлы реакций для графа серии: показать ответ на заметке и вернуться к вопросу
+  const offGraph = (S) => Object.fromEntries(OFF_NODES.map((k) => [k, { show: ['said'], delay: 400, next: () => S.back || null }]));
+
   // Episode.define(id, серия) — из файлов episodes/*.js; util — общие помощники для их графов
   const define = (id, e) => { EPISODES[id] = e; };
-  window.Episode = { mount, define, util: { has, norm, cap }, titles: { ...TITLES, ...Object.fromEntries(Object.entries(EPISODES).map(([k, v]) => [k, v.title])) } };
+  window.Episode = { mount, define, util: { has, norm, cap, offTopic, aside, offGraph, OFF_NODES }, titles: { ...TITLES, ...Object.fromEntries(Object.entries(EPISODES).map(([k, v]) => [k, v.title])) } };
 })();
