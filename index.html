@@ -1662,18 +1662,37 @@ async function completePayment(){
   // ЮKassa: переходим на страницу оплаты, оттуда покупатель вернётся на /?pay=<заказ> (payReturn)
   if(res&&res.confirmation_url){payMsg.textContent='Переходим к оплате…';location.href=res.confirmation_url;return}
   btn.disabled=false;paymentForm.style.display='none';paymentSuccess.style.display='block'}
+// Счёт, выставленный вручную в админке (ссылка /?invoice=<id>): сумма и назначение → согласие с офертой → ЮKassa
+async function invoiceOpen(id){
+  show('<h2>Счёт на оплату</h2><p>Загружаем…</p>');
+  const{data,error}=await sb.functions.invoke('yookassa',{body:{invoice:id}});
+  let r=data;if(error){try{r=await error.context.json()}catch(e){r={}}}
+  if(!r||!r.status)return show('<h2>Счёт не найден</h2><p>'+escapeHtml((r&&r.message)||'Проверьте ссылку или напишите нам.')+'</p>');
+  if(r.status==='paid')return show('<h2>Счёт уже оплачен</h2><p>Спасибо! Доступ открыт в личном кабинете.</p><button class="btn primary" onclick="closeModal();enterCabinet()">Войти в личный кабинет</button>');
+  if(r.status!=='open')return show('<h2>Счёт отменён</h2><p>Этот счёт больше не действует. Напишите нам — пришлём новый.</p>');
+  show('<h2>Счёт на оплату</h2><p><b>'+escapeHtml(r.title)+'</b></p><p class="plan-total">К оплате: <b>'+RUB(r.amount)+'</b></p>'+
+    '<p class="note">Доступ откроется в личном кабинете для <b>'+escapeHtml(r.email)+'</b>, туда же придут письмо и кассовый чек.</p>'+
+    '<label class="consent"><input type="checkbox" id="invConsent"><span>Я принимаю условия <a href="/dokumenty/oferta/" target="_blank">публичной оферты</a> и даю <a href="/dokumenty/soglasie-na-obrabotku/" target="_blank">согласие на обработку персональных данных</a> — своих и ребёнка</span></label>'+
+    '<p class="note" id="invMsg"></p><button class="btn primary" id="invBtn">Оплатить '+RUB(r.amount)+'</button>'+
+    '<p class="note">Оплата — на защищённой странице ЮKassa: банковская карта, СБП или SberPay.</p>');
+  invBtn.onclick=async()=>{
+    if(!invConsent.checked){invMsg.textContent='Чтобы продолжить, примите условия оферты и дайте согласие на обработку персональных данных.';return}
+    invBtn.disabled=true;invMsg.textContent='Переходим к оплате…';
+    const{data:d,error:e}=await sb.functions.invoke('yookassa',{body:{invoice:id,action:'pay',offer_accepted:true}});
+    let x=d;if(e){try{x=await e.context.json()}catch(_){x={}}}
+    if(x&&x.confirmation_url){location.href=x.confirmation_url;return}
+    invBtn.disabled=false;invMsg.textContent=(x&&x.message)||'Не получилось перейти к оплате. Попробуйте ещё раз или напишите нам.'}}
 // Возврат с ЮKassa: проверяем заказ (функция yookassa сама спросит ЮKassa) и показываем, чем закончилась оплата
 async function payReturn(id){
   const box=(h,t,btns)=>show('<h2>'+h+'</h2><p>'+t+'</p>'+btns);
   const toCab='<button class="btn primary" onclick="closeModal();enterCabinet()">Войти в личный кабинет</button>';
   box('Проверяем оплату…','Это займёт несколько секунд.','');
-  const{data:{session}}=await sb.auth.getSession();
-  if(!session)return box('Спасибо!','Если оплата прошла, доступ уже открыт, а письмо с логином придёт на почту. Войдите в личный кабинет, чтобы начать.',toCab);
   let st='pending';
   for(let k=0;k<10&&st==='pending';k++){
     const{data}=await sb.functions.invoke('yookassa',{body:{order_id:id}}).catch(()=>({data:null}));st=(data&&data.status)||'pending';
     if(st==='pending')await new Promise(r=>setTimeout(r,3000))}
   if(st==='paid')return box('🎉 Оплата прошла успешно!','Доступ к курсу открыт в личном кабинете. Письмо с логином и кассовый чек придут на почту — если их нет, загляните в папку «Спам».',toCab);
+  if(st==='refunded')return box('Оплата возвращена','По этому заказу сделан возврат. Если есть вопросы — напишите нам.',toCab);
   if(st==='canceled')return box('Оплата не прошла','Деньги не списаны. Можно попробовать ещё раз — другой картой или через СБП. Если что-то не получается, напишите нам.','<button class="btn primary" onclick="closeModal();showPage(&quot;courses&quot;)">Попробовать ещё раз</button>');
   box('Оплата обрабатывается','Обычно это занимает пару минут. Когда платёж пройдёт, курс откроется в личном кабинете сам, а на почту придёт письмо.',toCab)}
 async function enterDashboard(){return enterCabinet()}
@@ -2233,7 +2252,9 @@ sb.auth.getSession().then(({data:{session}})=>navAuth(session)).catch(()=>navAut
 ensureCourses().then(()=>{const i=courses.findIndex((c,k)=>isAvailable(k)),pr=i>=0&&coursePrice[i];if(!pr)return;if(pr.price_trial)heroTrial.textContent=RUB(pr.price_trial);if(pr.price_trial_base)heroTrialBase.textContent=RUB(pr.price_trial_base)}).catch(()=>{});
 sb.auth.onAuthStateChange((ev,session)=>{if(ev==='SIGNED_IN'||ev==='SIGNED_OUT')navAuth(session)});
 if(new URLSearchParams(location.search).has('kabinet')){history.replaceState({},'',location.pathname);enterCabinet()}
-{const pay=new URLSearchParams(location.search).get('pay');if(pay&&/^[0-9a-f-]{36}$/i.test(pay)){history.replaceState({},'',location.pathname);payReturn(pay)}}
+{const q=new URLSearchParams(location.search),pay=q.get('pay'),inv=q.get('invoice');
+  if(pay&&/^[0-9a-f-]{36}$/i.test(pay)){history.replaceState({},'',location.pathname);payReturn(pay)}
+  else if(inv&&/^[0-9a-f-]{36}$/i.test(inv)){history.replaceState({},'',location.pathname);invoiceOpen(inv)}}
 function speak(text){if('speechSynthesis' in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ru-RU';u.rate=.95;speechSynthesis.speak(u)}}
 function speakWelcome(){speak(document.getElementById('welcomeText').textContent)}
 </script></body></html>

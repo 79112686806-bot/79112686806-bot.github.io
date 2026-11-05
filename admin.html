@@ -141,6 +141,7 @@ label.filebtn{display:inline-block;border:1px solid var(--accent);color:var(--ac
   <a href="#episodes" data-tab="episodes"><span class="ic">🎬</span>Ответы в сериях<span class="navcount" id="eCount" hidden></span></a>
   <a href="#support" data-tab="support"><span class="ic">❓</span>Вопросы с сайта<span class="navcount" id="sCount" hidden></span></a>
   <a href="#leads" data-tab="leads"><span class="ic">📝</span>Заявки<span class="navcount" id="lCount" hidden></span></a>
+  <a href="#invoices" data-tab="invoices"><span class="ic">🧾</span>Счета</a>
   <a href="#shop" data-tab="shop"><span class="ic">🎁</span>Лавка и призы<span class="navcount" id="pCount" hidden></span></a>
   <h4>Курсы</h4>
   <a href="#materials" data-tab="materials"><span class="ic">📚</span>Материалы курса</a>
@@ -210,6 +211,7 @@ async function logout(){await sb.auth.signOut();location.hash='';location.reload
 // ---------- Маршруты: #students, #student/<id> ----------
 // одна строка «что здесь делать» над разделом (у отзывов, видео и игры пояснение уже в самом разделе)
 const HINTS={
+  invoices:'Счёт со своей ценой (скидкой): выберите курс и что открыть, укажите сумму — скопируйте ссылку и отправьте человеку. После оплаты доступ откроется сам, письмо и чек придут на почту.',
   queue:'Всё, что ждёт вашего ответа. Нажмите на плитку — откроется нужный раздел; ниже — те же дела списком.',
   calls:'Расписание занятий с преподавателем. Назначить занятие — в карточке ученика: тема → «📞 Занятие и видеозапись».',
   students:'Все ученики. Нажмите на ученика — откроется его курс по темам: подтвердить тему, ответить в чате, назначить занятие.',
@@ -230,6 +232,7 @@ function route(){closeAdminChat();matView=null;const h=location.hash.slice(1)||'
   if(tab==='materials')return showMaterials(arg?+arg:undefined);
   if(tab==='calls')return showCalls();
   if(tab==='leads')return showLeads();
+  if(tab==='invoices')return showInvoices();
   if(tab==='shop')return showShop();
   if(tab==='support')return showSupport(arg);
   if(tab==='notify')return showNotify();
@@ -642,6 +645,74 @@ async function saveMemoVideo(slug){const url=document.querySelector(`#mv-${slug}
 
 // ---------- «Заявки» с сайта ----------
 const LEAD_RU={new:'новая',in_progress:'в работе',done:'обработана'};
+// ---------- Счета, выставленные вручную: своя цена за курс / пробное / модули; оплата по ссылке через ЮKassa ----------
+let invC=[];
+const INV_RU={open:['ждёт оплаты','b-warn'],paid:['оплачен','b-ok'],canceled:['отменён','b-mute']};
+const invLink=id=>location.origin+'/?invoice='+id;
+async function showInvoices(){app.innerHTML='<p class="muted">Загрузка счетов…</p>';
+  const[{data:list,error},{data:cs}]=await Promise.all([
+    sb.from('invoices').select('id,email,name,title,amount,status,created_at,paid_at,course_id').order('created_at',{ascending:false}).limit(300),
+    sb.from('courses').select('id,title,price,price_trial,price_lesson,sort,modules(id,sort,title,lessons(id,sort,title))').order('sort')]);
+  if(error){app.innerHTML='<p>Ошибка: '+esc(error.message)+'</p><p class="small muted">Если таблицы нет — выполните миграцию 20261107000045_invoices.sql.</p>';return}
+  invC=(cs||[]).map(c=>({...c,modules:(c.modules||[]).sort((a,b)=>a.sort-b.sort).map(m=>({...m,lessons:(m.lessons||[]).sort((a,b)=>a.sort-b.sort)}))}));
+  const ct=id=>(invC.find(c=>c.id===id)||{}).title||'—';
+  app.innerHTML=`<h1>Счета</h1>
+    <div class="card"><h2 style="margin-top:0">Новый счёт</h2>
+      <div class="grid">
+        <label>Почта покупателя — на неё откроется доступ и придёт чек<input id="ivEmail" type="email" placeholder="parent@mail.ru"></label>
+        <label>Кому (для себя, необязательно)<input id="ivName" placeholder="Иванова Мария"></label>
+        <label>Курс<select id="ivCourse" onchange="invForm(event)">${invC.map(c=>`<option value="${c.id}">${esc(c.title)}</option>`).join('')}</select></label>
+        <label>Что открыть<select id="ivKind" onchange="invForm(event)"><option value="full">Весь курс</option><option value="trial">Пробное занятие</option><option value="custom">Выбранные блоки и модули</option></select></label>
+      </div>
+      <div id="ivPick" style="margin-top:12px"></div>
+      <div class="grid" style="margin-top:12px">
+        <label>Сумма, ₽ — можно со скидкой<input id="ivAmount" type="number" min="1" step="1" oninput="invPriceNote()"></label>
+        <label>Назначение — так будет в счёте и в чеке<input id="ivTitle" maxlength="128"></label>
+      </div>
+      <p class="small muted" id="ivNote"></p>
+      <div class="row"><button class="primary" onclick="invCreate()">Создать счёт</button><span class="small" id="ivMsg"></span></div>
+      <div id="ivDone"></div>
+    </div>
+    <h2>Выставленные счета <span class="muted small">(${(list||[]).length})</span></h2>
+    ${(list||[]).length?`<table><thead><tr><th>Дата</th><th>Кому</th><th>Назначение</th><th>Сумма</th><th>Статус</th><th></th></tr></thead><tbody>${list.map(v=>`<tr style="cursor:default">
+      <td class="small">${fmtDate(v.created_at)}</td><td>${esc(v.name)||''}<div class="small muted">${esc(v.email)}</div></td>
+      <td>${esc(v.title)}<div class="small muted">${esc(ct(v.course_id))}</div></td><td><b>${Number(v.amount).toLocaleString('ru-RU')} ₽</b></td>
+      <td><span class="badge ${INV_RU[v.status][1]}">${INV_RU[v.status][0]}</span>${v.paid_at?`<div class="small muted">${fmtDate(v.paid_at)}</div>`:''}</td>
+      <td class="small">${v.status==='open'?`<button onclick="invCopy('${v.id}')">Скопировать ссылку</button> <button class="link" onclick="invCancel('${v.id}')">Отменить</button>`:''}</td></tr>`).join('')}</tbody></table>`
+      :'<p class="muted">Счетов пока нет.</p>'}`;
+  invForm()}
+// что выбрано: стандартная цена (подсказка рядом с суммой) и назначение (собирается само, можно поправить)
+function invSel(){const c=invC.find(x=>x.id===+ivCourse.value),k=ivKind.value;if(!c)return null;
+  let mods=[],les=[],n=0;
+  if(k==='custom'){mods=[...document.querySelectorAll('[data-ivmod]:checked')].map(i=>+i.dataset.ivmod);
+    les=[...document.querySelectorAll('[data-ivles]:checked')].filter(i=>!mods.includes(+i.dataset.of)).map(i=>+i.dataset.ivles);
+    n=c.modules.filter(m=>mods.includes(m.id)).reduce((a,m)=>a+m.lessons.length,0)+les.length}
+  const std=k==='full'?c.price:k==='trial'?c.price_trial:n*c.price_lesson;
+  const what=k==='full'?'весь курс':k==='trial'?'пробное занятие':'модули ('+n+')';
+  return{c,k,mods,les,n,std,title:('Онлайн-курс «'+c.title+'»: '+what).slice(0,128)}}
+function invForm(e){const c=invC.find(x=>x.id===+ivCourse.value),t=e&&e.target&&e.target.id;
+  if(!e||t==='ivCourse'||t==='ivKind'){
+    ivPick.innerHTML=ivKind.value!=='custom'||!c?'':c.modules.map(m=>`<div style="margin-top:8px"><label class="row"><input type="checkbox" data-ivmod="${m.id}" onchange="invMod(this)"><b>${esc(m.title)}</b> <span class="small muted">весь блок</span></label>
+      <div style="padding-left:26px">${m.lessons.map(l=>`<label class="row small"><input type="checkbox" data-ivles="${l.id}" data-of="${m.id}" onchange="invForm(event)">${esc(l.title)}</label>`).join('')}</div></div>`).join('')}
+  const s=invSel();if(!s)return;ivTitle.value=s.title;ivAmount.value=s.std||'';invPriceNote()}
+function invMod(el){document.querySelectorAll('[data-of="'+el.dataset.ivmod+'"]').forEach(i=>{i.checked=el.checked;i.disabled=el.checked});invForm({target:el})}
+function invPriceNote(){const s=invSel();if(!s)return;const a=+ivAmount.value||0;
+  ivNote.textContent=s.std?'Обычная цена — '+s.std.toLocaleString('ru-RU')+' ₽'+(a&&a<s.std?' · скидка '+(s.std-a).toLocaleString('ru-RU')+' ₽ ('+Math.round((s.std-a)*100/s.std)+'%)':''):''}
+async function invCreate(){const s=invSel(),email=ivEmail.value.trim().toLowerCase(),amount=Math.round(+ivAmount.value),title=ivTitle.value.trim();
+  const msg=t=>ivMsg.textContent=t;
+  if(!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email))return msg('Проверьте почту');
+  if(!s||s.k==='custom'&&!s.n)return msg('Отметьте блоки или модули');
+  if(!(amount>0))return msg('Укажите сумму');
+  if(!title)return msg('Укажите назначение');
+  const{data,error}=await sb.from('invoices').insert({email,name:ivName.value.trim()||null,course_id:s.c.id,kind:s.k,items:{module_ids:s.mods,lesson_ids:s.les},title,amount,created_by:me.id}).select('id').single();
+  if(error)return msg('Ошибка: '+error.message);
+  await showInvoices();
+  ivDone.innerHTML=`<div class="card" style="margin:14px 0 0;background:#f3faf1"><b>Счёт создан.</b> Отправьте человеку ссылку:<div class="row" style="margin-top:8px"><input readonly value="${invLink(data.id)}" style="flex:1;min-width:260px" onclick="this.select()"><button class="primary" onclick="invCopy('${data.id}')">Скопировать</button></div></div>`;
+  invCopy(data.id)}
+async function invCopy(id){try{await navigator.clipboard.writeText(invLink(id));toast('Ссылка скопирована')}catch(e){prompt('Скопируйте ссылку:',invLink(id))}}
+async function invCancel(id){if(!confirm('Отменить счёт? Ссылка перестанет работать.'))return;
+  const{error}=await sb.from('invoices').update({status:'canceled'}).eq('id',id).eq('status','open');if(error)return toast('Ошибка: '+error.message);showInvoices()}
+
 async function showLeads(){app.innerHTML='<p class="muted">Загрузка заявок…</p>';
   const[{data:leads,error},{data:courses}]=await Promise.all([sb.from('leads').select('*').order('created_at',{ascending:false}).limit(300),sb.from('courses').select('id,title')]);
   if(error){app.innerHTML='<p>Ошибка: '+esc(error.message)+'</p>';return}
