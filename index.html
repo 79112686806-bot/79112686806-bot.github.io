@@ -1696,7 +1696,12 @@ async function payReturn(id){
   if(st==='canceled')return box('Оплата не прошла','Деньги не списаны. Можно попробовать ещё раз — другой картой или через СБП. Если что-то не получается, напишите нам.','<button class="btn primary" onclick="closeModal();showPage(&quot;courses&quot;)">Попробовать ещё раз</button>');
   box('Оплата обрабатывается','Обычно это занимает пару минут. Когда платёж пройдёт, курс откроется в личном кабинете сам, а на почту придёт письмо.',toCab)}
 async function enterDashboard(){return enterCabinet()}
-async function enterCabinet(){const session=await requireLogin();if(!session)return;
+// неоплаченные заказы ЮKassa за 2 дня: спрашиваем функцию yookassa, она проверит платёж в ЮKassa и откроет курс,
+// если уведомление ЮKassa не дошло, а покупатель не вернулся на сайт после оплаты
+async function syncPendingOrders(uid){try{const since=new Date(Date.now()-2*864e5).toISOString();
+  const{data}=await sb.from('orders').select('id').eq('user_id',uid).eq('status','pending').eq('provider','yookassa').gte('created_at',since).order('created_at',{ascending:false}).limit(3);
+  await Promise.all((data||[]).map(o=>Promise.race([sb.functions.invoke('yookassa',{body:{order_id:o.id}}),new Promise(r=>setTimeout(r,8000))]).catch(()=>{})))}catch(e){console.warn('Проверка оплат:',e)}}
+async function enterCabinet(){const session=await requireLogin();if(!session)return;await syncPendingOrders(session.user.id);
   const[{data,error},{data:prog}]=await Promise.all([
     sb.from('enrollments').select('courses(id,slug,title,subtitle,sort,modules(sort,title,lessons(id,title,sort)))').eq('user_id',session.user.id).in('status',['active','finished']),
     sb.from('lesson_progress').select('lesson_id,status').eq('user_id',session.user.id)]);
@@ -2141,11 +2146,24 @@ let afterLogin=null;
 function authMsg(text){const el=document.getElementById('authMsg');if(el)el.textContent=text}
 function authBusy(form,busy){form.querySelectorAll('button').forEach(b=>b.disabled=busy)}
 async function requireLogin(){let session=null;try{({data:{session}}=await sb.auth.getSession())}catch(e){console.error(e)}if(session)return session;showLogin();return false}
-function showLogin(){show(`<h2>Вход в личный кабинет</h2><p class="login-hint">Логин — почта, которую вы указали при оплате. Пароль вы придумали на странице оплаты.</p><form class="form" onsubmit="doLogin(event)"><label for="authEmail">Почта</label><input id="authEmail" type="email" autocomplete="email" placeholder="name@mail.ru" required><label for="authPassword">Пароль</label><div class="pw-wrap"><input id="authPassword" type="password" autocomplete="current-password" required><button type="button" class="pw-eye" onclick="pwToggle(this)" aria-label="Показать пароль">показать</button></div><p class="note" id="authMsg"></p><div class="login-actions"><button class="btn primary" type="submit">Войти</button><a href="#" onclick="showForgot();return false">Забыли пароль?</a></div></form><div class="login-new"><b>Ещё не учитесь у нас?</b> <a href="/kursy/wheel/" onclick="return startTrial(event)">Записаться на пробное занятие →</a><br><a class="login-help" href="/pomoshch/#h-login" onclick="closeModal();return go(event,'help')">Не получается войти? Помощь</a></div>`);authEmail.focus()}
+function showLogin(){show(`<h2>Вход в личный кабинет</h2><p class="login-hint">Логин — почта, которую вы указали при оплате. Пароль вы придумали на странице оплаты.</p><form class="form" onsubmit="doLogin(event)"><label for="authEmail">Почта</label><input id="authEmail" type="email" autocomplete="email" placeholder="name@mail.ru" required><label for="authPassword">Пароль</label><div class="pw-wrap"><input id="authPassword" type="password" autocomplete="current-password" required><button type="button" class="pw-eye" onclick="pwToggle(this)" aria-label="Показать пароль">показать</button></div><p class="note" id="authMsg"></p><div class="login-actions"><button class="btn primary" type="submit">Войти</button><a href="#" onclick="showForgot();return false">Забыли пароль?</a></div></form><div class="login-new"><b>Ещё не учитесь у нас?</b> <a href="/kursy/wheel/" onclick="return startTrial(event)">Записаться на пробное занятие →</a><br><a href="#" onclick="showSignup();return false">Зарегистрироваться без оплаты</a><br><a class="login-help" href="/pomoshch/#h-login" onclick="closeModal();return go(event,'help')">Не получается войти? Помощь</a></div>`);authEmail.focus()}
 function pwToggle(b){const i=b.previousElementSibling,on=i.type==='password';i.type=on?'text':'password';b.textContent=on?'скрыть':'показать';b.setAttribute('aria-label',on?'Скрыть пароль':'Показать пароль')}
 async function doLogin(e){e.preventDefault();const f=e.target;authBusy(f,true);authMsg('');
   let error;try{({error}=await sb.auth.signInWithPassword({email:authEmail.value.trim(),password:authPassword.value}))}catch(e){error=e}
   authBusy(f,false);if(error)return authMsg(authError(error));closeModal();const next=afterLogin||enterCabinet;afterLogin=null;next()}
+// Регистрация без оплаты: аккаунт на почту; курс откроется после оплаты (на сайте или по счёту из админки на эту же почту)
+function showSignup(){show(`<h2>Регистрация</h2><p class="login-hint">Создайте аккаунт — потом можно оплатить курс на сайте или по счёту, который пришлёт клуб. Доступ откроется в этом же аккаунте.</p><form class="form" onsubmit="doSignup(event)"><label for="suName">Имя родителя</label><input id="suName" autocomplete="name" maxlength="100" placeholder="Мария"><label for="suContact">Телефон или мессенджер для связи</label><input id="suContact" autocomplete="tel" maxlength="100" placeholder="+7 900 000-00-00"><label for="authEmail">Почта — это логин</label><input id="authEmail" type="email" autocomplete="email" placeholder="name@mail.ru" required><label for="authPassword">Пароль — не короче 8 символов</label><div class="pw-wrap"><input id="authPassword" type="password" autocomplete="new-password" minlength="8" required><button type="button" class="pw-eye" onclick="pwToggle(this)" aria-label="Показать пароль">показать</button></div><label class="consent"><input type="checkbox" id="suConsent"><span>Даю <a href="/dokumenty/soglasie-na-obrabotku/" target="_blank">согласие на обработку персональных данных</a> и принимаю <a href="/dokumenty/politika-konfidencialnosti/" target="_blank">политику конфиденциальности</a></span></label><p class="note" id="authMsg"></p><div class="login-actions"><button class="btn primary" type="submit">Зарегистрироваться</button><a href="#" onclick="showLogin();return false">У меня уже есть аккаунт</a></div></form>`);suName.focus()}
+async function doSignup(e){e.preventDefault();const f=e.target;authMsg('');
+  if(!suConsent.checked)return authMsg('Чтобы продолжить, дайте согласие на обработку персональных данных.');
+  if(authPassword.value.length<8)return authMsg('Пароль должен быть не короче 8 символов.');
+  authBusy(f,true);const email=authEmail.value.trim().toLowerCase();
+  let data,error;try{({data,error}=await sb.auth.signUp({email,password:authPassword.value,options:{emailRedirectTo:location.origin+'/',data:{parent_name:suName.value.trim(),contact:suContact.value.trim()}}}))}catch(x){error=x}
+  authBusy(f,false);
+  if(error)return authMsg(/registered|exists/i.test(error.message||'')?'Аккаунт с этой почтой уже есть — войдите или восстановите пароль.':authError(error));
+  // подтверждение почты выключено — сразу в кабинет; включено — ждём письмо
+  if(data&&data.session){closeModal();return enterCabinet()}
+  if(data&&data.user&&Array.isArray(data.user.identities)&&!data.user.identities.length)return authMsg('Аккаунт с этой почтой уже есть — войдите или восстановите пароль.');
+  show('<h2>Проверьте почту</h2><p>Мы отправили письмо на <b>'+escapeHtml(email)+'</b>. Нажмите в нём ссылку, чтобы подтвердить почту, — и аккаунт готов.</p><p class="note">Письма нет несколько минут? Загляните в папку «Спам».</p>')}
 function showForgot(){show(`<h2>Восстановление пароля</h2><p>Укажите email, на который оформлен доступ, — пришлём ссылку для установки нового пароля.</p><form class="form" onsubmit="doForgot(event)"><label>Email</label><input id="authEmail" type="email" autocomplete="email" required><p class="note" id="authMsg"></p><div style="display:flex;gap:12px;flex-wrap:wrap"><button class="btn primary" type="submit">Отправить ссылку</button><button class="btn" type="button" onclick="showLogin()">Назад ко входу</button></div></form>`);authEmail.focus()}
 async function doForgot(e){e.preventDefault();const f=e.target;authBusy(f,true);authMsg('');
   const{error}=await sb.auth.resetPasswordForEmail(authEmail.value.trim(),{redirectTo:location.origin+location.pathname});
@@ -2162,6 +2180,8 @@ async function logout(){closeChat();if(badgeChannel){sb.removeChannel(badgeChann
 // Переход по ссылке из письма: приглашение или восстановление пароля
 (async()=>{
   if(AUTH_LINK.error){history.replaceState(null,'',location.pathname);showLinkError();return}
+  if(AUTH_LINK.type==='signup'){history.replaceState(null,'',location.pathname);const{data:{session}}=await sb.auth.getSession();
+    return session?show('<h2>🎉 Почта подтверждена</h2><p>Аккаунт готов. Курсы появятся в личном кабинете после оплаты.</p><button class="btn primary" onclick="closeModal();enterCabinet()">Открыть личный кабинет</button>'):showLinkError()}
   if(AUTH_LINK.type==='invite'||AUTH_LINK.type==='recovery'||AUTH_LINK.type==='email_change'){
     const{data:{session}}=await sb.auth.getSession();history.replaceState(null,'',location.pathname);
     session?showSetPassword(AUTH_LINK.type):showLinkError()}
