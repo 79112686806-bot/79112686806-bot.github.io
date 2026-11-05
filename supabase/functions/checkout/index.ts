@@ -5,7 +5,8 @@
 // оплаченным: курс открывается и уходит итоговое письмо с логином (без пароля).
 //
 // Секреты функции (Edge Functions → Secrets):
-//   DEMO_PAYMENTS  — 'true', пока не подключена ЮKassa. ПЕРЕД ЗАПУСКОМ ВЫКЛЮЧИТЬ.
+//   DEMO_PAYMENTS  — 'true' — демо без оплаты. С ЮKassa — удалить или поставить 'false'.
+//   YOOKASSA_SHOP_ID, YOOKASSA_SECRET_KEY — ключи магазина ЮKassa (тестового или боевого)
 //   SITE_URL       — адрес сайта для ссылки в письме
 //   RESEND_API_KEY — ключ Resend; без него письмо не отправляется
 //   EMAIL_FROM     — отправитель, например «Инженерный клуб <noreply@engineeringclub.ru>»
@@ -149,8 +150,47 @@ Deno.serve(async (req) => {
     return fail('server', 'Не удалось создать заказ', 500);
   }
 
-  // Здесь позже: создание платежа в ЮKassa и возврат ссылки на оплату
-  if (!DEMO) return fail('payments_disabled', 'Оплата пока не подключена', 503);
+  // ЮKassa: создаём платёж с чеком (54-ФЗ, «Чеки от ЮKassa») и отдаём сайту ссылку на страницу оплаты.
+  // Заказ откроется функцией yookassa — по уведомлению ЮKassa или когда покупатель вернётся на сайт.
+  if (!DEMO) {
+    const shop = Deno.env.get('YOOKASSA_SHOP_ID'), key = Deno.env.get('YOOKASSA_SECRET_KEY');
+    const amount = q.amount ?? 0;
+    if (!shop || !key || amount <= 0) {
+      console.error('yookassa: нет ключей или сумма 0', amount);
+      return fail('payments_disabled', 'Оплата временно недоступна — напишите нам', 503);
+    }
+    const what = kind === 'trial' ? 'пробное занятие' : kind === 'custom' ? `модули (${(q.lesson_ids ?? []).length})` : 'весь курс';
+    const desc = `Онлайн-курс «${course.title}»: ${what}`.slice(0, 128);
+    const value = amount.toFixed(2);
+    const res = await fetch('https://api.yookassa.ru/v3/payments', {
+      method: 'POST',
+      headers: { Authorization: 'Basic ' + btoa(shop + ':' + key), 'Idempotence-Key': order.id, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: { value, currency: 'RUB' },
+        capture: true,
+        confirmation: { type: 'redirect', return_url: `${SITE_URL}/?pay=${order.id}` },
+        description: desc,
+        metadata: { order_id: order.id },
+        receipt: {
+          customer: { email },
+          tax_system_code: 3, // УСН «доходы минус расходы»
+          items: [{
+            description: desc, quantity: '1.00', amount: { value, currency: 'RUB' },
+            vat_code: 1, // без НДС
+            payment_mode: 'full_payment', payment_subject: 'service',
+          }],
+        },
+      }),
+    });
+    const p = await res.json().catch(() => ({}));
+    if (!res.ok || !p.confirmation?.confirmation_url) {
+      console.error('yookassa create', res.status, p);
+      await admin.from('orders').update({ status: 'canceled' }).eq('id', order.id);
+      return fail('payment_create', 'Не удалось перейти к оплате. Попробуйте ещё раз или напишите нам', 502);
+    }
+    await admin.from('orders').update({ provider_payment_id: p.id }).eq('id', order.id);
+    return json({ ok: true, confirmation_url: p.confirmation.confirmation_url, order_id: order.id });
+  }
 
   const { error: paidError } = await admin.rpc('mark_order_paid', { p_order_id: order.id });
   if (paidError) {
