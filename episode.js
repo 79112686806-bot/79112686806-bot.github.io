@@ -40,7 +40,7 @@
       slots: { name: [660, 300, 600, 80], problem: [580, 222, 340, 104], ideas: [572, 400, 816, 296], idea: [580, 196, 760, 76], good: [576, 346, 358, 104], fix: [986, 346, 358, 104], checks: [1290, 493, 50, 182] },   // в пикселях кадра 1920×1080
       endText: 'Не забудь задание: найди дома три предмета, которые придумали инженеры, и подумай, как бы ты их улучшил.',
       // длительность роликов, с (для полосы перемотки), момент и длина места для обращения по имени
-      dur: { n01: 39.07, n02: 18.07, n03: 47.73, n04a: 4.9, n04b: 7.47, n05: 35.97, n06: 58.67, pNaush: 8.73, pZaryad: 8.83, pRyukzak: 8.73, pPoter: 8.6, pBudil: 7.8, pShnur: 6.93, pPen: 7.17, pTech: 7.67, pZont: 7.67, pChai: 7.93, pAny: 6.83, pNone: 12.37, pLife: 19.27, pOdd: 14.1, n07: 19.17, n08a: 16.93, n08b: 15.13, n09: 13.3, n10a: 38.8, n10b: 29.3, s01: 17.13, s02: 5.67, sFan: 8.9, sApp: 8.33, sBat: 9.93, sMag: 9.2, sSpr: 10.23, sKol: 8.53, sFly: 7.9, sSig: 9, sTep: 8.13, sZas: 7.7, sMat: 7.53, sRob: 10.1, sAny: 11.37, sOdd: 12.7, s03: 11.8, sGood: 17.23, sWork: 16.13, n11: 38.2, n12: 6.5 },
+      dur: { n01: 39.07, n02: 18.07, n03: 47.73, n04a: 4.9, n04b: 7.47, n05: 35.97, n06: 58.67, pNaush: 8.73, pZaryad: 8.83, pRyukzak: 8.73, pPoter: 8.6, pBudil: 7.8, pShnur: 6.93, pPen: 7.17, pTech: 7.67, pZont: 7.67, pChai: 7.93, pAny: 6.83, pNone: 12.37, pLife: 19.27, pOdd: 14.1, n07: 19.17, n08a: 16.93, n08b: 15.13, n08c: 17.7, n09: 13.3, n10a: 38.8, n10b: 29.3, s01: 17.13, s02: 5.67, sFan: 8.9, sApp: 8.33, sBat: 9.93, sMag: 9.2, sSpr: 10.23, sKol: 8.53, sFly: 7.9, sSig: 9, sTep: 8.13, sZas: 7.7, sMat: 7.53, sRob: 10.1, sAny: 11.37, sOdd: 12.7, s03: 11.8, sGood: 17.23, sWork: 16.13, n11: 38.2, n12: 6.5 },
       voice: { n02: { slot: 'hi', at: 0.6, room: 1.77 }, n12: { slot: 'bye', at: 1.53, room: 1.3 } },
       // реакция на названную проблему: узел с примером идеи (порядок важен — «телефон разряжается» → зарядка)
       problems: [
@@ -106,8 +106,8 @@
           // проблема не про вещь (pLife) или шутка (pOdd) — психолог просит назвать предмет
           ...Object.fromEntries(['pLife', 'pOdd'].map((k) => [k, { show: ['problem'], ask: { kind: 'free', q: 'Какая вещь тебе мешает?', input: 'Например: рюкзак тяжёлый', save: 'problem' }, showAfter: ['problem'],
             next: () => onProblem(true), outs: reacts.filter((x) => x !== 'pLife' && x !== 'pOdd') }])),
-          n07: { show: ['problem'], ask: { kind: 'ideas', q: 'Мозговой штурм: говори все идеи подряд!', secs: 20, input: 'Напиши идею и нажми Enter' }, next: () => (S.ideas.length >= 3 ? 'n08a' : 'n08b'), outs: ['n08a', 'n08b'] },
-          n08a: { show: ['problem', 'ideas'], next: () => 'n09' }, n08b: { show: ['problem', 'ideas'], next: () => 'n09' },
+          n07: { show: ['problem'], ask: { kind: 'ideas', q: 'Мозговой штурм: говори все идеи подряд!', secs: 20, input: 'Напиши идею и нажми Enter' }, next: () => (S.ideas.length >= 3 ? 'n08a' : S.ideas.length ? 'n08b' : 'n08c'), outs: ['n08a', 'n08b', 'n08c'] },
+          n08a: { show: ['problem', 'ideas'], next: () => 'n09' }, n08b: { show: ['problem', 'ideas'], next: () => 'n09' }, n08c: { show: ['problem'], next: () => 'n09' },
           n09: { ask: { kind: 'choice', q: 'Куда отправимся?', opts: [['past', 'В прошлое', ['прош', 'древн', 'назад', 'истор']], ['future', 'В будущее', ['будущ', 'вперёд', 'вперед', 'завтра']]] }, next: (a) => (a === 'future' ? 'n10b' : 'n10a'), outs: ['n10a', 'n10b'] },
           n10a: { next: () => 's01' }, n10b: { next: () => 's01' },
           // проверка идеи: выбрать свою идею → что в ней хорошего → ответ инженера по идее и «как исправить» → три вопроса → итог
@@ -723,9 +723,13 @@
   const words = (t) => t.split(/[^a-zа-я0-9-]+/).filter(Boolean);
   const hasW = (t, list) => { const w = words(t); return list.some((s) => (s[0] === '=' ? w.includes(s.slice(1)) : s.includes(' ') ? t.includes(s) : w.some((x) => x.startsWith(s)))); };
   const silly = (t) => { const l = t.replace(/[^а-яa-z]/g, ''); return l.length < 3 || !/[аеиоуыэюяaeiouy]/.test(l) || (l.length >= 5 && new Set(l).size <= 2) || /(.)\1\1/.test(l); };
+  // слово темы: длинная основа (от 4 букв) или фраза — где угодно в ответе; короткая (пол, ям, кам…) — только с начала слова,
+  // иначе бессмыслица вроде «пупупол» засчитывалась как ответ по теме
+  const PRE = ['по', 'за', 'при', 'про', 'на', 'вы', 'пере', 'раз', 'рас', 'об', 'от', 'до', 'под', 'во', 'в', 'с', 'у', 'голо'];   // приставки: гололёд, заезд, проход
+  const onTopic = (t, topic) => { const w = words(t); return topic.some((k) => { k = norm(k); return k.length >= 4 || k.includes(' ') ? t.includes(k) : w.some((x) => x.startsWith(k) || PRE.some((p) => x.startsWith(p + k))); }); };
   function offTopic(text, topic) {
     const t = norm(text || '');
-    if (!t || OFF_NONE.test(t) || has(t, ...topic)) return null;
+    if (!t || OFF_NONE.test(t) || onTopic(t, topic)) return null;
     if (silly(t) || hasW(t, OFF_ODD)) return 'xOdd';
     if (hasW(t, OFF_FOOD)) return 'xFood';
     if (hasW(t, OFF_PET)) return 'xPet';
