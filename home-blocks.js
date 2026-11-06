@@ -24,21 +24,26 @@
     return null;
   }
 
-  // Обложка ролика: своя картинка из админки, иначе — обложка с Rutube (у VK Видео без ключа API её не получить)
+  // Обложка ролика: своя картинка из админки, иначе — копия обложки Rutube на сайте (assets/videos/<id>.webp,
+  // npm run video:thumbs); если копии ещё нет — обложка с Rutube (fallback в onerror). У VK Видео без ключа API её не получить.
+  const rutubeId = (v) => ((embedUrl(v.url) || '').match(/^https:\/\/rutube\.ru\/play\/embed\/([0-9a-f]{32})$/) || [])[1];
   function thumbUrl(v) {
     if (v.thumbnail_url) return v.thumbnail_url;
-    const m = (embedUrl(v.url) || '').match(/^https:\/\/rutube\.ru\/play\/embed\/([0-9a-f]{32})$/);
-    return m ? 'https://rutube.ru/api/video/' + m[1] + '/thumbnail/?redirect=1' : null;
+    const id = rutubeId(v);
+    return id ? '/assets/videos/' + id + '.webp' : null;
   }
+  const thumbFallback = (v) => { const id = !v.thumbnail_url && rutubeId(v); return id ? 'https://rutube.ru/api/video/' + id + '/thumbnail/?redirect=1' : ''; };
 
   // Заставка с кнопкой ▶ — плеер загружается только по нажатию (не тормозит страницу)
   function videosHtml(list) {
     return (list || []).map((v) => {
       const e = embedUrl(v.url);
       if (!e) return '';
-      const t = thumbUrl(v);
+      const t = thumbUrl(v), fb = thumbFallback(v);
+      // нет своей копии обложки — один раз пробуем обложку с Rutube, потом прячем картинку (остаётся фон и кнопка ▶)
+      const onerr = fb ? ` onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src='${esc(fb)}'}else{this.remove()}"` : ` onerror="this.remove()"`;
       return `<figure class="video-card"><div class="video-frame"><button type="button" data-embed="${esc(e)}" onclick="playVideo(this)" aria-label="Смотреть видео: ${esc(v.title)}">` +
-        `${t ? `<img src="${esc(t)}" alt="" loading="lazy" decoding="async">` : ''}<span class="video-play" aria-hidden="true">▶</span></button></div>` +
+        `${t ? `<img src="${esc(t)}" alt="" loading="lazy" decoding="async"${onerr}>` : ''}<span class="video-play" aria-hidden="true">▶</span></button></div>` +
         `<figcaption><h3>${esc(v.title)}</h3>${v.description ? `<p>${esc(v.description)}</p>` : ''}</figcaption></figure>`;
     }).join('');
   }
