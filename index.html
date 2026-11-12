@@ -3,6 +3,21 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="importmap">{"imports":{"three":"/vendor/three.module.min.js"}}</script>
 <meta name="yandex-verification" content="26878f9f69d53159" />
+<!-- Yandex.Metrika counter (только на боевом домене) -->
+<script type="text/javascript">
+if(location.hostname==='engineeringclub.ru'){window._ymUrl=location.href;
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=114223841', 'ym');
+
+    ym(114223841, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+}
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/114223841" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
 <!--seo-->
 <title>Инженерный клуб — онлайн-занятия по инженерии для детей 9–14 лет</title>
 <meta name="description" content="Онлайн-курсы инженерного мышления для школьников 9–14 лет: исследования, опыты и собственные проекты с преподавателем. 10 программ — от колеса до роботов. Первое занятие со скидкой 50%.">
@@ -1543,7 +1558,9 @@ function drawRoutes(){document.querySelectorAll('#howPage .route').forEach(ol=>{
   updateRouteDraw()}
 window.addEventListener('resize',()=>{clearTimeout(drawRoutes.t);drawRoutes.t=setTimeout(drawRoutes,150)});
 document.addEventListener('click',e=>{const a=e.target.closest('.help-jump a');if(!a)return;e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth'})});
-function setMeta(key){const m=(window.SEO_PAGES||{})[key];if(!m)return;document.title=m.title;const d=document.querySelector('meta[name="description"]');if(d)d.content=m.description}
+function setMeta(key){const m=(window.SEO_PAGES||{})[key];if(m){document.title=m.title;const d=document.querySelector('meta[name="description"]');if(d)d.content=m.description}
+  // Метрика: переход внутри сайта без перезагрузки — отдельный просмотр страницы
+  if(window.ym&&window._ymUrl&&location.href!==window._ymUrl){ym(114223841,'hit',location.href,{title:document.title,referer:window._ymUrl});window._ymUrl=location.href}}
 // Ссылка с onclick="return go(...)": обычный клик — без перезагрузки; Ctrl/колёсико — в новой вкладке
 function go(e,page,arg){if(e&&(e.ctrlKey||e.metaKey||e.shiftKey||e.button===1))return true;if(e)e.preventDefault();closeModal();
   if(page==='gorod'&&arg)gorod.tab=arg;
