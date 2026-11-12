@@ -50,10 +50,19 @@
 .pb-chip u{text-decoration:none;font-weight:700;color:var(--sanguine,#9a3a1b)}
 .pb-chip b{font:700 26px/1 "Cormorant Garamond",Georgia,serif}
 .pb-chip small{display:block;font-size:12.5px;color:var(--ink-soft,#6e4b2c);line-height:1.25}
+.pb-chip{min-width:0}.pb-chip>span:last-child{min-width:0}
+.pb-chip .pb-l{display:block;font-size:13px;line-height:1.2;white-space:nowrap}
+.pb-chip .pb-s{display:block;font-size:12px;line-height:1.25;color:var(--ink-soft,#6e4b2c)}
+.pb>.pb-chip{align-self:stretch}
+.pb-chip .pb-s.go{color:var(--sanguine,#9a3a1b);font-weight:700}
+.pb-chip .pb-n{display:flex;align-items:baseline;gap:6px}
+.pb-chip .pb-frz{font-size:11.5px;color:#3d6f9e;display:inline-flex;align-items:center;gap:2px;font-weight:700}
+.pb-tg{display:none;margin-left:auto;border:1.5px solid var(--sanguine,#9a3a1b);border-radius:14px;background:#fff8e6;color:var(--sanguine,#9a3a1b);font:700 12.5px "PT Serif",Georgia,serif;padding:3px 10px;cursor:pointer;white-space:nowrap}
+.pb-seg{display:flex;gap:3px;margin-left:4px}.pb-seg i{width:14px;height:6px;border-radius:3px;background:rgba(74,44,20,.18)}.pb-seg i.on{background:#3f7d4a}
 .pb-fire{color:#b7aa98}.pb-fire.on{color:#e0661b;animation:pbFlick 2.4s ease-in-out infinite}
 .pb-gear{color:#8a6d1f}.pb-gear:hover svg{animation:pbSpin 2.4s linear infinite}
 .pb-q{padding:12px 16px;border:1.5px solid var(--line,rgba(74,44,20,.26));border-bottom-width:4px;border-radius:6px;background:rgba(255,248,230,.55);display:grid;grid-template-columns:1fr auto;gap:6px 14px;align-items:center}
-.pb-q h4{margin:0;font:700 19px/1.1 "Cormorant Garamond",Georgia,serif;display:flex;gap:6px;align-items:center}
+.pb-q h4{margin:0;font:700 19px/1.1 "Cormorant Garamond",Georgia,serif;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .pb-q ul{grid-column:1;list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .pb-q li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:13.5px}
 .pb-q li em{font-style:normal;color:var(--ink-soft,#6e4b2c);font-size:12.5px}
@@ -140,15 +149,20 @@
     const q = st.quests || [], ok = q.filter((x) => x.have >= x.target).length;
     const boxState = st.daily_claimed ? 'done' : st.quests_done ? 'ready' : 'lock';
     el.innerHTML = `<div class="pb">
-      <button type="button" class="pb-chip" data-a="fire" title="Серия дней"><span class="pb-fire${st.today_done ? ' on' : ''}">${ico(I.flame, 34)}</span><span><b>${st.streak}</b><small>${plural(st.streak, 'день', 'дня', 'дней')} подряд${st.today_done || !st.streak ? '' : '<br>сегодня — ещё нет'}</small></span></button>
-      <button type="button" class="pb-chip" data-a="gear" title="Шестерёнки — потратить в лавке"><span class="pb-gear">${ico(I.gear, 32)}</span><span><b>${st.gears}</b><small>${plural(st.gears, 'шестерёнка', 'шестерёнки', 'шестерёнок')}${st.freezes ? `<br><span title="Заморозки спасают серию дней">${ico(I.snow, 11)} ×${st.freezes}</span>` : ''}${onGears ? '<br><u>в лавку →</u>' : ''}</small></span></button>
-      <div class="pb-q"><h4><span style="color:var(--sanguine,#9a3a1b)">${ico(I.target, 20)}</span>Задания дня <small class="hero-hint">· ${ok} из ${q.length}</small></h4>
+      <button type="button" class="pb-chip" data-a="fire" title="Серия дней"><span class="pb-fire${st.today_done ? ' on' : ''}">${ico(I.flame, 32)}</span><span><span class="pb-n"><b>${st.streak}</b>${st.freezes ? `<span class="pb-frz" title="Заморозки спасают серию, если пропустить день">${ico(I.snow, 11)}${st.freezes}</span>` : ''}</span><span class="pb-l">${plural(st.streak, 'день', 'дня', 'дней')} подряд</span><span class="pb-s${st.today_done ? '' : ' go'}">${st.today_done ? 'сегодня ✓' : st.streak ? 'сегодня ещё нет' : 'начни сегодня'}</span></span></button>
+      <button type="button" class="pb-chip" data-a="gear" title="Шестерёнки — потратить в лавке"><span class="pb-gear">${ico(I.gear, 32)}</span><span><span class="pb-n"><b>${st.gears}</b></span><span class="pb-l">${plural(st.gears, 'шестерёнка', 'шестерёнки', 'шестерёнок')}</span><span class="pb-s go">${onGears ? 'в лавку →' : '&nbsp;'}</span></span></button>
+      <div class="pb-q"><h4><span style="color:var(--sanguine,#9a3a1b)">${ico(I.target, 20)}</span>Задания дня <small class="hero-hint">· ${ok} из ${q.length}</small><span class="pb-seg" aria-hidden="true">${q.map((x) => `<i class="${x.have >= x.target ? 'on' : ''}"></i>`).join('')}</span><button type="button" class="pb-tg" aria-expanded="false">Показать ▾</button></h4>
         <button type="button" class="pb-box ${boxState}" data-a="box" ${boxState === 'ready' ? '' : 'tabindex="-1"'} aria-label="Сундук за задания дня">${chestSvg(boxState === 'done')}<span>${boxState === 'ready' ? 'Открыть!' : boxState === 'done' ? 'открыт' : 'сундук'}</span></button>
         <ul>${q.map((x) => { const p = Math.min(100, Math.round((x.have * 100) / x.target)); return `<li class="${x.have >= x.target ? 'ok' : ''}"><span>${esc(x.title)}</span><em>${Math.min(x.have, x.target)} / ${x.target}</em><span class="bar"><i style="--p:${p}%"></i></span></li>`; }).join('')}</ul>
       </div></div>`;
     el.querySelector('[data-a=fire]').onclick = () => streakShow(st);
     el.querySelector('[data-a=gear]').onclick = () => onGears && onGears();
-    el.querySelector('.pb-q h4').onclick = () => el.querySelector('.pb-q').classList.toggle('open');   // на телефоне список заданий свёрнут
+    // на телефоне список заданий можно свернуть; по умолчанию открыт, выбор запоминаем
+    const pq = el.querySelector('.pb-q'), tg = el.querySelector('.pb-tg');
+    const setQ = (open) => { pq.classList.toggle('open', open); tg.textContent = open ? 'Скрыть ▴' : 'Показать ▾'; tg.setAttribute('aria-expanded', open); };
+    let qOpen = true; try { qOpen = localStorage.getItem('pbQuests') !== '0'; } catch (e) {}
+    setQ(qOpen);
+    el.querySelector('.pb-q h4').onclick = () => { const open = !pq.classList.contains('open'); setQ(open); try { localStorage.setItem('pbQuests', open ? '1' : '0'); } catch (e) {} };
     const b = el.querySelector('[data-a=box]');
     b.onclick = async () => { if (!b.classList.contains('ready')) return; if (await claim(sb, 'daily')) bar(el, { sb, userId, onGears }); };
     // день засчитан — один раз показываем огонёк

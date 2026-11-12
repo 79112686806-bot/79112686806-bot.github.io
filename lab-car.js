@@ -237,7 +237,7 @@ const MODES = { toy: CH_TOY, real: CH_REAL };
 const CSS = `
 .lab2{position:relative;border:1.5px solid var(--line,rgba(74,44,20,.26));border-bottom-width:4px;border-radius:14px;overflow:hidden;background:rgba(255,250,238,.55);font-family:"PT Serif",Georgia,serif;color:var(--ink,#3a2313)}
 .lab-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 12px 0}
-.lab-modes{display:inline-flex;padding:3px;border-radius:22px;background:rgba(74,44,20,.1)}
+.lm-s{display:none}.lab-modes{display:inline-flex;padding:3px;border-radius:22px;background:rgba(74,44,20,.1)}
 .lab-modes button{padding:7px 14px;border:0;border-radius:18px;background:none;font:700 14.5px "PT Serif",Georgia,serif;color:var(--ink-soft,#6e4b2c);cursor:pointer;white-space:nowrap}
 .lab-modes button.on{background:#fffaf0;color:var(--sanguine,#9a3a1b);box-shadow:0 2px 0 rgba(74,44,20,.18)}
 .lab-chaps{display:flex;gap:6px;overflow-x:auto;padding:10px 12px;scrollbar-width:thin}
@@ -331,7 +331,7 @@ const CSS = `
 .lab-next button{padding:9px 18px;border-radius:20px;border:1.5px solid var(--sanguine,#9a3a1b);background:var(--sanguine,#9a3a1b);color:#fff6e6;font:700 15px "PT Serif",Georgia,serif;cursor:pointer}
 @media(max-width:700px){.lab-stage{height:58vh;min-height:300px}.lab-cap{font-size:13px;max-width:calc(100% - 64px)}.lab-prog{top:auto;bottom:12px;right:auto;left:12px}
   .lab-nav{top:auto;bottom:10px;transform:none;grid-template-columns:1fr 1fr}.lab-nav button{width:36px;height:36px;font-size:16px}.lab-hint{display:none}
-  .lab-modes{width:100%}.lab-modes button{flex:1;padding:7px 8px;font-size:13.5px}.lab-text{padding:10px 14px 14px}.lab-text h3{font-size:23px}.lab-deck{padding:10px 12px;gap:10px 14px}.dk-go{flex:1}}
+  .lab-modes{width:100%;box-sizing:border-box}.lm-l{display:none}.lm-s{display:inline}.lab-modes button{flex:1;min-width:0;padding:7px 6px;font-size:13.5px;overflow:hidden;text-overflow:ellipsis}.lab-text{padding:10px 14px 14px}.lab-text h3{font-size:23px}.lab-deck{padding:10px 12px;gap:10px 14px}.dk-go{flex:1}}
 @media(prefers-reduced-motion:reduce){.lab-spot:after,.lh-hand,.lab-coach .big{animation:none}}
 `;
 const icoTire = (k) => `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="${k === 'etape' ? '#202024' : k === 'band' ? '#8a3b2a' : k === 'tape' ? '#dfe8ee' : '#c8643a'}" stroke="#3a2313" stroke-width="1.4"/><circle cx="12" cy="12" r="${k === 'band' ? 8 : 7}" fill="#c8643a" stroke="#3a2313" stroke-width="1"/><circle cx="12" cy="12" r="2" fill="#3a2313"/></svg>`;
@@ -343,7 +343,7 @@ export function start(root) {
   let mode = 'toy', CH = CH_TOY;
   try { const m = localStorage.getItem('labMode'); if (m === 'real') { mode = 'real'; CH = CH_REAL; } } catch (e) {}
   root.innerHTML = `<div class="lab2" tabindex="-1">
-  <div class="lab-top"><div class="lab-modes" role="tablist"><button type="button" role="tab" data-m="toy">🛠 Наша машинка</button><button type="button" role="tab" data-m="real">🚗 Настоящий автомобиль</button></div></div>
+  <div class="lab-top"><div class="lab-modes" role="tablist"><button type="button" role="tab" data-m="toy">🛠 <span class="lm-l">Наша машинка</span><span class="lm-s">Машинка</span></button><button type="button" role="tab" data-m="real">🚗 <span class="lm-l">Настоящий автомобиль</span><span class="lm-s">Автомобиль</span></button></div></div>
   <div class="lab-chaps" id="labChaps" role="tablist"></div>
   <div class="lab-stage" id="labView"><canvas id="labCanvas"></canvas><div class="lab-labels" id="labLabels"><svg class="lab-leads" id="labLeads"><path d=""/></svg></div><div class="lab-spots" id="labSpots"></div>
     <div class="lab-cap" id="labCap" hidden></div><div class="lab-prog" id="labProg" hidden></div><div class="lab-info" id="labInfo" hidden></div>
@@ -595,7 +595,7 @@ export function start(root) {
     const [a, b] = c.box, cc = W((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2), dir = W(...P0).sub(W(...T0)).normalize();
     const pts = []; for (const x of [a[0], b[0]]) for (const y of [a[1], b[1]]) for (const z of [a[2], b[2]]) pts.push(W(x, y, z));
     tmpCam.fov = camera.fov; tmpCam.aspect = camera.aspect; tmpCam.near = 1; tmpCam.far = 50000; tmpCam.updateProjectionMatrix();
-    const ok = (d) => { tmpCam.position.copy(cc).addScaledVector(dir, d); tmpCam.lookAt(cc); tmpCam.updateMatrixWorld(); return pts.every((q) => { const v = q.clone().project(tmpCam); return v.z < 1 && Math.abs(v.x) < 0.86 && Math.abs(v.y) < 0.8; }); };
+    const ok = (d) => { tmpCam.position.copy(cc).addScaledVector(dir, d); tmpCam.lookAt(cc); tmpCam.updateMatrixWorld(); return pts.every((q) => { const v = q.clone().project(tmpCam); return v.z < 1 && Math.abs(v.x) < (camera.aspect < 1 ? 0.95 : 0.86) && Math.abs(v.y) < 0.8; }); };
     let lo = 10, hi = 20000; for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (ok(m)) hi = m; else lo = m; }
     return [cc.clone().addScaledVector(dir, hi), cc];
   }
