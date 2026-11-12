@@ -17,7 +17,7 @@ require('../home-blocks.js');
 require('../memo.js');
 const { coursePageHtml, coursePageStats, HomeBlocks, Memo } = globalThis;
 
-const FILES = ['admin.html', 'sb-client.js', 'chat.js', 'support.js', 'hero.js', 'path.js', 'world.js', 'shop.js', 'city.js', 'brain.js', 'sw.js', 'admin.webmanifest', 'course-page.js', 'episode.js', 'home-blocks.js', 'memo.js', 'research.js', 'favicon.svg'];
+const FILES = ['admin.html', 'sb-client.js', 'chat.js', 'support.js', 'hero.js', 'path.js', 'world.js', 'shop.js', 'garage.js', 'paper.css', 'city.js', 'brain.js', 'sw.js', 'admin.webmanifest', 'course-page.js', 'episode.js', 'home-blocks.js', 'memo.js', 'research.js', 'favicon.svg', 'lab-car.js'];
 
 // Данные продавца — индивидуального предпринимателя (site-info.json) — для документов и подвала. Пустое поле → заметная пометка.
 const INFO = JSON.parse(readFileSync('site-info.json', 'utf8'));
@@ -434,7 +434,7 @@ function stampVersions() {
   const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? walk(`${dir}/${d.name}`) : d.name.endsWith('.html') ? [`${dir}/${d.name}`] : []));
   let n = 0;
   // модули кабинета страница грузит сама (need в index.html) — их метки версий кладём в JSV
-  const jsv = JSON.stringify(Object.fromEntries(['hero', 'path', 'world', 'chat', 'research', 'episode', 'city', 'brain', 'shop'].map((m) => [m, ver(`${OUT}/${m}.js`)])));
+  const jsv = JSON.stringify(Object.fromEntries(['hero', 'path', 'world', 'chat', 'research', 'episode', 'city', 'brain', 'shop', 'garage', 'lab-car'].map((m) => [m, ver(`${OUT}/${m}.js`)])));
   for (const page of walk(OUT)) {
     const html = readFileSync(page, 'utf8');
     const out = html.replace('{/*JSV*/}', jsv).replace(/(<(?:script|link)\b[^>]*?\s(?:src|href)=")(\/?[\w./-]+\.(?:js|css))(")/g, (m, a, url, b) => {

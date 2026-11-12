@@ -5,7 +5,9 @@
 // приносят доход (монетки над постройками). Реки, дороги и леса ставятся подряд, мост — только на реку, водяная мельница — у реки;
 // землю можно докупить. Управление как в градостроителях: карту тянуть и приближать (колёсико, два пальца), постройка-«призрак»
 // с ✓ / ✕, перетаскивание. Всё решает сервер: city_state, city_place, city_move, city_sell, city_collect, city_expand.
-// City.open(el, { sb, onChange, onEarn, guest }) — onChange() после трат и сбора (обновить панель наград); onEarn {memo, brain} — где заработать,
+// Одинаковые клетки рядом срастаются в группы с уровнями (двор → улица → квартал → район и т. п.): больше движения и бонус к доходу.
+// Гонка: race_start (миграция 20261112000049) — трасса по дорогам города, машины из гаража (garage.js грузится по требованию).
+// City.open(el, { sb, onChange, onEarn, guest, onGarage }) — onChange() после трат и сбора (обновить панель наград); onEarn {memo, brain} — где заработать,
 // если шестерёнок не хватает; guest — играет без курса (страница /gorod/): вместо «пройди блок» — «эпохи открываются на курсе».
 // Нужны hero.js (окна, звук) и path.js.
 (function () {
@@ -137,7 +139,26 @@
       + posts + [-1, 1].map((m) => `<path d="M${P(q(-1, m, L + 7))}L${P(q(1, m, L + 7))}" stroke="${INK}" stroke-width="1.8"/>`).join('');
   };
   // ---------- Объединения: поля, леса, клумбы и дома рядом срастаются (g — группа: n клеток, front — передняя клетка, на ней украшения) ----------
-  const GROUP = { field: 'Большое поле', forest: 'Чаща', flowers: 'Парк', house: 'Квартал' };
+  // уровень группы: 1–2 клетки → 0, 3–4 → 1, 5–7 → 2, 8 и больше → 3; бонус к доходу за группу (считает сервер, city_ready)
+  const LV = {
+    house: ['Двор', 'Улица', 'Квартал', 'Район'], field: ['Поле', 'Большое поле', 'Ферма', 'Угодья'], forest: ['Рощица', 'Лес', 'Чаща', 'Заповедник'],
+    flowers: ['Клумбы', 'Сквер', 'Парк', 'Ботанический сад'], tree: ['Деревья', 'Сад', 'Фруктовый сад', 'Большой сад'],
+    water: ['Ручей', 'Река', 'Озеро', 'Большая вода'], road: ['Дорожка', 'Дорога', 'Улица', 'Трасса'],
+  };
+  const BONUS = new Set(['house', 'field', 'forest', 'flowers', 'tree']);
+  const lvl = (n) => (n >= 8 ? 3 : n >= 5 ? 2 : n >= 3 ? 1 : 0);
+  const lvBonus = (n) => [0, 1, 3, 5][lvl(n)];
+  const lvName = (code, n) => (LV[code] ? LV[code][lvl(n)] : code);
+  // что появляется на новом уровне (подсказка после стройки)
+  const LV_TIP = {
+    house: ['', 'между домами пошли прохожие', 'по улице ездят повозки, зажглись фонари', 'на площади играют дети'],
+    field: ['', 'на поле стог сена и корова', 'пришли пугало и пахарь', 'ещё одно стадо'],
+    forest: ['', 'над лесом летают птицы', 'в чаще бродит олень', 'в заповеднике поселился лесник'],
+    flowers: ['', 'прилетели бабочки, поставили скамейку', 'в парке беседка и гуляют люди', 'забил фонтан'],
+    tree: ['', 'на деревьях поспели яблоки, прилетели птицы', 'над садом жужжат пчёлы', 'пришёл садовник'],
+    water: ['', 'по реке плавают утки', 'по озеру ходит лодка', 'из воды выпрыгивает рыба'],
+    road: ['', 'по дороге поехали повозки', 'движение стало оживлённее', 'по трассе мчатся машины'],
+  };
   const diamond = (fill, k = 1, extra = '') => { const c = corners(k); return `<path d="M${[c.L, c.B, c.R, c.T].map(P).join('L')}z" fill="${fill}"${extra}/>`; };
   const along = (a, b, u, k = 0.93) => [(a[0] + (b[0] - a[0]) * u) * k, (a[1] + (b[1] - a[1]) * u) * k];
   // забор по краям группы (стороны без соседа того же вида)
@@ -175,6 +196,69 @@
 
   // жители бродят у домов (оживляет город)
   const walkers = (n, r) => Array.from({ length: n }, (_, i) => `<g class="ct-walk" style="--d:${(r() * 6).toFixed(1)}s;--x:${Math.round(r() * 24 - 12)}px">${person(Math.round(r() * 20 - 10), Math.round(r() * 8 + 6), ['#9a3a1b', '#5f7f8f', '#7f9a6a', '#a06a33'][i % 4])}</g>`).join('');
+  // ---------- Жизнь в группах: чем больше одинаковых клеток рядом, тем больше движения ----------
+  // Движение — только transform (CSS-переменные --ax/--ay → --bx/--by), каждое — маленький элемент; всего не больше LIFE_MAX на город.
+  const LIFE_MAX = 70;
+  const way = (a, b, dur, delay, body, cls = 'ct-way') => `<g class="${cls}" style="--ax:${f1(a[0])}px;--ay:${f1(a[1])}px;--bx:${f1(b[0])}px;--by:${f1(b[1])}px;animation-duration:${f1(dur)}s;animation-delay:-${f1(delay)}s">${body}</g>`;
+  // повозка (до эпохи 3) или машинка в изометрии, нос — вправо-вниз (flip — влево)
+  const cart = (era, col, flip) => `<g transform="scale(${flip ? -1 : 1} 1)">` + (era >= 3
+    ? `<ellipse cy="2" rx="9" ry="3.5" fill="#000" opacity=".18"/><path d="M-8-1l8 4 8-4v-4l-8-4-8 4z" fill="${col}" stroke="${INK}" stroke-width=".9"/><path d="M-4-6l4 2 5-2.5-4-2z" fill="#cfe3ea" stroke="${INK}" stroke-width=".7"/><circle cx="-4" cy="1.5" r="1.8" fill="${INK}"/><circle cx="5" cy="1.5" r="1.8" fill="${INK}"/>`
+    : `<ellipse cy="2" rx="9" ry="3" fill="#000" opacity=".15"/><path d="M-9-3l7 3.5 7-3.5v-3l-7-3.5-7 3.5z" fill="#b08a55" stroke="${INK}" stroke-width=".9"/><circle cx="-5" cy="1" r="2.6" fill="none" stroke="${INK}" stroke-width="1.2"/><circle cx="3" cy="1" r="2.6" fill="none" stroke="${INK}" stroke-width="1.2"/><path d="M5-4l4-1" stroke="${INK}" stroke-width="1"/><path d="M8-9l3 1v5h-3zM9-11a2 2 0 1 1 3 0" fill="#8a6038" stroke="${INK}" stroke-width=".8"/>`) + '</g>';
+  const bird = (c = INK) => `<path class="ct-flap" d="M-5-1q2.5-3 5 0 2.5-3 5 0" fill="none" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/>`;
+  const butterfly = (c) => `<g class="ct-flap"><path d="M0 0c-3-4-6-1-4 1 1 1 3 0 4-1zM0 0c3-4 6-1 4 1-1 1-3 0-4-1z" fill="${c}" stroke="${INK}" stroke-width=".5"/></g>`;
+  const cow = (x, y, flip) => `<g transform="translate(${x} ${y}) scale(${flip ? -1 : 1} 1)"><g class="ct-nod"><path d="M-7-4h11v-6h-11z" fill="#f4efe4" stroke="${INK}" stroke-width=".9"/><path d="M-4-10h3v3h-3zM1-7h3v3H1z" fill="#3a2a20"/><path d="M4-9l4-1 1 4-4 1z" fill="#f4efe4" stroke="${INK}" stroke-width=".9"/><path d="M-6-4v4M-3-4v4M1-4v4M3-4v4" stroke="${INK}" stroke-width="1"/></g></g>`;
+  const deer = (c = '#a06a33') => `<path d="M-5-5h8v-4h-8zM3-9l3-5 2 1-2 4" fill="${c}" stroke="${INK}" stroke-width=".8"/><path d="M6-14l-1-3M6-14l2-2M7-15l2-1" stroke="${INK}" stroke-width=".8"/><path d="M-4-5v4M-1-5v4M1-5v4M3-5v4" stroke="${INK}" stroke-width=".9"/>`;
+  const horse = `<path d="M-7-6h10v-4h-10zM3-10l3-4 3 1-2 4z" fill="#6e4b2c" stroke="${INK}" stroke-width=".8"/><path d="M-6-6v5M-3-6v5M0-6v5M2-6v5" stroke="${INK}" stroke-width="1"/><path d="M-7-8l-6 5h-4" fill="none" stroke="${INK}" stroke-width="1"/><path d="M-19-5l2 4h4l1-4z" fill="#a06a33" stroke="${INK}" stroke-width=".7"/>`;
+  const duck = `<path d="M-3 0h6q1-3-2-3l1-2q-2-1-3 1-3 0-2 4z" fill="#f4efe4" stroke="${INK}" stroke-width=".7"/><path d="M2-5l2 .5-2 .5" fill="#e0661b"/>`;
+  const boat = `<path d="M-9 0h18l-3 4H-6z" fill="#8a6038" stroke="${INK}" stroke-width=".9"/><path d="M0 0v-16" stroke="${INK}" stroke-width="1"/><path d="M1-15l8 12H1z" fill="#fff8ea" stroke="${INK}" stroke-width=".8"/>`;
+  const fish = `<g class="ct-jump"><path d="M-4 0q4-4 8 0-4 4-8 0zM-4 0l-3-2v4z" fill="#d4804f" stroke="${INK}" stroke-width=".6"/></g>`;
+  const bee = `<g class="ct-flap"><ellipse rx="2" ry="1.4" fill="#e3b341" stroke="${INK}" stroke-width=".5"/><path d="M-1-1l1 2" stroke="${INK}" stroke-width=".6"/></g>`;
+  const ball = `<g class="ct-bounce"><circle cy="-3" r="2.2" fill="#c0392b" stroke="${INK}" stroke-width=".7"/></g>`;
+  const hut = `<g transform="translate(-14 -2)"><path d="M-8 0v-8h16v8z" fill="#a06a33" stroke="${INK}" stroke-width=".9"/><path d="M-10-8l10-8 10 8z" fill="#7a5530" stroke="${INK}" stroke-width=".9"/><path d="M-2 0v-5h4v5" fill="#4a2c14"/></g>` + smoke(-8, -22);
+  const apples = (r) => [[-6, -20], [4, -24], [8, -16], [-2, -14]].filter(() => r() > 0.25).map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.8" fill="#c0392b" stroke="${INK}" stroke-width=".5"/>`).join('');
+  const lampPost = (x, y) => `<g transform="translate(${x} ${y})"><path d="M0 0v-18" stroke="${INK}" stroke-width="1.3"/><circle class="ct-glow" cy="-19" r="6" fill="#f6dc8a" opacity=".4"/><circle cy="-19" r="2.6" fill="#f3d27a" stroke="${INK}" stroke-width=".7"/></g>`;
+  const TONE = ['#9a3a1b', '#5f7f8f', '#7f9a6a', '#a06a33', '#7b4aa0', '#2f6fb0'];
+  // клетка в группе: L — уровень, links — соседи той же группы (SIDES), front — передняя клетка группы, take() — бюджет живых элементов
+  function life(code, era, L, links, front, r, take, nb) {
+    let o = '';
+    const pos = links.filter(([dx, dy]) => dx + dy > 0); // каждая связь между клетками — один раз
+    const tone = () => TONE[Math.floor(r() * TONE.length)];
+    if (code === 'house' && L >= 1) {
+      for (const [, , m] of pos.slice(0, 2)) if (take()) o += way([0, 6], [m[0], m[1] + 6], 5 + r() * 4, r() * 8, person(0, 0, tone()));
+      if (L >= 2 && front) o += lampPost(-22, 4) + lampPost(22, 4);
+      if (L >= 2 && pos.length && r() < 0.6 && take()) { const m = pos[0][2]; o += way([0, 8], [m[0], m[1] + 8], 7 + r() * 3, r() * 9, cart(era, tone(), m[0] < 0)); }
+      if (L >= 3 && front && take()) o += `<g transform="translate(-12 12)">${ball}</g>${person(-18, 14, '#e0661b')}${person(-6, 15, '#2f6fb0')}`;
+    } else if (code === 'road' && L >= 1) {
+      const rl = SIDES.filter(([dx, dy]) => ['road', 'bridge'].includes(nb(dx, dy)));
+      if (rl.length && (L >= 2 || r() < 0.6)) for (let i = 0; i < (L >= 3 && r() < 0.4 ? 2 : 1); i++) {
+        if (!take()) break;
+        const A = rl[Math.floor(r() * rl.length)][2], B = rl.length > 1 ? rl.find((q) => q[2] !== A)[2] : null;
+        o += B ? way(A, B, 3 + r() * 2, r() * 5, cart(era, tone(), B[0] - A[0] < 0), 'ct-pass ct-traffic') : way([0, 0], A, 4 + r() * 2, r() * 5, cart(era, tone(), A[0] < 0), 'ct-way ct-traffic');
+      }
+    } else if (code === 'forest') {
+      if (L >= 1 && front && take()) o += way([-40, -40], [40, -64], 9, r() * 9, bird(), 'ct-pass') + way([-30, -54], [44, -48], 11, r() * 11, bird(), 'ct-pass');
+      if (L >= 2 && pos.length && r() < 0.5 && take()) { const m = pos[0][2]; o += way([-m[0] * 0.3, 8], [m[0], m[1] + 8], 8, r() * 8, deer()); }
+      if (L >= 3 && front && take()) o += hut;
+    } else if (code === 'field') {
+      if (L >= 1 && front) o += cow(-16, 0, r() < 0.5);
+      if (L >= 2 && front && take()) o += way([-18, -6], [10, 8], 7, r() * 7, era >= 4 ? cart(era, '#c0392b', false) : horse);
+      if (L >= 3 && !front && r() < 0.35) o += cow(6, 6, r() < 0.5);
+    } else if (code === 'flowers' && L >= 1) {
+      if ((front || r() < 0.3) && take()) o += way([-10, -6], [10, -18], 4 + r() * 3, r() * 4, butterfly(['#e3b341', '#b85c8a', '#8fb2c4'][Math.floor(r() * 3)]));
+      if (L >= 2 && pos.length && r() < 0.5 && take()) { const m = pos[0][2]; o += way([0, 4], [m[0], m[1] + 4], 8, r() * 8, person(0, 0, tone())); }
+      if (L >= 3 && front && take()) o += `<g transform="translate(14 8) scale(.55)">${ART.fountain()}</g>`;
+    } else if (code === 'tree' && L >= 1) {
+      o += apples(r);
+      if (front && take()) o += way([-30, -46], [30, -58], 8, r() * 8, bird(), 'ct-pass');
+      if (L >= 2 && r() < 0.5 && take()) o += way([-6, -26], [8, -32], 2 + r(), r() * 2, bee);
+      if (L >= 3 && front && take()) o += way([-14, 10], [14, 4], 9, r() * 9, person(0, 0, '#3f6a32'));
+    } else if (code === 'water' && L >= 1) {
+      if (r() < 0.5 && take()) o += way([-10, 0], [8, 4], 6 + r() * 4, r() * 8, duck);
+      if (L >= 2 && front && take()) { const m = (pos[0] || links[0] || [0, 0, [12, 6]])[2]; o += way([-m[0] * 0.5, -m[1] * 0.5], [m[0], m[1]], 12, r() * 12, boat); }
+      if (L >= 3 && r() < 0.35 && take()) o += `<g transform="translate(${Math.round(r() * 16 - 8)} 2)">${fish}</g>`;
+    }
+    return o;
+  }
   const FLAT = new Set(['road', 'water', 'bridge', 'field', 'flowers']);           // лежат на земле — рисуются первыми
   const PAINT = new Set(['road', 'water', 'forest', 'tree', 'flowers', 'lamp', 'field']);  // ставятся подряд: нажал — построил
   const CATS = [['home', 'Дома', ['house', 'well', 'fire']], ['work', 'Работа', ['field', 'stall', 'wheelshop', 'watermill', 'windmill', 'lab', 'leonardo', 'garage', 'solar']],
@@ -234,6 +318,26 @@
 .ct-jet{animation:ctJet 1.2s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 100%}@keyframes ctJet{to{transform:scaleY(.85)}}
 .ct-water,.ct-ripple{animation:ctWater 2.4s ease-in-out infinite alternate}@keyframes ctWater{to{transform:translate(4px,2px)}}
 .ct-walk{animation:ctWalk 7s ease-in-out infinite var(--d)}@keyframes ctWalk{50%{transform:translateX(var(--x))}}
+.ct-way{animation:ctWay 6s ease-in-out infinite alternate}@keyframes ctWay{from{transform:translate(var(--ax),var(--ay))}to{transform:translate(var(--bx),var(--by))}}
+.ct-pass{animation:ctPass 4s linear infinite}@keyframes ctPass{0%{transform:translate(var(--ax),var(--ay));opacity:0}12%,88%{opacity:1}100%{transform:translate(var(--bx),var(--by));opacity:0}}
+.ct-flap{transform-box:fill-box;transform-origin:50% 50%;animation:ctFlap .35s ease-in-out infinite alternate}@keyframes ctFlap{to{transform:scaleY(.4)}}
+.ct-nod{animation:ctNod 2.6s ease-in-out infinite alternate}@keyframes ctNod{to{transform:translate(1px,1px)}}
+.ct-jump{animation:ctJump 3.4s ease-out infinite;opacity:0}@keyframes ctJump{0%,60%{opacity:0;transform:translateY(4px)}70%{opacity:1}80%{transform:translateY(-10px) rotate(-30deg);opacity:1}95%,100%{opacity:0;transform:translate(6px,4px) rotate(40deg)}}
+.ct-bounce{animation:ctBounce .7s cubic-bezier(.3,0,.7,1) infinite alternate}@keyframes ctBounce{to{transform:translate(4px,-8px)}}
+.ct-glow{animation:ctGlow 2.4s ease-in-out infinite alternate}@keyframes ctGlow{to{opacity:.15}}
+.cw-race{pointer-events:auto;display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;border:1.5px solid #9a3a1b;background:#fff3e6;color:#9a3a1b;font:700 13px "PT Serif",Georgia,serif;cursor:pointer;box-shadow:0 3px 0 rgba(154,58,27,.25)}
+.cw-race[disabled]{opacity:.6;cursor:wait}.cw-gar{border-color:#3f6a32;color:#2f5f2a;background:#eef6e6;box-shadow:0 3px 0 rgba(47,95,42,.25)}
+.city-wrap.racing>svg{cursor:default}.city-wrap.racing .ct-traffic{display:none}.cw-land[hidden]{display:none}.city-wrap.racing .cw-side,.city-wrap.racing #cwAct{display:none}
+.cw-board{position:absolute;left:10px;bottom:12px;z-index:4;display:grid;gap:3px;padding:8px 10px;border-radius:10px;background:rgba(255,250,238,.94);border:1.5px solid rgba(74,44,20,.3);font-size:12.5px;min-width:150px;pointer-events:none}
+.cw-board div{display:flex;align-items:center;gap:6px}.cw-board i{width:10px;height:10px;border-radius:50%;border:1px solid #4a2c14;flex:none}.cw-board .me{font-weight:700}
+.cw-count{position:absolute;inset:0;display:grid;place-items:center;z-index:5;pointer-events:none;font:700 92px/1 "Cormorant Garamond",Georgia,serif;color:#9a3a1b;text-shadow:0 3px 0 #fff6e6}
+.cw-count b{animation:cwCount .9s ease-out both}@keyframes cwCount{from{transform:scale(1.8);opacity:0}30%{opacity:1}to{transform:scale(1);opacity:.85}}
+.race-res{text-align:center}.race-res h3{font:700 30px/1.1 "Cormorant Garamond",Georgia,serif;margin:4px 0}
+.race-res ol{list-style:none;margin:10px auto;padding:0;max-width:400px;display:grid;gap:6px;text-align:left}
+.race-res li{display:grid;grid-template-columns:28px 64px 1fr auto;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;background:rgba(255,252,242,.85);border:1.5px solid rgba(74,44,20,.18);font-size:14px}
+.race-res li.me{border-color:#c9a227;background:#fff3cf}.race-res li b{font:700 20px/1 "Cormorant Garamond",Georgia,serif;text-align:center}
+.race-res li svg{width:64px;height:auto}.race-res li small{display:block;color:var(--ink-soft,#6e4b2c);font-size:11.5px}.race-res li em{font-style:normal;font-size:12.5px;color:var(--ink-soft,#6e4b2c)}
+.race-res .why{font-size:13.5px;color:var(--ink-soft,#6e4b2c);max-width:420px;margin:6px auto 12px}
 .cw-fly{position:absolute;z-index:6;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;display:grid;place-items:center;background:#e3b341;border:2px solid #8a6d1f;color:#3a2313;transition:transform .8s cubic-bezier(.5,-.3,.6,1),opacity .8s;pointer-events:none}
 .city-tools{margin-top:12px}
 .city-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
@@ -260,8 +364,8 @@
 .city-sheet p{margin:0 0 12px;color:var(--ink-soft,#6e4b2c)}
 .city-era{text-align:center}.city-era h3{font:700 30px/1.1 "Cormorant Garamond",Georgia,serif;margin:6px 0}
 .city-era .pair{display:flex;justify-content:center;align-items:center;gap:8px}.city-era .pair .ct-th{width:130px;height:120px}
-@media(max-width:600px){.city-wrap{height:60vh;min-height:330px}.city-next{flex-wrap:wrap}.city-next .bar{flex-basis:100%}.city-card{flex-basis:112px}.city-card .ct-th{width:84px;height:70px}.cw-era{display:none}}
-@media(prefers-reduced-motion:reduce){.ct-spin,.ct-smoke circle,.ct-flame,.ct-float,.ct-blink,.ct-jet,.ct-water,.ct-ripple,.ct-walk,.ct-bub>g,.ct-ghost .ct-art,.ct-b.sel .ct-in{animation:none}}
+@media(max-width:600px){.cw-board{left:auto;right:10px;top:58px;bottom:auto;min-width:0;font-size:11.5px;padding:6px 8px}.city-wrap{height:60vh;min-height:330px}.city-next{flex-wrap:wrap}.city-next .bar{flex-basis:100%}.city-card{flex-basis:112px}.city-card .ct-th{width:84px;height:70px}.cw-era{display:none}}
+@media(prefers-reduced-motion:reduce){.ct-way,.ct-pass,.ct-flap,.ct-nod,.ct-jump,.ct-bounce,.ct-glow,.ct-spin,.ct-smoke circle,.ct-flame,.ct-float,.ct-blink,.ct-jet,.ct-water,.ct-ripple,.ct-walk,.ct-bub>g,.ct-ghost .ct-art,.ct-b.sel .ct-in{animation:none}}
 `;
   function style() { if (window.Path) Path.style(); else if (H()) H().style(); if (document.getElementById('city-css')) return; const s = document.createElement('style'); s.id = 'city-css'; s.textContent = CSS; document.head.append(s); }
 
@@ -269,9 +373,9 @@
   const thumb = (code, era) => `<svg class="ct-th" viewBox="-38 -70 76 90" aria-hidden="true">${flat(0.9, ERAS[era].ground[0], ' opacity=".8"')}${ART[code] ? ART[code](era, 0.3, () => (code === 'bridge' ? 'water' : code === 'road' ? 'road' : null)) : ''}</svg>`;
   const coin = `<circle r="11" fill="#e3b341" stroke="${INK}" stroke-width="1.6"/><circle r="7" fill="none" stroke="#8a6d1f" stroke-width="3" stroke-dasharray="2.2 2.2"/><circle r="2.4" fill="#8a6d1f"/>`;
 
-  async function open(el, { sb, onChange, onEarn, guest }) {
+  async function open(el, { sb, onChange, onEarn, guest, onGarage }) {
     style();
-    let S = null, mode = null, cat = 'home', fresh = null, cam = null, busy = false, touched = false;
+    let S = null, mode = null, cat = 'home', fresh = null, cam = null, busy = false, touched = false, racing = false;
     const rpc = async (fn, args) => { const { data, error } = await sb.rpc(fn, args); if (error) throw new Error(error.message || 'Ошибка'); return data; };
     const load = async () => { S = await rpc('city_state'); S.radius = S.radius ?? ERAS[S.era].r; };
     el.innerHTML = '<p class="note" style="text-align:center;padding:40px 0">Строим город…</p>';
@@ -287,7 +391,7 @@
     const groups = () => {
       grp = {}; let id = 0;
       for (const t of S.tiles || []) {
-        const k0 = key(t.x, t.y); if (!GROUP[t.c] || grp[k0]) continue;
+        const k0 = key(t.x, t.y); if (!LV[t.c] || grp[k0]) continue;
         const list = [t], g = { id: ++id, n: 0, code: t.c }; grp[k0] = g;
         for (let i = 0; i < list.length; i++) for (const [dx, dy] of SIDES) {
           const q = occ[key(list[i].x + dx, list[i].y + dy)]; if (q && q.c === t.c && !grp[key(q.x, q.y)]) { grp[key(q.x, q.y)] = g; list.push(q); }
@@ -310,8 +414,8 @@
     }
 
     // ---------- разметка: шапка, поле, панель построек ----------
-    el.innerHTML = `<div class="city"><div class="city-next" id="cwNext"></div><div class="city-wrap" id="cwWrap"><svg id="cwSvg" xmlns="http://www.w3.org/2000/svg"><g id="cwWorld"></g><g id="cwGhost"></g></svg>`
-      + `<div class="cw-hud"><div class="cw-left"><div class="cw-chip cw-era"><span class="i">🏛</span><span><small>Эпоха</small><b id="cwEra"></b></span></div><div class="cw-chip"><span class="i">👥</span><b id="cwPop"></b></div><button type="button" class="cw-land" id="cwLand" hidden></button></div><div class="cw-chip cw-gears" id="cwGearsBox"><span class="i">${gear(17)}</span><b id="cwGears"></b></div></div>`
+    el.innerHTML = `<div class="city"><div class="city-next" id="cwNext"></div><div class="city-wrap" id="cwWrap"><svg id="cwSvg" xmlns="http://www.w3.org/2000/svg"><g id="cwWorld"></g><g id="cwGhost"></g><g id="cwCars"></g></svg>`
+      + `<div class="cw-hud"><div class="cw-left"><div class="cw-chip cw-era"><span class="i">🏛</span><span><small>Эпоха</small><b id="cwEra"></b></span></div><div class="cw-chip"><span class="i">👥</span><b id="cwPop"></b></div><button type="button" class="cw-land" id="cwLand" hidden></button>${onGarage ? '<button type="button" class="cw-race cw-gar" id="cwGarage">🔧 Гараж</button><button type="button" class="cw-race" id="cwRace">🏁 Гонка</button>' : ''}</div><div class="cw-chip cw-gears" id="cwGearsBox"><span class="i">${gear(17)}</span><b id="cwGears"></b></div></div>`
       + `<div class="cw-side"><button type="button" data-z="1" aria-label="Приблизить">+</button><button type="button" data-z="-1" aria-label="Отдалить">−</button><button type="button" data-z="0" aria-label="Показать весь город" style="font-size:17px">⌂</button></div><div id="cwAct"></div><div class="cw-tip" id="cwTip" hidden></div></div>`
       + `<div class="city-tools"><div class="city-tabs" id="cwTabs">${CATS.map(([k, t]) => `<button type="button" data-cat="${k}">${t}</button>`).join('')}</div><div class="city-cards" id="cwCards"></div></div></div>`;
     const $ = (id) => el.querySelector('#' + id);
@@ -345,7 +449,7 @@
     // Неподвижное (земля, дома, деревья, туман) рисуется готовыми картинками — по одной на ряд клеток, чтобы передние постройки
     // закрывали задние; живыми остаются только мелкие движущиеся части (мельницы, дым, огонь, вода, жители), выбранная и новая
     // постройка, монетки и табличка. Иначе телефон пересчитывает весь город на каждом кадре анимации.
-    const ANIM = '.ct-spin,.ct-smoke,.ct-flame,.ct-float,.ct-blink,.ct-jet,.ct-water,.ct-ripple,.ct-walk';
+    const ANIM = '.ct-spin,.ct-smoke,.ct-flame,.ct-float,.ct-blink,.ct-jet,.ct-water,.ct-ripple,.ct-walk,.ct-way,.ct-pass,.ct-nod,.ct-jump,.ct-bounce,.ct-glow';
     let shown = [], drawN = 0;
     function layer(body, B, urls) { // → неподвижная картинка + живые части
       if (!body) return '';
@@ -365,7 +469,8 @@
       const era = S.era, E = ERAS[era], R = S.radius, cells = [], N = R + 1;
       for (let y = -N; y <= N; y++) for (let x = -N; x <= N; x++) cells.push([x, y]);
       cells.sort((a, b) => a[0] + a[1] - (b[0] + b[1]) || a[0] - b[0]);
-      let ground = '', groundLive = '', fog = '', bubbles = '';
+      let ground = '', groundLive = '', fog = '', bubbles = '', budget = LIFE_MAX;
+      const take = () => budget-- > 0;
       const rows = {}, rowLive = {};
       const okMark = mode && (mode.kind === 'build' || mode.kind === 'move') ? mode.code : null;
       for (const [x, y] of cells) {
@@ -383,7 +488,7 @@
           + (okMark && canPlace(okMark, x, y, mode.from)[0] ? '<path d="M-30 0L0 15L30 0L0-15z" fill="#7eaa62" fill-opacity=".22" stroke="#3f6a32" stroke-opacity=".5" stroke-width="1"/>' : '') + '</g>';
         if (!code || !ART[code]) continue;
         const k = key(x, y), sel = mode && mode.kind === 'sel' && mode.x === x && mode.y === y, hide = mode && mode.kind === 'move' && mode.from.x === x && mode.from.y === y;
-        const g = `<g class="ct-b${fresh === k ? ' new' : ''}${sel ? ' sel' : ''}${hide ? ' hide' : ''}" data-x="${x}" data-y="${y}" transform="translate(${sx} ${sy})"><g class="ct-in">${ART[code](era, rr(), nb, grp[k] && { n: grp[k].n, front: grp[k].front === k })}</g>${code === 'house' || code === 'hall' ? walkers(code === 'hall' ? 2 : 1, rr) : ''}${fresh === k ? `<g class="ct-puff">${[[-20, -4], [20, -4], [-12, 8], [14, 8]].map(([dx, dy]) => `<circle r="5" style="--x:${dx}px;--y:${dy}px"/>`).join('')}</g>` : ''}</g>`;
+        const g = `<g class="ct-b${fresh === k ? ' new' : ''}${sel ? ' sel' : ''}${hide ? ' hide' : ''}" data-x="${x}" data-y="${y}" transform="translate(${sx} ${sy})"><g class="ct-in">${ART[code](era, rr(), nb, grp[k] && { n: grp[k].n, front: grp[k].front === k })}${grp[k] ? life(code, era, lvl(grp[k].n), SIDES.filter(([dx, dy]) => nb(dx, dy) === code), grp[k].front === k, rr, take, nb) : ''}</g>${code === 'house' || code === 'hall' ? walkers(code === 'hall' ? 2 : 1, rr) : ''}${fresh === k ? `<g class="ct-puff">${[[-20, -4], [20, -4], [-12, 8], [14, 8]].map(([dx, dy]) => `<circle r="5" style="--x:${dx}px;--y:${dy}px"/>`).join('')}</g>` : ''}</g>`;
         const live = sel || hide || fresh === k;
         if (FLAT.has(code)) { if (live) groundLive += g; else ground += g; } else if (live) rowLive[d] += g; else rows[d] += g;
         if (S.ready > 0 && occ[k] && income(occ[k])) bubbles += `<g class="ct-bub" data-bub="1" transform="translate(${sx} ${sy - 62})"><g>${coin}<path d="M0 11l-4 6h8z" fill="#e3b341" stroke="${INK}" stroke-width="1.2"/></g></g>`;
@@ -454,8 +559,8 @@
         box.dataset.m = mk;
         if (mode.kind === 'sel') {
           const it = item(mode.code), t = occ[key(mode.x, mode.y)] || {}, g = grp[key(mode.x, mode.y)];
-          const gi = g && g.n > 1 ? (S.tiles || []).filter((q) => grp[key(q.x, q.y)] === g).reduce((a, q) => a + income(q), 0) : income(t);
-          const name = g && g.n > 1 ? `${GROUP[mode.code]} · ${g.n} ${plural(g.n, 'клетка', 'клетки', 'клеток')}` : it.title;
+          const gi = (g && g.n > 1 ? (S.tiles || []).filter((q) => grp[key(q.x, q.y)] === g).reduce((a, q) => a + income(q), 0) : income(t)) + (g && BONUS.has(mode.code) ? lvBonus(g.n) : 0);
+          const name = g && g.n > 1 ? `${lvName(mode.code, g.n)} · ${g.n} ${plural(g.n, 'клетка', 'клетки', 'клеток')}` : it.title;
           box.innerHTML = `<div class="cw-act"><button type="button" class="name" tabindex="-1">${esc(name)}${gi ? ' · +' + gi + ' ⚙/день' : ''}</button>${['water', 'bridge'].includes(mode.code) ? '' : '<button type="button" data-a="move">✥ Переставить</button>'}<button type="button" data-a="sell">Убрать${it.refund && !t.g ? ' +' + it.refund + ' ⚙' : ''}</button><button type="button" class="no" data-a="cancel" aria-label="Закрыть">✕</button></div>`;
         } else box.innerHTML = `<div class="cw-act"><button type="button" class="no" data-a="cancel" aria-label="Отмена">✕</button><button type="button" class="ok" data-a="ok" aria-label="Построить здесь">✓</button></div>`;
       }
@@ -485,6 +590,7 @@
       return best || [cx, cy];
     }
     function startBuild(code) {
+      if (racing) return;
       const it = item(code);
       if (!it.unlocked) return;
       if (it.once && built(code)) { const t = S.tiles.find((q) => q.c === code); mode = { kind: 'sel', x: t.x, y: t.y, code }; tip('Особое здание — в городе может быть только одно. Его можно переставить.'); redraw(); drawCards(); return; }
@@ -512,9 +618,10 @@
         H().ding(true);
       });
       const g = ok && grp[key(x, y)];
-      if (g && [2, 3, 5, 8].includes(g.n)) {
-        const more = { field: { 3: 'на поле появился стог сена', 5: 'пришло пугало', 8: 'второй стог' }, forest: { 4: 'в чаще выросли грибы' }, flowers: { 3: 'в парке поставили скамейку', 5: 'и беседку' } }[code] || {};
-        tip(g.n === 2 ? `${GROUP[code]}! Рядом такие же дают больше${code === 'house' ? ' жителей' : ' ⚙'}` : `${GROUP[code]} растёт: ${g.n} ${plural(g.n, 'клетка', 'клетки', 'клеток')}${more[g.n] ? ' — ' + more[g.n] : ''}!`);
+      if (g && LV[code] && (g.n === 2 || lvl(g.n) > lvl(g.n - 1))) {
+        const L = lvl(g.n), b = BONUS.has(code) && L ? ` +${lvBonus(g.n)} ⚙ в день за всю группу.` : '', nx = [3, 5, 8][L];
+        tip(g.n === 2 ? `Рядом такие же — они срастаются. Собери 3 рядом — получится «${LV[code][1]}»!` : `Теперь это «${lvName(code, g.n)}»: ${LV_TIP[code][L]}!${b}${nx ? ` Следующий уровень — ${nx} ${plural(nx, 'клетка', 'клетки', 'клеток')}.` : ''}`);
+        if (L) setTimeout(() => H().ding(true), 300);
       }
       return ok;
     }
@@ -542,6 +649,77 @@
         const b = e.target.closest('[data-a]'); if (!b) return; o.close();
         if (b.dataset.a === 'y' && await act('city_expand', {})) { H().ding(true); fit(); applyCam(); tip('Город стал больше! Новые клетки — у края.'); setTimeout(() => tip(''), 2600); }
       });
+    }
+
+    // ---------- гонка: трасса по дорогам города (или кольцо вокруг), время каждой машины посчитал сервер ----------
+    const isRoad = (x, y) => ['road', 'bridge'].includes(codeAt(x, y));
+    function trackCells(ring) {
+      let best = [];
+      if (!ring) { // самый длинный путь по дорогам (поиск в глубину с пределом шагов)
+        const roads = (S.tiles || []).filter((t) => isRoad(t.x, t.y)), deg = (t) => SIDES.filter(([dx, dy]) => isRoad(t.x + dx, t.y + dy)).length;
+        const ends = roads.filter((t) => deg(t) <= 1), seen = new Set(); let steps = 0;
+        const dfs = (x, y, acc) => {
+          if (++steps > 30000) return; if (acc.length > best.length) best = acc.slice();
+          for (const [dx, dy] of SIDES) { const nx = x + dx, ny = y + dy, k = key(nx, ny); if (seen.has(k) || !isRoad(nx, ny)) continue; seen.add(k); acc.push([nx, ny]); dfs(nx, ny, acc); acc.pop(); seen.delete(k); }
+        };
+        for (const t of (ends.length ? ends : roads).slice(0, 8)) { seen.clear(); seen.add(key(t.x, t.y)); dfs(t.x, t.y, [[t.x, t.y]]); }
+      }
+      if (best.length >= 2) return { pts: best.map(([x, y]) => scr(x, y)), loop: false };
+      const N = S.radius + 1, c = [];
+      for (let x = -N; x < N; x++) c.push([x, -N]); for (let y = -N; y < N; y++) c.push([N, y]); for (let x = N; x > -N; x--) c.push([x, N]); for (let y = N; y > -N; y--) c.push([-N, y]);
+      return { pts: c.map(([x, y]) => scr(x, y)), loop: true };
+    }
+    function polyline(T) { // трасса: кольцо — два круга, дорога — туда и обратно
+      let p = T.pts.slice();
+      if (T.loop) p = [...p, ...p, p[0]]; else p = [...p, ...p.slice(0, -1).reverse()];
+      const len = [0]; for (let i = 1; i < p.length; i++) len.push(len[i - 1] + Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]));
+      const at = (u) => { const d = Math.max(0, Math.min(1, u)) * len[len.length - 1]; let i = 1; while (i < len.length - 1 && len[i] < d) i++; const a = p[i - 1], b = p[i], k = (d - len[i - 1]) / Math.max(1e-6, len[i] - len[i - 1]); return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, b[0] - a[0], b[1] - a[1]]; };
+      return { at };
+    }
+    const KIND = { me: 'это ты', player: 'машина игрока', bot: 'тренировочная' };
+    async function race() {
+      if (racing || busy) return;
+      const btn = $('cwRace'); btn.disabled = true;
+      try { if (!window.Garage && window.need) await window.need('garage'); } catch (e) {}
+      if (!window.Garage) { btn.disabled = false; return toast('<h3>Гонка не загрузилась</h3><p>Проверьте интернет и обновите страницу.</p>'); }
+      Garage.style();
+      let R; try { R = await rpc('race_start'); } catch (e) { btn.disabled = false; return toast(`<h3>Гонка не началась</h3><p>${esc(e.message)}</p>`); }
+      racing = true; mode = null; placeAct(); redraw(); wrap.classList.add('racing'); touched = false; fit(); applyCam();
+      const T = trackCells(R.track.ring), L = polyline(T), cars = $('cwCars'), rs = R.racers;
+      const maxT = Math.max(...rs.map((q) => +q.time)), DUR = 11000, dur = rs.map((q) => (DUR * q.time) / maxT);
+      const col = rs.map((q) => Garage.colorOf(q.parts));
+      tip(T.loop ? 'Трасса — вокруг города, два круга. Построй дорогу из 4 клеток и больше — гонки пойдут по твоим улицам!' : `Трасса — по дорогам города: ${R.track.n} ${plural(R.track.n, 'клетка', 'клетки', 'клеток')}, поворотов — ${R.track.turns}. Туда и обратно!`);
+      const board = document.createElement('div'); board.className = 'cw-board'; wrap.append(board);
+      const draw = (t) => {
+        const pos = rs.map((q, i) => { const u = Math.min(1, t / dur[i]), [x, y, dx, dy] = L.at(u), n = Math.hypot(dx, dy) || 1, off = (i - 1.5) * 3.2; return { i, u, x: x - (dy / n) * off, y: y + (dx / n) * off - 2, dir: dx >= 0 ? 1 : -1 }; });
+        cars.innerHTML = pos.slice().sort((a, b) => a.y - b.y).map((p) => `<g transform="translate(${f1(p.x)} ${f1(p.y)}) scale(1.45)">${Garage.iso(col[p.i], p.dir)}${rs[p.i].me ? '<path d="M-4-24h8l-4 6z" fill="#e3b341" stroke="#4a2c14" stroke-width="1"/>' : ''}</g>`).join('');
+        board.innerHTML = pos.slice().sort((a, b) => b.u - a.u || dur[a.i] - dur[b.i]).map((p, k) => `<div class="${rs[p.i].me ? 'me' : ''}"><span>${k + 1}.</span><i style="background:${col[p.i]}"></i>${esc(rs[p.i].me ? 'Ты' : rs[p.i].name)}${p.u >= 1 ? ' 🏁' : ''}</div>`).join('');
+      };
+      draw(0);
+      const cnt = document.createElement('div'); cnt.className = 'cw-count'; wrap.append(cnt);
+      for (const n of ['3', '2', '1', 'Старт!']) { cnt.innerHTML = `<b style="${n.length > 1 ? 'font-size:64px' : ''}">${n}</b>`; H().ding(n.length > 1); await new Promise((ok) => setTimeout(ok, n.length > 1 ? 600 : 800)); }
+      cnt.remove();
+      const t0 = performance.now(), end = Math.max(...dur) + 500;
+      await new Promise((ok) => { const step = (now) => { const t = now - t0; draw(t); if (t < end && el.isConnected) requestAnimationFrame(step); else ok(); }; requestAnimationFrame(step); });
+      board.remove(); cars.innerHTML = ''; wrap.classList.remove('racing'); racing = false; btn.disabled = false; tip('');
+      S.gears = R.balance ?? S.gears; drawHud(); drawCards(); onChange && onChange();
+      if (!el.isConnected) return;
+      const me = rs.find((q) => q.me), win = rs[0];
+      const why = R.place === 1 ? 'Твоя машина быстрее всех на этой трассе!' : (() => {
+        const s1 = me.stats, s2 = win.stats, tips = [];
+        if (s2.pw > s1.pw) tips.push('у победителя мощнее двигатель');
+        if (s2.ar > s1.ar) tips.push('его кузов обтекаемее');
+        if (s1.fr > s2.fr) tips.push('у тебя больше трение — попробуй подшипники');
+        if (s1.ms > s2.ms) tips.push('твоя машина тяжелее');
+        if (R.track.turns > 1 && s2.gr > s1.gr) tips.push(`на трассе ${R.track.turns} ${plural(R.track.turns, 'поворот', 'поворота', 'поворотов')} — помогло бы сцепление шин`);
+        return tips.length ? 'Почему так: ' + tips.slice(0, 2).join(', ') + '. Загляни в гараж!' : 'Совсем чуть-чуть не хватило — в гонке есть немного удачи. Попробуй ещё!';
+      })();
+      const o = H().overlay(`<div class="race-res">${R.place === 1 ? `<div class="hero-bits">${H().bits()}</div>` : ''}<small>Гонка в городе</small><h3>${['🏆 Победа!', '🥈 Второе место!', '🥉 Третье место', 'Четвёртое место'][R.place - 1]}</h3>`
+        + `<ol>${rs.map((q, i) => `<li class="${q.me ? 'me' : ''}"><b>${i + 1}</b>${Garage.side(q.parts)}<span>${esc(q.name)}<small>${KIND[q.kind] || ''}</small></span><em>${(dur[i] / 1000).toFixed(1)} с</em></li>`).join('')}</ol>`
+        + `<p class="why">${esc(why)}</p><p>${R.gears ? `<b>+${R.gears} ⚙</b> за ${R.place} место.${R.prize_left ? ` Гонок с наградой сегодня: ещё ${R.prize_left}.` : ' Это была последняя гонка с наградой на сегодня.'}` : R.prize_left === 0 ? 'Гонки с наградой на сегодня закончились — дальше гоняем для тренировки. Завтра — снова за шестерёнками!' : 'В этот раз без шестерёнок — призы за первые три места.'}</p>`
+        + `<div class="hero-btns" style="justify-content:center"><button type="button" class="hero-b main" data-r="again">🏁 Ещё гонка</button>${onGarage ? '<button type="button" class="hero-b" data-r="garage">🔧 В гараж</button>' : ''}<button type="button" class="hero-b" data-r="">Закрыть</button></div></div>`);
+      if (R.place === 1) H().ding(true);
+      o.box.addEventListener('click', (e) => { const b = e.target.closest('[data-r]'); if (!b) return; o.close(); if (b.dataset.r === 'again') setTimeout(race, 50); if (b.dataset.r === 'garage') onGarage(); });
     }
 
     // ---------- касания и мышь ----------
@@ -573,6 +751,7 @@
 
     function tap(cx, cy) {
       const hit = document.elementFromPoint(cx, cy), [x, y] = cellAt(cx, cy);
+      if (racing) return;
       if (hit && hit.closest('[data-bub]')) return collect();
       if (hit && hit.closest('[data-sign]') && !mode) return expand();
       if (mode && mode.kind === 'build' && mode.paint) {
@@ -590,6 +769,8 @@
       const z = e.target.closest('[data-z]');
       if (z) { if (z.dataset.z === '0') fit(), applyCam(); else zoomAt(z.dataset.z === '1' ? 1.3 : 1 / 1.3); return; }
       if (e.target.closest('#cwLand')) return expand();
+      if (e.target.closest('#cwRace')) return race();
+      if (e.target.closest('#cwGarage')) return onGarage();
       const a = e.target.closest('[data-a]'); if (!a) return;
       if (a.dataset.a === 'ok') return confirm();
       if (a.dataset.a === 'cancel') return cancel();

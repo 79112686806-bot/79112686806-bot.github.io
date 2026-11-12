@@ -7,15 +7,14 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Marck+Script&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/paper.css">
 <style>
 :root{--ink:#3a2313;--ink-soft:#6e4b2c;--sanguine:#9a3a1b;--paper:#e8d4aa;--paper-light:#f2e4c4;--desk:#24160c;--line:rgba(74,44,20,.26)}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--desk) radial-gradient(ellipse at 50% 0,#3b2513,transparent 70%);color:var(--ink);font-family:"PT Serif",Georgia,serif;font-size:18px;line-height:1.7}
+body{margin:0;color:var(--ink);font-family:"PT Serif",Georgia,serif;font-size:18px;line-height:1.7}
 a{color:var(--sanguine)}
-.wrap{position:relative;width:min(1160px,calc(100% - 32px));margin:28px auto 40px;padding:10px clamp(16px,5vw,64px) 6px;border-radius:6px;
-  background:radial-gradient(ellipse at 50% 30%,rgba(255,246,222,.6),transparent 70%),var(--paper);
-  box-shadow:inset 0 0 80px rgba(110,58,16,.5),inset 0 0 18px rgba(85,38,8,.6),0 22px 40px rgba(0,0,0,.55)}
+.wrap{position:relative;width:min(1160px,calc(100% - 32px));margin:28px auto 40px;padding:10px clamp(16px,5vw,64px) 6px;border-radius:6px;}
 nav{display:flex;align-items:center;gap:12px;padding:18px 0;flex-wrap:wrap}
 .brand{display:flex;gap:12px;align-items:center;font-family:"Cormorant Garamond",Georgia,serif;font-size:22px;font-weight:700;color:var(--ink);text-decoration:none}
 .logo{width:34px;height:34px;border:2px solid var(--sanguine);border-radius:50%;display:grid;place-items:center;position:relative}
@@ -359,6 +358,8 @@ a.mp-btn{text-decoration:none}
 </style></style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="torn" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="5" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="26" xChannelSelector="R" yChannelSelector="G"/></filter><filter id="tornRough" x="-8%" y="-8%" width="116%" height="116%"><feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="5" seed="11" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="38" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
+<div class="scraps" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
 <div class="wrap">
 <nav><a class="brand" href="/"><span class="logo"><i></i></span>ИНЖЕНЕРНЫЙ КЛУБ</a>
 <span class="nav-links"><a class="nav-txt" href="/programmy/">Программы</a><a class="nav-txt nav-wide" href="/kak-prohodyat-zanyatiya/">Как проходят занятия</a><a class="nav-txt" href="/gorod/">Игры</a><a class="nav-txt nav-wide" href="/kontakty/">Контакты</a><a class="btn" href="/?kabinet">Войти в кабинет</a></span></nav>
