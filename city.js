@@ -430,6 +430,8 @@
     }
     function applyCam() {
       const W = wrap.clientWidth, Hh = wrap.clientHeight, b = bounds(), minS = Math.min(W / (2 * b.w), Hh / (b.bot - b.top)) * 0.8;
+      if (!W || !Hh) return;
+      if (!(Number.isFinite(cam.x) && Number.isFinite(cam.y) && Number.isFinite(cam.s) && cam.s > 0)) fit();
       cam.s = Math.max(minS, Math.min(3.2, cam.s));
       cam.x = Math.max(-b.w, Math.min(b.w, cam.x)); cam.y = Math.max(b.top, Math.min(b.bot, cam.y));
       svg.setAttribute('viewBox', `${f1(cam.x - W / 2 / cam.s)} ${f1(cam.y - Hh / 2 / cam.s)} ${f1(W / cam.s)} ${f1(Hh / cam.s)}`);
@@ -742,11 +744,18 @@
     });
     const end = (e) => {
       if (!pts.has(e.pointerId)) return; pts.delete(e.pointerId); wrap.classList.remove('panning');
-      if (pts.size || !gest) { if (!pts.size) gest = null; return; }
+      if (pts.size || !gest) {
+        if (!pts.size) gest = null;
+        else if (gest && gest.pinch) { const [q] = [...pts.values()]; gest = { sx: q[0], sy: q[1], cx: cam.x, cy: cam.y, moved: true }; }
+        return;
+      }
       const g = gest; gest = null; if (g.moved) return;
       tap(e.clientX, e.clientY);
     };
-    svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', (e) => { pts.delete(e.pointerId); gest = null; });
+    svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', (e) => { pts.delete(e.pointerId); gest = null; wrap.classList.remove('panning'); });
+    // iPhone: щипок по городу увеличивает город, а не всю страницу
+    wrap.addEventListener('gesturestart', (e) => e.preventDefault());
+    wrap.addEventListener('touchmove', (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
     svg.addEventListener('wheel', (e) => { e.preventDefault(); zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX, e.clientY); }, { passive: false });
 
     function tap(cx, cy) {
