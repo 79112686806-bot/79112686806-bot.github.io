@@ -1,5 +1,6 @@
 // Варианты PDF-материалов для телефона → бакет «materials», рядом с основным файлом под именем <файл>.m.pdf.
 // Запуск: node scripts/upload-materials-mobile.mjs "<папка с PDF для телефона>"
+// MAIN=1 — заменить сами материалы (A4) этими файлами: node scripts/upload-materials-mobile.mjs "<папка с PDF A4>" с MAIN=1
 // Файл в папке называется так же, как материал в админке («Модуль 7. Автомобиль.pdf»).
 // Ключ — SUPABASE_SERVICE_ROLE_KEY из .env (только локально, в браузер и в репозиторий не попадает).
 // Скачивать варианты ученикам разрешает миграция 20261108000047_materials_mobile.sql.
@@ -24,7 +25,7 @@ let n = 0;
 for (const f of files) {
   const m = mats.find((x) => norm(x.title) === norm(f) && /\.pdf$/i.test(x.storage_path || ''));
   if (!m) { console.log('— нет материала с таким названием:', f); continue; }
-  const path = m.storage_path.replace(/\.pdf$/i, '.m.pdf');
+  const path = process.env.MAIN ? m.storage_path : m.storage_path.replace(/\.pdf$/i, '.m.pdf');
   const r = await fetch(`${url}/storage/v1/object/materials/${path}`, {
     method: 'POST', headers: { ...auth, 'Content-Type': 'application/pdf', 'x-upsert': 'true' }, body: readFileSync(join(dir, f)),
   });
